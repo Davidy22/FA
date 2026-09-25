@@ -1,0 +1,21 @@
+{
+  "title": "创作者仪表板",
+  "submit": "投稿模型",
+  "agreement": "创作者协议",
+  "agreement_prompt": "你必须先同意创作者协议才能投稿。",
+  "my_submissions": "我的投稿",
+  "my_products": "已上架作品",
+  "earnings": "收益",
+  "balance": "余额",
+  "request_payout": "申请请款",
+  "payout_history": "请款记录",
+  "sales_count": "销售量",
+  "status": {
+    "draft": "草稿",
+    "pending_review": "审核中",
+    "changes_requested": "需要修改",
+    "approved": "已通过",
+    "rejected": "已驳回",
+    "disabled": "已停用"
+  }
+}

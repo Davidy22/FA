@@ -1,0 +1,13 @@
+{
+  "title": "結帳",
+  "contact_info": "聯絡資訊",
+  "name": "姓名",
+  "email": "Email",
+  "review_order": "確認訂單",
+  "pay_with_stripe": "透過 Stripe 付款",
+  "success": "感謝你的訂購！",
+  "success_note": "我們已寄送確認信至 {{email}}。",
+  "pickup_only": "僅供門市取件",
+  "pickup": "取件",
+  "order_number": "訂單編號"
+}

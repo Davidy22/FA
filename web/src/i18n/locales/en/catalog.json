@@ -1,0 +1,14 @@
+{
+  "browse": "Browse products",
+  "filters": "Filters",
+  "filter_by_material": "Material",
+  "filter_by_category": "Category",
+  "no_results": "No products match your filters.",
+  "available_colors": "Available colors",
+  "multi_material_hint": "Choose a material to see available colors and price.",
+  "single_material": "Made with {{material}}",
+  "designer": "Designer",
+  "select_color": "Select a color",
+  "select_material": "Select a material",
+  "base_price": "Base price"
+}

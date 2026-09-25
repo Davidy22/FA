@@ -1,0 +1,15 @@
+{
+  "title": "Employee Portal",
+  "pending_orders": "Pending orders",
+  "orders": "Orders",
+  "filament_stock": "Filament stock",
+  "in_stock": "In stock",
+  "out_of_stock": "Out of stock",
+  "add_note": "Add internal note",
+  "update_status": "Update status",
+  "print_sheet": "Print sheet",
+  "download_model": "Download model",
+  "customer": "Customer",
+  "mark_shipped": "Mark shipped",
+  "tracking": "Tracking number"
+}

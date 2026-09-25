@@ -1,0 +1,8 @@
+{
+  "title": "我的订单",
+  "none": "你还没有任何订单。",
+  "download_invoice": "下载发票",
+  "track": "订单追踪",
+  "guest_lookup": "查询访客订单",
+  "guest_lookup_prompt": "输入订单编号与 email。"
+}

@@ -1,0 +1,9 @@
+{
+  "generic": "發生錯誤。",
+  "select_location_first": "請先選擇門市。",
+  "quote_expired": "報價已過期，請重新報價。",
+  "price_changed": "價格變動超過 10%，請重新確認。",
+  "file_too_large": "檔案太大（上限 50 MB）。",
+  "invalid_file": "檔案格式錯誤，請使用 STL、OBJ 或 3MF。",
+  "login_required": "請先登入再繼續。"
+}

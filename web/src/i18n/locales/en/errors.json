@@ -1,0 +1,9 @@
+{
+  "generic": "Something went wrong.",
+  "select_location_first": "Please select a location first.",
+  "quote_expired": "Your quote has expired. Please request a new one.",
+  "price_changed": "Price changed by more than 10%. Please confirm the new total.",
+  "file_too_large": "File is too large (max 50 MB).",
+  "invalid_file": "Invalid file type. Please use STL, OBJ, or 3MF.",
+  "login_required": "Please sign in to continue."
+}

@@ -1,0 +1,15 @@
+{
+  "title": "員工入口",
+  "pending_orders": "待處理訂單",
+  "orders": "訂單管理",
+  "filament_stock": "線材庫存",
+  "in_stock": "有庫存",
+  "out_of_stock": "缺貨",
+  "add_note": "新增內部備註",
+  "update_status": "更新狀態",
+  "print_sheet": "列印工單",
+  "download_model": "下載模型",
+  "customer": "客戶",
+  "mark_shipped": "標記為已出貨",
+  "tracking": "物流單號"
+}

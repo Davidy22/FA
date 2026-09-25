@@ -1,0 +1,14 @@
+{
+  "title": "Admin",
+  "locations": "Locations",
+  "materials_filaments": "Materials & Filaments",
+  "products": "Products",
+  "orders": "All orders",
+  "users": "Users",
+  "submissions": "Submission review",
+  "payouts": "Payouts",
+  "settings": "Platform settings",
+  "approve": "Approve",
+  "reject": "Reject",
+  "request_changes": "Request changes"
+}

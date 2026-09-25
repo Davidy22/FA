@@ -1,0 +1,9 @@
+{
+  "generic": "发生错误。",
+  "select_location_first": "请先选择门店。",
+  "quote_expired": "报价已过期，请重新报价。",
+  "price_changed": "价格变动超过 10%，请重新确认。",
+  "file_too_large": "文件太大（上限 50 MB）。",
+  "invalid_file": "文件格式错误，请使用 STL、OBJ 或 3MF。",
+  "login_required": "请先登录再继续。"
+}

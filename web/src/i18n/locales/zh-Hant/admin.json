@@ -1,0 +1,14 @@
+{
+  "title": "管理後台",
+  "locations": "門市",
+  "materials_filaments": "材料與線材",
+  "products": "商品",
+  "orders": "所有訂單",
+  "users": "使用者",
+  "submissions": "投稿審核",
+  "payouts": "請款",
+  "settings": "平台設定",
+  "approve": "通過",
+  "reject": "駁回",
+  "request_changes": "要求修改"
+}

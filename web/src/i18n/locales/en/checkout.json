@@ -1,0 +1,13 @@
+{
+  "title": "Checkout",
+  "contact_info": "Contact info",
+  "name": "Name",
+  "email": "Email",
+  "review_order": "Review your order",
+  "pay_with_stripe": "Pay with Stripe",
+  "success": "Thanks for your order!",
+  "success_note": "We've sent a confirmation to {{email}}.",
+  "pickup_only": "Pickup only",
+  "pickup": "Pickup",
+  "order_number": "Order number"
+}

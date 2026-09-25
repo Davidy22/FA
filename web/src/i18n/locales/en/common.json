@@ -1,0 +1,61 @@
+{
+  "app_name": "Fab Anything",
+  "tagline": "3D prints on demand, made near you.",
+  "nav": {
+    "home": "Home",
+    "catalog": "Catalog",
+    "quote": "Get a Quote",
+    "cart": "Cart",
+    "login": "Sign in",
+    "register": "Sign up",
+    "logout": "Sign out",
+    "account": "Account",
+    "creator_dashboard": "Creator Dashboard",
+    "employee_portal": "Employee Portal",
+    "admin": "Admin"
+  },
+  "location": {
+    "title": "Choose a location",
+    "prompt": "Pick a Fab location near you to see available colors and materials.",
+    "selected": "Location",
+    "none_selected": "Select a location",
+    "change": "Change",
+    "pickup_at": "Pickup at {{location}}"
+  },
+  "language": "Language",
+  "loading": "Loading…",
+  "save": "Save",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "delete": "Delete",
+  "edit": "Edit",
+  "close": "Close",
+  "search": "Search",
+  "from_price": "from {{price}}",
+  "add_to_cart": "Add to cart",
+  "price": "Price",
+  "total": "Total",
+  "subtotal": "Subtotal",
+  "tax": "Tax",
+  "quantity": "Quantity",
+  "community_design": "Community design",
+  "by_designer": "by @{{name}}",
+  "advanced_details": "Advanced details",
+  "categories": {
+    "toy": "Toys",
+    "tool": "Tools",
+    "art": "Art & Decor",
+    "gadget": "Gadgets",
+    "replacement_part": "Replacement parts",
+    "other": "Other"
+  },
+  "status": {
+    "pending": "Pending",
+    "printing": "Printing",
+    "completed": "Completed",
+    "shipped": "Shipped",
+    "cancelled": "Cancelled",
+    "refunded": "Refunded"
+  },
+  "currency_code": "USD"
+}

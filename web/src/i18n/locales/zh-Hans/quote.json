@@ -1,0 +1,22 @@
+{
+  "title": "上传你的 3D 模型",
+  "dropzone": "拖放 STL / OBJ / 3MF 到这里，或点击选取文件",
+  "supported_formats": "STL、OBJ、3MF，最大 50 MB",
+  "calculating": "报价计算中…",
+  "estimate_disclaimer": "此为估计价格，误差约 ±20%，实际价格由门店确认。",
+  "material": "材料",
+  "color": "颜色",
+  "infill": "填充率",
+  "layer_height": "层高（毫米）",
+  "breakdown": {
+    "title": "价格明细",
+    "material": "材料",
+    "machine_time": "机台时间",
+    "handling": "处理费",
+    "minimum_fee": "最低订单费",
+    "grams": "{{g}} 克材料",
+    "print_time": "预估打印时间 {{min}} 分钟"
+  },
+  "preview": "3D 预览",
+  "error_parse": "无法解析模型，请确认文件格式。"
+}
