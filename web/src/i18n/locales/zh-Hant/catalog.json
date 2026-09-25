@@ -1,0 +1,14 @@
+{
+  "browse": "瀏覽商品",
+  "filters": "篩選",
+  "filter_by_material": "材料",
+  "filter_by_category": "分類",
+  "no_results": "沒有符合的商品。",
+  "available_colors": "可用顏色",
+  "multi_material_hint": "選擇材料以查看顏色與價格。",
+  "single_material": "以 {{material}} 製作",
+  "designer": "設計師",
+  "select_color": "選擇顏色",
+  "select_material": "選擇材料",
+  "base_price": "基礎價格"
+}

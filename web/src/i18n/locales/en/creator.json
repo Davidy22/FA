@@ -1,0 +1,21 @@
+{
+  "title": "Creator Dashboard",
+  "submit": "Submit a model",
+  "agreement": "Creator Agreement",
+  "agreement_prompt": "You must accept the Creator Agreement to submit designs.",
+  "my_submissions": "My submissions",
+  "my_products": "My published products",
+  "earnings": "Earnings",
+  "balance": "Balance",
+  "request_payout": "Request payout",
+  "payout_history": "Payout history",
+  "sales_count": "Sales",
+  "status": {
+    "draft": "Draft",
+    "pending_review": "Pending review",
+    "changes_requested": "Changes requested",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "disabled": "Disabled"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "title": "Your orders",
+  "none": "You don't have any orders yet.",
+  "download_invoice": "Download invoice",
+  "track": "Track order",
+  "guest_lookup": "Look up a guest order",
+  "guest_lookup_prompt": "Enter your order number and email."
+}

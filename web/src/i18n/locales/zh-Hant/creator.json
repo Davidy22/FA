@@ -1,0 +1,21 @@
+{
+  "title": "創作者儀表板",
+  "submit": "投稿模型",
+  "agreement": "創作者協議",
+  "agreement_prompt": "你必須先同意創作者協議才能投稿。",
+  "my_submissions": "我的投稿",
+  "my_products": "已上架作品",
+  "earnings": "收益",
+  "balance": "餘額",
+  "request_payout": "申請請款",
+  "payout_history": "請款紀錄",
+  "sales_count": "銷售量",
+  "status": {
+    "draft": "草稿",
+    "pending_review": "審核中",
+    "changes_requested": "需要修改",
+    "approved": "已通過",
+    "rejected": "已駁回",
+    "disabled": "已停用"
+  }
+}

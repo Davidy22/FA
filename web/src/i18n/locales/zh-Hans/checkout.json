@@ -1,0 +1,13 @@
+{
+  "title": "结账",
+  "contact_info": "联络信息",
+  "name": "姓名",
+  "email": "Email",
+  "review_order": "确认订单",
+  "pay_with_stripe": "通过 Stripe 付款",
+  "success": "感谢你的订购！",
+  "success_note": "我们已寄送确认信至 {{email}}。",
+  "pickup_only": "仅供门店取件",
+  "pickup": "取件",
+  "order_number": "订单编号"
+}

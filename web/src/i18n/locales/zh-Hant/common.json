@@ -1,0 +1,61 @@
+{
+  "app_name": "Fab Anything",
+  "tagline": "3D 列印隨選，在你附近製造。",
+  "nav": {
+    "home": "首頁",
+    "catalog": "商品目錄",
+    "quote": "線上報價",
+    "cart": "購物車",
+    "login": "登入",
+    "register": "註冊",
+    "logout": "登出",
+    "account": "帳號",
+    "creator_dashboard": "創作者儀表板",
+    "employee_portal": "員工入口",
+    "admin": "管理後台"
+  },
+  "location": {
+    "title": "選擇門市",
+    "prompt": "請先選擇離你最近的門市，才能看到可選顏色與材料。",
+    "selected": "門市",
+    "none_selected": "請選擇門市",
+    "change": "更換",
+    "pickup_at": "於 {{location}} 取件"
+  },
+  "language": "語言",
+  "loading": "載入中…",
+  "save": "儲存",
+  "cancel": "取消",
+  "confirm": "確認",
+  "delete": "刪除",
+  "edit": "編輯",
+  "close": "關閉",
+  "search": "搜尋",
+  "from_price": "最低 {{price}}",
+  "add_to_cart": "加入購物車",
+  "price": "價格",
+  "total": "總計",
+  "subtotal": "小計",
+  "tax": "稅金",
+  "quantity": "數量",
+  "community_design": "社群設計",
+  "by_designer": "由 @{{name}} 設計",
+  "advanced_details": "進階細節",
+  "categories": {
+    "toy": "玩具",
+    "tool": "工具",
+    "art": "藝術裝飾",
+    "gadget": "小物",
+    "replacement_part": "替換零件",
+    "other": "其他"
+  },
+  "status": {
+    "pending": "待處理",
+    "printing": "列印中",
+    "completed": "已完成",
+    "shipped": "已出貨",
+    "cancelled": "已取消",
+    "refunded": "已退款"
+  },
+  "currency_code": "USD"
+}

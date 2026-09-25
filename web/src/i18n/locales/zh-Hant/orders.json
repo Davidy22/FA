@@ -1,0 +1,8 @@
+{
+  "title": "我的訂單",
+  "none": "你還沒有任何訂單。",
+  "download_invoice": "下載發票",
+  "track": "訂單追蹤",
+  "guest_lookup": "查詢訪客訂單",
+  "guest_lookup_prompt": "輸入訂單編號與 email。"
+}

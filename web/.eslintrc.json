@@ -1,0 +1,6 @@
+{
+  "extends": ["next/core-web-vitals"],
+  "rules": {
+    "i18next/no-literal-string": "off"
+  }
+}

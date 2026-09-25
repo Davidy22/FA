@@ -1,0 +1,61 @@
+{
+  "app_name": "Fab Anything",
+  "tagline": "3D 打印随选，在你附近制造。",
+  "nav": {
+    "home": "首页",
+    "catalog": "商品目录",
+    "quote": "在线报价",
+    "cart": "购物车",
+    "login": "登录",
+    "register": "注册",
+    "logout": "登出",
+    "account": "账号",
+    "creator_dashboard": "创作者仪表板",
+    "employee_portal": "员工入口",
+    "admin": "管理后台"
+  },
+  "location": {
+    "title": "选择门店",
+    "prompt": "请先选择离你最近的门店，才能查看可选颜色与材料。",
+    "selected": "门店",
+    "none_selected": "请选择门店",
+    "change": "更换",
+    "pickup_at": "于 {{location}} 取件"
+  },
+  "language": "语言",
+  "loading": "载入中…",
+  "save": "保存",
+  "cancel": "取消",
+  "confirm": "确认",
+  "delete": "删除",
+  "edit": "编辑",
+  "close": "关闭",
+  "search": "搜索",
+  "from_price": "最低 {{price}}",
+  "add_to_cart": "加入购物车",
+  "price": "价格",
+  "total": "总计",
+  "subtotal": "小计",
+  "tax": "税金",
+  "quantity": "数量",
+  "community_design": "社区设计",
+  "by_designer": "由 @{{name}} 设计",
+  "advanced_details": "高级细节",
+  "categories": {
+    "toy": "玩具",
+    "tool": "工具",
+    "art": "艺术装饰",
+    "gadget": "小物",
+    "replacement_part": "替换零件",
+    "other": "其他"
+  },
+  "status": {
+    "pending": "待处理",
+    "printing": "打印中",
+    "completed": "已完成",
+    "shipped": "已发货",
+    "cancelled": "已取消",
+    "refunded": "已退款"
+  },
+  "currency_code": "USD"
+}
