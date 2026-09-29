@@ -69,5 +69,28 @@ inspector_port = 8083
 [analytics]
 enabled = false
 
-[functions]
+# Per-function JWT verification (the old global [functions] verify_jwt key no longer parses).
+# Everything verifies except the Stripe webhook, which is called by Stripe directly.
+[functions.create-staff]
+verify_jwt = true
+
+[functions.set-user-active]
+verify_jwt = true
+
+[functions.sign-file]
+verify_jwt = true
+
+[functions.site-rebuild]
+verify_jwt = true
+
+[functions.stripe-checkout]
+verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.submissions-decide]
+verify_jwt = true
+
+[functions.verify-model]
 verify_jwt = true

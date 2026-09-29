@@ -11,12 +11,15 @@ import { useMemo, useState, useEffect } from 'react';
 import type { Filament, Material, PremadeProduct, QuoteRequest } from '@/lib/types';
 
 export default function CartPage() {
-  const { t } = useTranslation(['common','cart','quote','errors']);
+  const { t } = useTranslation(['common','cart','quote','errors','rewards']);
   const locale = useLocale((s) => s.locale);
-  const { items, removeItem, updateQuantity, location_id } = useCart();
+  const { items, removeItem, updateQuantity, location_id, coupon_code, setCoupon } = useCart();
   const locationId = useLocation((s) => s.selectedLocationId) || location_id;
   const [livePricing, setLivePricing] = useState<any>(null);
   const [loadingPrice, setLoadingPrice] = useState(false);
+  const [couponInput, setCouponInput] = useState('');
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponBusy, setCouponBusy] = useState(false);
 
   const productIds = items.filter(i => i.kind==='premade').map(i=>i.product_id!).filter(Boolean);
   const quoteIds = items.filter(i => i.kind==='custom').map(i=>i.quote_request_id!).filter(Boolean);
@@ -83,14 +86,46 @@ export default function CartPage() {
       if (!locationId || items.length === 0) return setLivePricing(null);
       setLoadingPrice(true);
       try {
+        const { data: { user } } = await supabase().auth.getUser();
         const { data, error } = await supabase().rpc('price_cart', {
-          p_cart: { location_id: locationId, items }
+          p_cart: {
+            location_id: locationId,
+            items,
+            user_id: user?.id || null,
+            coupon_code: coupon_code || null,
+          }
         });
         if (!error) setLivePricing(data);
       } finally { setLoadingPrice(false); }
     }
     run();
-  }, [items, locationId]);
+  }, [items, locationId, coupon_code]);
+
+  async function applyCoupon(e: React.FormEvent) {
+    e.preventDefault();
+    const candidate = couponInput.trim().toUpperCase();
+    if (!candidate) return;
+    setCouponBusy(true);
+    setCouponError(null);
+    try {
+      const { data: { user } } = await supabase().auth.getUser();
+      const { error } = await supabase().rpc('price_cart', {
+        p_cart: {
+          location_id: locationId,
+          items,
+          user_id: user?.id || null,
+          coupon_code: candidate,
+        }
+      });
+      if (error) throw new Error(error.message);
+      setCoupon(candidate);
+      setCouponInput('');
+    } catch (err) {
+      setCouponError((err as Error).message);
+    } finally {
+      setCouponBusy(false);
+    }
+  }
 
   const pricing = livePricing || { total_amount: localTotal.subtotal, subtotal: localTotal.subtotal, tax_amount: 0 };
 
@@ -156,10 +191,42 @@ export default function CartPage() {
         {loadingPrice ? <p className="text-sm text-slate-500">{t('common:loading')}</p> : (
           <dl className="space-y-1 text-sm">
             <div className="flex justify-between"><dt>{t('common:subtotal')}</dt><dd>{formatMoney(pricing.subtotal, locale)}</dd></div>
+            {pricing.discount_amount > 0 && (
+              <div className="flex justify-between text-green-700">
+                <dt>{t('rewards:discount')}</dt>
+                <dd>−{formatMoney(pricing.discount_amount, locale)}</dd>
+              </div>
+            )}
             <div className="flex justify-between"><dt>{t('common:tax')}</dt><dd>{formatMoney(pricing.tax_amount || 0, locale)}</dd></div>
             <div className="flex justify-between font-semibold text-base pt-2 border-t"><dt>{t('common:total')}</dt><dd>{formatMoney(pricing.total_amount, locale)}</dd></div>
           </dl>
         )}
+        <div className="mt-3 text-sm">
+          {!coupon_code ? (
+            <form onSubmit={applyCoupon} className="flex gap-2">
+              <input
+                className="input flex-1 py-1.5 text-sm"
+                placeholder={t('rewards:coupon_placeholder')}
+                value={couponInput}
+                onChange={(e) => setCouponInput(e.target.value)}
+                aria-label={t('rewards:coupon_placeholder')}
+              />
+              <button type="submit" className="btn-outline px-3 py-1.5 text-sm" disabled={couponBusy || !couponInput.trim()}>
+                {t('rewards:coupon_apply')}
+              </button>
+            </form>
+          ) : (
+            <div className="flex items-center justify-between rounded border border-brand-200 bg-brand-50 px-3 py-2">
+              <span className="font-mono text-xs">{t('rewards:coupon_applied')}: <strong>{coupon_code}</strong></span>
+              <button
+                className="text-slate-500 hover:text-red-600"
+                aria-label={t('rewards:coupon_remove')}
+                onClick={() => setCoupon(null)}
+              >✕</button>
+            </div>
+          )}
+          {couponError && <p className="mt-2 text-xs text-red-700">{couponError}</p>}
+        </div>
         {!locationId ? (
           <p className="mt-3 text-sm text-amber-700">{t('errors:select_location_first')}</p>
         ) : (

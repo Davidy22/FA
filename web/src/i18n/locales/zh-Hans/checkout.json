@@ -5,6 +5,7 @@
   "email": "Email",
   "review_order": "确认订单",
   "pay_with_stripe": "通过 Stripe 付款",
+  "guest_ok": "以访客结账？只需填写姓名与电子邮件即可，无需注册账号。",
   "success": "感谢你的订购！",
   "success_note": "我们已寄送确认信至 {{email}}。",
   "pickup_only": "仅供门店取件",

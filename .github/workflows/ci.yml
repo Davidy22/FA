@@ -28,7 +28,7 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
-      - run: node ../scripts/i18n-check.mjs
+      - run: node scripts/i18n-check.mjs
         working-directory: ${{ github.workspace }}
       - run: pnpm build
         env:

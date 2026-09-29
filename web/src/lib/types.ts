@@ -12,6 +12,32 @@ export type Profile = {
   locale: 'en' | 'zh-Hant' | 'zh-Hans';
   is_creator: boolean;
   is_active: boolean;
+  points_balance: number;
+};
+
+export type Coupon = {
+  id: string;
+  code: string;
+  user_id: string | null;
+  source: 'reward' | 'offer' | 'admin';
+  discount_type: 'percent' | 'fixed';
+  discount_value: number;
+  status: 'active' | 'used';
+  expires_at: string | null;
+  used_order_id: string | null;
+  used_at: string | null;
+  created_at: string;
+};
+
+export type RewardTransaction = {
+  id: string;
+  user_id: string;
+  points: number;
+  type: 'order_earn' | 'redeem' | 'adjustment';
+  order_id: string | null;
+  coupon_id: string | null;
+  memo: string | null;
+  created_at: string;
 };
 
 export type Location = {

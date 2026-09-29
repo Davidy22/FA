@@ -45,6 +45,7 @@ export function Header() {
           <nav className="hidden md:flex gap-4 text-sm">
             <Link href="/catalog" className="text-slate-700 hover:text-brand-700">{t('nav.catalog')}</Link>
             <Link href="/quote" className="text-slate-700 hover:text-brand-700">{t('nav.quote')}</Link>
+            <Link href="/rewards" className="text-slate-700 hover:text-brand-700">{t('nav.rewards')}</Link>
           </nav>
         </div>
         <div className="flex items-center gap-3">

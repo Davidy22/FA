@@ -17,9 +17,14 @@ jobs:
       - run: supabase db start
       - run: supabase db reset
       - working-directory: web
+        env:
+          # Static export still needs these at build/runtime; no API is running in
+          # this job (db only), so network calls fail soft inside react-query.
+          NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: anon
         run: |
           pnpm install --frozen-lockfile || pnpm install
           pnpm exec playwright install chromium --with-deps
           pnpm build
-          pnpm preview --port 3000 &
+          # Playwright's webServer (pnpm dev) serves the app for the specs.
           pnpm test:e2e

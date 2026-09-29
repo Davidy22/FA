@@ -31,7 +31,14 @@ export default function AccountPage() {
     <div className="container-fa py-10">
       <h1 className="text-2xl font-semibold">{t('nav.account')}</h1>
       <p className="mt-2 text-slate-600">{profile.email}</p>
-      {profile.is_creator && <Link href="/creator" className="btn-outline mt-4 inline-block">{t('nav.creator_dashboard')}</Link>}
+      <p className="mt-3 text-sm text-slate-700">
+        {t('rewards:balance_label')}: <strong>{t('rewards:points', { count: profile.points_balance ?? 0 })}</strong>
+      </p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link href="/rewards" className="btn-outline inline-block">{t('nav.rewards')}</Link>
+        <Link href="/offers" className="btn-outline inline-block">{t('rewards:offers_promo_cta')}</Link>
+        {profile.is_creator && <Link href="/creator" className="btn-outline inline-block">{t('nav.creator_dashboard')}</Link>}
+      </div>
       <h2 className="mt-8 text-xl font-medium">{t('orders:title')}</h2>
       {!orders?.length ? <p className="text-slate-500 mt-3">{t('orders:none')}</p> : (
         <table className="mt-4 w-full text-sm">

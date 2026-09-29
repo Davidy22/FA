@@ -219,10 +219,6 @@ create table public.uploaded_models (
 create trigger uploaded_models_updated_at before update on public.uploaded_models
   for each row execute function public.tg_set_updated_at();
 
-alter table public.cart_items
-  add constraint cart_items_quote_request_id_fkey
-  foreign key (quote_request_id) references public.quote_requests(id) on delete set null;
-
 -- quote_requests
 create table public.quote_requests (
   id uuid primary key default gen_random_uuid(),
@@ -242,6 +238,10 @@ create table public.quote_requests (
   created_at timestamptz not null default now(),
   expires_at timestamptz not null default (now() + interval '24 hours')
 );
+
+alter table public.cart_items
+  add constraint cart_items_quote_request_id_fkey
+  foreign key (quote_request_id) references public.quote_requests(id) on delete set null;
 
 -- orders
 create table public.orders (
