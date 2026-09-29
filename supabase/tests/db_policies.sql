@@ -85,7 +85,8 @@ begin
   insert into public.orders(order_number, location_id, contact_email, subtotal, total_amount)
   values (a, '00000000-0000-0000-0000-000000000001', 'seq@example.com', 1, 1);
   b := public.next_order_number();
-  return public.ok(a <> b, 'consecutive order numbers differ');
+  -- unqualified: pgtap is not necessarily installed in public on CI
+  return ok(a <> b, 'consecutive order numbers differ');
 end;$$;
 select tap_consecutive_order_numbers();
 
