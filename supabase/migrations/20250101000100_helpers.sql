@@ -1,4 +1,9 @@
 -- Helper functions for RLS (stable, security definer, fixed search_path)
+-- The server default is check_function_bodies = on, which would try to resolve
+-- relations in these bodies at creation time -- but public.profiles is only
+-- created in the following migration. Turn validation off for this file (the
+-- applier runs RESET ALL between files, so this does not leak past the file).
+set check_function_bodies = off;
 
 create or replace function public.auth_role()
 returns text
