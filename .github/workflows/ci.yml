@@ -28,7 +28,7 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
-      - run: node ../scripts/i18n-check.mjs
+      - run: node scripts/i18n-check.mjs
         working-directory: ${{ github.workspace }}
       - run: pnpm build
         env:
@@ -42,6 +42,35 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
-      - run: supabase db start
-      - run: supabase db reset
-      - run: supabase test db
+      - name: Run supabase db start
+        run: |
+          set -o pipefail
+          if ! supabase db start 2>&1 | tee db-start.log; then
+            msg=$(tail -n 40 db-start.log | awk '{printf "%s%%0A", $0}')
+            echo "::error::supabase db start failed (CLI $(supabase --version)) -- ${msg}"
+            exit 1
+          fi
+      - name: Run supabase db reset
+        run: |
+          set -o pipefail
+          if ! supabase db reset 2>&1 | tee db-reset.log; then
+            msg=$(tail -n 40 db-reset.log | awk '{printf "%s%%0A", $0}')
+            echo "::error::supabase db reset failed -- ${msg}"
+            exit 1
+          fi
+      - name: Run supabase test db
+        run: |
+          set -o pipefail
+          if ! supabase test db 2>&1 | tee db-test.log; then
+            hits=$(grep -E '^not ok ' db-test.log | head -n 8 || true)
+            if [ -n "$hits" ]; then
+              while IFS= read -r line; do
+                safe=$(printf '%s' "$line" | tr -d '\r' | sed 's/%/%25/g' | cut -c1-300)
+                echo "::error::${safe}"
+              done <<< "$hits"
+            else
+              safe=$(tail -c 2000 db-test.log | tr -d '\r' | sed 's/%/%25/g' | tr '\n' '\001' | sed 's/\x01/%0A/g')
+              echo "::error::supabase test db failed (no TAP output): ${safe}"
+            fi
+            exit 1
+          fi

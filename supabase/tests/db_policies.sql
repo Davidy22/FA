@@ -4,7 +4,7 @@
 create extension if not exists pgtap;
 
 -- Plan count
-select plan(40);
+select plan(17);
 
 -- RLS is enabled on key tables
 select tables_are('public', array[
@@ -13,16 +13,17 @@ select tables_are('public', array[
   'text_option_config','file_option_config','carts','cart_items',
   'uploaded_models','quote_requests','orders','order_items','order_item_option_values','order_notes',
   'model_submissions','model_submission_materials','creator_earnings','payouts',
-  'platform_settings','checkout_sessions','stripe_events'
+  'platform_settings','checkout_sessions','stripe_events',
+  'coupons','offer_codes','offer_claims','reward_transactions'
 ], 'All expected tables exist');
 
--- Check status enforces CHECK constraints (sample)
+-- Check status enforces CHECK constraints (sample: explicit invalid status)
 select throws_ok(
-  $$insert into public.orders(order_number, location_id, contact_email, subtotal, total_amount)
-    values('FA-BAD','00000000-0000-0000-0000-000000000001','x@example.com',10,10)$$,
+  $$insert into public.orders(order_number, location_id, contact_email, subtotal, total_amount, status)
+    values('FA-BAD','00000000-0000-0000-0000-000000000001','x@example.com',10,10,'not_a_status')$$,
   23514,
   null,
-  'Orders require a valid status (default pending is set)'
+  'Orders reject an invalid status'
 );
 
 -- Helper: reset role to authed user
@@ -55,29 +56,39 @@ select ok(
   'price_cart returns totals for a premade item'
 );
 
--- min_order_fee floor works: $0.50 item should floor to $3
-do $$
-declare r jsonb;
-begin
-  -- Use cheap product bench-dog $4 * 1 qty = $4 > min fee; price returns at least subtotal + tax
-  r := public.price_cart(jsonb_build_object(
+-- min_order_fee floor works: $4 base price item should price fine (>= base subtotal)
+select ok(
+  ((public.price_cart(jsonb_build_object(
     'location_id','00000000-0000-0000-0000-000000000001',
     'items', jsonb_build_array(jsonb_build_object(
       'kind','premade','product_id','33333333-3333-3333-3333-000000000004',
       'material_id','11111111-1111-1111-1111-000000000003',
       'quantity',1,'options','{}'::jsonb
     ))
-  ));
-  perform ok((r->>'subtotal')::numeric >= 4, 'subtotal >= product base price');
-end$$;
+  )))->>'subtotal')::numeric >= 4,
+  'subtotal >= product base price'
+);
 
 select ok(true, 'price_cart smoke');
 
 -- next_order_number returns a well-formed order number
 select ok(public.next_order_number() ~ '^FA-\d{4}-\d{6}$', 'next_order_number format FA-YYYY-NNNNNN');
 
--- format of order number unique-ish
-select isnt(public.next_order_number(), public.next_order_number(), 'consecutive order numbers differ');
+-- Consecutive numbers differ once the first one is consumed by an insert.
+-- pgTAP assertions must be SELECTed at top level so their TAP line reaches the
+-- runner; a PERFORM inside a DO block silently drops it (prove counts the plan).
+create or replace function tap_consecutive_order_numbers() returns text
+language plpgsql as $$
+declare a text; b text;
+begin
+  a := public.next_order_number();
+  insert into public.orders(order_number, location_id, contact_email, subtotal, total_amount)
+  values (a, '00000000-0000-0000-0000-000000000001', 'seq@example.com', 1, 1);
+  b := public.next_order_number();
+  -- unqualified: pgtap is not necessarily installed in public on CI
+  return ok(a <> b, 'consecutive order numbers differ');
+end;$$;
+select tap_consecutive_order_numbers();
 
 -- Direct payouts insert is blocked to non-admin by RLS
 select ok(true, 'payouts RLS: only owner read / admin all — tested via policy definitions');
@@ -92,21 +103,23 @@ select is_empty(
 select is((select density_g_cm3 from public.materials where slug='pla'), 1.24, 'PLA density 1.24');
 select is((select density_g_cm3 from public.materials where slug='petg'), 1.27, 'PETG density 1.27');
 
--- RLS enabled on all tables (boolean)
-select results_eq(
-  $$select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace
-    where n.nspname='public' and c.relkind='r' and c.relrowsecurity=true
-    order by relname$$,
-  $$values
-   ('carts'),('cart_items'),('checkout_sessions'),('creator_earnings'),
-   ('filaments'),('location_filaments'),('locations'),('materials'),
-   ('model_submission_materials'),('model_submissions'),
-   ('order_item_option_values'),('order_items'),('order_notes'),('orders'),
-   ('payouts'),('platform_settings'),('premade_products'),('product_materials'),
-   ('product_option_choices'),('product_option_groups'),('profiles'),
-   ('quote_requests'),('stripe_events'),('text_option_config'),
-   ('file_option_config'),('uploaded_models')
-   order by 1$$,
+-- RLS enabled on all expected tables (tables_are above asserts the exact table set;
+-- this asserts every one of them actually has RLS on)
+select ok(
+  not exists (
+    select 1 from pg_class c join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname = 'public' and c.relkind = 'r' and c.relrowsecurity = false
+      and c.relname in (
+        'cart_items','carts','checkout_sessions','coupons','creator_earnings',
+        'filaments','file_option_config','location_filaments','locations','materials',
+        'model_submission_materials','model_submissions','offer_claims','offer_codes',
+        'order_item_option_values','order_items','order_notes','orders',
+        'payouts','platform_settings','premade_products','product_materials',
+        'product_option_choices','product_option_groups','profiles',
+        'quote_requests','reward_transactions','stripe_events','text_option_config',
+        'uploaded_models'
+      )
+  ),
   'RLS enabled on all expected tables'
 );
 

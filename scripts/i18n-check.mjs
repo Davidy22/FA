@@ -5,7 +5,7 @@ import path from 'node:path';
 
 const ROOT = path.resolve('web/src/i18n/locales');
 const LOCALES = ['en','zh-Hant','zh-Hans'];
-const NAMESPACES = ['common','catalog','quote','cart','checkout','orders','creator','employee','admin','errors'];
+const NAMESPACES = ['common','catalog','quote','cart','checkout','orders','creator','employee','admin','errors','rewards'];
 
 function flatten(obj, prefix = '') {
   const out = [];
