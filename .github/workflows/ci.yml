@@ -62,8 +62,15 @@ jobs:
         run: |
           set -o pipefail
           if ! supabase test db 2>&1 | tee db-test.log; then
-            msg=$(grep -E "not ok|ERROR|Failure|failed" db-test.log | head -n 30 | awk '{printf "%s%%0A", $0}')
-            [ -n "$msg" ] || msg=$(tail -n 40 db-test.log | awk '{printf "%s%%0A", $0}')
-            echo "::error::supabase test db failed -- ${msg}"
+            hits=$(grep -E '^not ok ' db-test.log | head -n 8 || true)
+            if [ -n "$hits" ]; then
+              while IFS= read -r line; do
+                safe=$(printf '%s' "$line" | tr -d '\r' | sed 's/%/%25/g' | cut -c1-300)
+                echo "::error::${safe}"
+              done <<< "$hits"
+            else
+              safe=$(tail -c 2000 db-test.log | tr -d '\r' | sed 's/%/%25/g' | tr '\n' '\001' | sed 's/\x01/%0A/g')
+              echo "::error::supabase test db failed (no TAP output): ${safe}"
+            fi
             exit 1
           fi
