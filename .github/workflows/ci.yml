@@ -42,6 +42,14 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
-      - run: supabase db start
+      - name: Run supabase db start
+        run: |
+          set -o pipefail
+          if ! supabase db start 2>&1 | tee db-start.log; then
+            echo "::error::supabase db start failed (CLI $(supabase --version)). Last log lines:"
+            tail -n 20 db-start.log | sed 's/^/::error::db-start: /'
+            echo "::error::docker server: $(docker info --format '{{.ServerVersion}}' 2>&1)"
+            exit 1
+          fi
       - run: supabase db reset
       - run: supabase test db
