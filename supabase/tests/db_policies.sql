@@ -56,37 +56,38 @@ select ok(
   'price_cart returns totals for a premade item'
 );
 
--- min_order_fee floor works: $0.50 item should floor to $3
-do $$
-declare r jsonb;
-begin
-  -- Use cheap product bench-dog $4 * 1 qty = $4 > min fee; price returns at least subtotal + tax
-  r := public.price_cart(jsonb_build_object(
+-- min_order_fee floor works: $4 base price item should price fine (>= base subtotal)
+select ok(
+  ((public.price_cart(jsonb_build_object(
     'location_id','00000000-0000-0000-0000-000000000001',
     'items', jsonb_build_array(jsonb_build_object(
       'kind','premade','product_id','33333333-3333-3333-3333-000000000004',
       'material_id','11111111-1111-1111-1111-000000000003',
       'quantity',1,'options','{}'::jsonb
     ))
-  ));
-  perform ok((r->>'subtotal')::numeric >= 4, 'subtotal >= product base price');
-end$$;
+  )))->>'subtotal')::numeric >= 4,
+  'subtotal >= product base price'
+);
 
 select ok(true, 'price_cart smoke');
 
 -- next_order_number returns a well-formed order number
 select ok(public.next_order_number() ~ '^FA-\d{4}-\d{6}$', 'next_order_number format FA-YYYY-NNNNNN');
 
--- Consecutive numbers differ once the first one is actually consumed by an insert
-do $$
+-- Consecutive numbers differ once the first one is consumed by an insert.
+-- pgTAP assertions must be SELECTed at top level so their TAP line reaches the
+-- runner; a PERFORM inside a DO block silently drops it (prove counts the plan).
+create or replace function tap_consecutive_order_numbers() returns text
+language plpgsql as $$
 declare a text; b text;
 begin
   a := public.next_order_number();
   insert into public.orders(order_number, location_id, contact_email, subtotal, total_amount)
   values (a, '00000000-0000-0000-0000-000000000001', 'seq@example.com', 1, 1);
   b := public.next_order_number();
-  perform ok(a <> b, 'consecutive order numbers differ');
-end$$;
+  return public.ok(a <> b, 'consecutive order numbers differ');
+end;$$;
+select tap_consecutive_order_numbers();
 
 -- Direct payouts insert is blocked to non-admin by RLS
 select ok(true, 'payouts RLS: only owner read / admin all — tested via policy definitions');
