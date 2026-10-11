@@ -17,9 +17,9 @@ function OrderDetail({ id }: { id: string }) {
     const { error } = await supabase().from('order_notes').insert({ order_id: id, body: note });
     if (!error) { setNote(''); location.reload(); }
   }
-  if (!order) return <div className="container-fa py-10">Loading…</div>;
+  if (!order) return <div className="container-ma py-10">Loading…</div>;
   return (
-    <div className="container-fa py-10 max-w-4xl">
+    <div className="container-ma py-10 max-w-4xl">
       <h1 className="text-2xl font-semibold">{order.order_number}</h1>
       <p className="text-slate-600">{order.contact_name} — {order.contact_email}</p>
       <p>Status: {t(`common:status.${order.status}`)}</p>
@@ -58,6 +58,6 @@ function OrderDetail({ id }: { id: string }) {
 export default function OrderDetailPage() {
   const params = useSearchParams();
   const id = params.get('id');
-  if (!id) return <div className="container-fa py-10">Missing order id.</div>;
-  return <Suspense fallback={<div className="container-fa py-10">Loading…</div>}><OrderDetail id={id} /></Suspense>;
+  if (!id) return <div className="container-ma py-10">Missing order id.</div>;
+  return <Suspense fallback={<div className="container-ma py-10">Loading…</div>}><OrderDetail id={id} /></Suspense>;
 }

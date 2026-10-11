@@ -17,7 +17,7 @@ export default function HomePage() {
     },
   });
   return (
-    <div className="container-fa py-10">
+    <div className="container-ma py-10">
       <section className="rounded-2xl bg-gradient-to-br from-brand-50 to-white border border-brand-100 p-8 md:p-12">
         <h1 className="text-3xl md:text-5xl font-bold tracking-tight">{t('common:app_name')}</h1>
         <p className="mt-3 text-lg text-slate-600 max-w-2xl">{t('common:tagline')}</p>

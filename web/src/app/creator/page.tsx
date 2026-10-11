@@ -57,14 +57,14 @@ export default function CreatorDashboard() {
     else alert('Payout requested');
   }
 
-  if (!profile) return <div className="container-fa py-10">Please sign in.</div>;
+  if (!profile) return <div className="container-ma py-10">Please sign in.</div>;
   if (!profile.is_creator || !agreed) {
     return (
-      <div className="container-fa py-16 max-w-xl">
+      <div className="container-ma py-16 max-w-xl">
         <h1 className="text-2xl font-semibold mb-3">{t('creator:title')}</h1>
         <p className="text-slate-700">{t('creator:agreement_prompt')}</p>
         <p className="mt-3 text-sm text-slate-500">
-          By submitting designs you grant Fab Anything a license to print and sell them, with an 85% revenue share to you.
+          By submitting designs you grant Make Anyth.ing a license to print and sell them, with an 85% revenue share to you.
         </p>
         <button className="btn mt-6" onClick={acceptAgreement}>{t('creator:agreement')} — {t('common:confirm')}</button>
       </div>
@@ -72,7 +72,7 @@ export default function CreatorDashboard() {
   }
 
   return (
-    <div className="container-fa py-10">
+    <div className="container-ma py-10">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">{t('creator:title')}</h1>
         <Link href="/creator/submit" className="btn">{t('creator:submit')}</Link>

@@ -10,8 +10,8 @@ on conflict (key) do nothing;
 
 -- 2 Locations
 insert into public.locations(id, name, address, phone, timezone, hourly_machine_rate, tax_rate, currency, is_active) values
- ('00000000-0000-0000-0000-000000000001', 'Fab Taipei', '123 Main St, Taipei', '+886-2-1234-5678', 'Asia/Taipei', 8.00, 0.05, 'USD', true),
- ('00000000-0000-0000-0000-000000000002', 'Fab SF', '456 Howard St, San Francisco', '+1-415-555-0123', 'America/Los_Angeles', 12.00, 0.0875, 'USD', true)
+ ('00000000-0000-0000-0000-000000000001', 'Make Anyth.ing Taipei', '123 Main St, Taipei', '+886-2-1234-5678', 'Asia/Taipei', 8.00, 0.05, 'USD', true),
+ ('00000000-0000-0000-0000-000000000002', 'Make Anyth.ing SF', '456 Howard St, San Francisco', '+1-415-555-0123', 'America/Los_Angeles', 12.00, 0.0875, 'USD', true)
 on conflict (id) do nothing;
 
 -- 5 Materials

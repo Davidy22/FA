@@ -128,10 +128,10 @@ function ProductDetail({ slug }: { slug: string }) {
     return true;
   }, [product, locationId, filamentId, groups, options]);
 
-  if (isLoading || !product) return <div className="container-fa py-8">{t('common:loading')}</div>;
+  if (isLoading || !product) return <div className="container-ma py-8">{t('common:loading')}</div>;
 
   return (
-    <div className="container-fa py-8 grid grid-cols-1 lg:grid-cols-2 gap-10">
+    <div className="container-ma py-8 grid grid-cols-1 lg:grid-cols-2 gap-10">
       <div className="aspect-square bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
         {product.image_urls?.[0] ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -254,10 +254,10 @@ export default function ProductPage() {
   const params = useSearchParams();
   const slug = params.get('slug');
   if (!slug) {
-    return <div className="container-fa py-10">Missing product slug.</div>;
+    return <div className="container-ma py-10">Missing product slug.</div>;
   }
   return (
-    <Suspense fallback={<div className="container-fa py-8">Loading…</div>}>
+    <Suspense fallback={<div className="container-ma py-8">Loading…</div>}>
       <ProductDetail slug={slug} />
     </Suspense>
   );

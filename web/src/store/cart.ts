@@ -32,6 +32,6 @@ export const useCart = create<CartState>()(
       clear: () => set({ items: [], coupon_code: null }),
       setItems: (items) => set({ items }),
     }),
-    { name: 'fab.cart' }
+    { name: 'ma.cart' }
   )
 );

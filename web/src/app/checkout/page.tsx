@@ -105,11 +105,11 @@ export default function CheckoutPage() {
   }
 
   if (!cartLocationId) {
-    return <div className="container-fa py-10"><p>{t('errors:select_location_first')}</p></div>;
+    return <div className="container-ma py-10"><p>{t('errors:select_location_first')}</p></div>;
   }
 
   return (
-    <div className="container-fa py-10 max-w-2xl">
+    <div className="container-ma py-10 max-w-2xl">
       <h1 className="text-2xl font-semibold mb-6">{t('checkout:title')}</h1>
       <section className="space-y-4">
         <div>

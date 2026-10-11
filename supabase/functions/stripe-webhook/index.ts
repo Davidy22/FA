@@ -15,9 +15,9 @@ const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? '';
 const RESEND_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 
 const LOCALIZED_SUBJECT: Record<string, string> = {
-  en: 'Your Fab Anything order is confirmed',
-  'zh-Hant': '您的 Fab Anything 訂單已成立',
-  'zh-Hans': '您的 Fab Anything 订单已成立',
+  en: 'Your Make Anyth.ing order is confirmed',
+  'zh-Hant': '您的 Make Anyth.ing 訂單已成立',
+  'zh-Hans': '您的 Make Anyth.ing 订单已成立',
 };
 
 serve(async (req) => {
@@ -81,7 +81,7 @@ serve(async (req) => {
           method: 'POST',
           headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            from: 'Fab Anything <no-reply@fab.example.com>',
+            from: 'Make Anyth.ing <no-reply@makeanyth.ing>',
             to: [contactEmail],
             subject: LOCALIZED_SUBJECT[locale] ?? LOCALIZED_SUBJECT.en,
             html: `<p>${orderNum}</p><p>Total: US$${total.toFixed(2)}</p>`,

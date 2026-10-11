@@ -1,6 +1,6 @@
 # Architecture
 
-Fab Anything is a static SPA on GitHub Pages backed by a single Supabase free-tier project.
+Make Anyth.ing is a static SPA on GitHub Pages backed by a single Supabase free-tier project.
 
 - Frontend: Next.js 14 static export (`output: 'export'`), React, Tailwind, TanStack Query, Zustand.
 - Backend: Supabase Postgres + RLS + RPCs + Auth + Storage + Deno Edge Functions.

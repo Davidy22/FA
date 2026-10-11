@@ -37,11 +37,11 @@ export default function AdminPage() {
   }
 
   if (!profile || profile.role !== 'admin') {
-    return <div className="container-fa py-10">Admin only.</div>;
+    return <div className="container-ma py-10">Admin only.</div>;
   }
 
   return (
-    <div className="container-fa py-10">
+    <div className="container-ma py-10">
       <h1 className="text-2xl font-semibold">{t('admin:title')}</h1>
       <div className="mt-4 flex gap-2 flex-wrap">
         {(['submissions','products','users','payouts','settings'] as const).map(k => (

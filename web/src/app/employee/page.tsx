@@ -60,11 +60,11 @@ export default function EmployeePortal() {
   }
 
   if (!profile || !['employee','manager','admin'].includes(profile.role)) {
-    return <div className="container-fa py-10">Access denied.</div>;
+    return <div className="container-ma py-10">Access denied.</div>;
   }
 
   return (
-    <div className="container-fa py-10">
+    <div className="container-ma py-10">
       <h1 className="text-2xl font-semibold">{t('employee:title')}</h1>
       <div className="mt-4 flex gap-2 items-center flex-wrap">
         {['pending','printing','completed','shipped','cancelled'].map(s => (

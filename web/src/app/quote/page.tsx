@@ -174,7 +174,7 @@ export default function QuotePage() {
   }}, []);
 
   return (
-    <div className="container-fa py-10 max-w-3xl">
+    <div className="container-ma py-10 max-w-3xl">
       <h1 className="text-3xl font-bold">{t('quote:title')}</h1>
       <p className="mt-2 text-slate-600">{t('quote:supported_formats')}</p>
 

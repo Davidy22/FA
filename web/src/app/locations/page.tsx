@@ -17,7 +17,7 @@ export default function LocationsPage() {
   const setLocation = useLocation((s) => s.setLocation);
   const selected = useLocation((s) => s.selectedLocationId);
   return (
-    <div className="container-fa py-10 max-w-3xl">
+    <div className="container-ma py-10 max-w-3xl">
       <h1 className="text-2xl font-semibold mb-6">{t('location.title')}</h1>
       <div className="grid gap-4 sm:grid-cols-2">
         {locations?.map((l) => (

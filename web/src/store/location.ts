@@ -13,6 +13,6 @@ export const useLocation = create<LocationState>()(
       selectedLocationId: null,
       setLocation: (id) => set({ selectedLocationId: id }),
     }),
-    { name: 'fab.location' }
+    { name: 'ma.location' }
   )
 );

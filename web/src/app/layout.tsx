@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <title>Fab Anything — 3D prints on demand</title>
+        <title>Make Anyth.ing — 3D prints on demand</title>
       </head>
       <body className="min-h-screen flex flex-col">
         <I18nextProvider i18n={i18n}>
@@ -33,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <LocationPrompt />
               <main className="flex-1">{children}</main>
               <footer className="border-t border-slate-200 py-6 text-center text-sm text-slate-500">
-                © {new Date().getFullYear()} Fab Anything
+                © {new Date().getFullYear()} Make Anyth.ing
               </footer>
             </ClientOnly>
           </QueryClientProvider>

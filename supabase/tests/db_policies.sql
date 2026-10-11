@@ -20,7 +20,7 @@ select tables_are('public', array[
 -- Check status enforces CHECK constraints (sample: explicit invalid status)
 select throws_ok(
   $$insert into public.orders(order_number, location_id, contact_email, subtotal, total_amount, status)
-    values('FA-BAD','00000000-0000-0000-0000-000000000001','x@example.com',10,10,'not_a_status')$$,
+    values('MA-BAD','00000000-0000-0000-0000-000000000001','x@example.com',10,10,'not_a_status')$$,
   23514,
   null,
   'Orders reject an invalid status'
@@ -72,7 +72,7 @@ select ok(
 select ok(true, 'price_cart smoke');
 
 -- next_order_number returns a well-formed order number
-select ok(public.next_order_number() ~ '^FA-\d{4}-\d{6}$', 'next_order_number format FA-YYYY-NNNNNN');
+select ok(public.next_order_number() ~ '^MA-\d{4}-\d{6}$', 'next_order_number format MA-YYYY-NNNNNN');
 
 -- Consecutive numbers differ once the first one is consumed by an insert.
 -- pgTAP assertions must be SELECTed at top level so their TAP line reaches the
@@ -90,12 +90,29 @@ begin
 end;$$;
 select tap_consecutive_order_numbers();
 
+-- Rebrand: numbering continues from a legacy 'FA-' order instead of restarting at 1,
+-- and the new number carries the 'MA-' prefix. Mirrors the note in migration
+-- 20250101001000_rebrand_make_anything.sql.
+create or replace function tap_order_number_continues_past_legacy_prefix() returns text
+language plpgsql as $$
+declare legacy text; nxt text; expect text;
+begin
+  legacy := 'FA-'||to_char(now(),'YYYY')||'-000777';
+  insert into public.orders(order_number, location_id, contact_email, subtotal, total_amount)
+  values (legacy, '00000000-0000-0000-0000-000000000001', 'legacy@example.com', 1, 1);
+  nxt := public.next_order_number();
+  expect := 'MA-'||to_char(now(),'YYYY')||'-000778';
+  -- unqualified: pgtap is not necessarily installed in public on CI
+  return ok(nxt = expect, 'order numbering continues past legacy FA- prefix (got '||nxt||')');
+end;$$;
+select tap_order_number_continues_past_legacy_prefix();
+
 -- Direct payouts insert is blocked to non-admin by RLS
 select ok(true, 'payouts RLS: only owner read / admin all — tested via policy definitions');
 
 -- Lookup order for email match returns nothing for bad credentials
 select is_empty(
-  $$select * from public.lookup_order('FA-BOGUS','nobody@example.com')$$,
+  $$select * from public.lookup_order('MA-BOGUS','nobody@example.com')$$,
   'lookup_order returns nothing for invalid credentials'
 );
 

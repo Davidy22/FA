@@ -80,10 +80,10 @@ export default function RewardsPage() {
     }
   }
 
-  if (isLoading) return <div className="container-fa py-10">{t('common:loading')}</div>;
+  if (isLoading) return <div className="container-ma py-10">{t('common:loading')}</div>;
   if (!profile) {
     return (
-      <div className="container-fa py-10">
+      <div className="container-ma py-10">
         <h1 className="text-2xl font-semibold">{t('rewards:title')}</h1>
         <p className="mt-3 text-slate-600">{t('rewards:sign_in_required')}</p>
         <Link href="/login" className="btn mt-4 inline-block">{t('common:nav.login')}</Link>
@@ -96,7 +96,7 @@ export default function RewardsPage() {
   const pointsPerDollar = settings?.pointsPerDollar ?? DEFAULT_POINTS_PER_DOLLAR;
 
   return (
-    <div className="container-fa py-10 max-w-3xl">
+    <div className="container-ma py-10 max-w-3xl">
       <h1 className="text-2xl font-semibold">{t('rewards:title')}</h1>
       <p className="mt-1 text-slate-600">{t('rewards:subtitle')}</p>
 

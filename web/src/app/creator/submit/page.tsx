@@ -65,7 +65,7 @@ export default function SubmitPage() {
   }
 
   return (
-    <div className="container-fa py-10 max-w-2xl">
+    <div className="container-ma py-10 max-w-2xl">
       <h1 className="text-2xl font-semibold mb-6">{t('submit')}</h1>
       <form onSubmit={submit} className="space-y-4">
         <div><label className="label">Title (EN)</label>

@@ -40,11 +40,11 @@ export default function OffersPage() {
     }
   }
 
-  if (isLoading) return <div className="container-fa py-10">{t('common:loading')}</div>;
+  if (isLoading) return <div className="container-ma py-10">{t('common:loading')}</div>;
 
   if (!profile) {
     return (
-      <div className="container-fa py-10 max-w-xl">
+      <div className="container-ma py-10 max-w-xl">
         <h1 className="text-2xl font-semibold">{t('rewards:offers_title')}</h1>
         <p className="mt-3 text-slate-600">{t('rewards:sign_in_required')}</p>
         <Link href="/login" className="btn mt-4 inline-block">{t('common:nav.login')}</Link>
@@ -53,7 +53,7 @@ export default function OffersPage() {
   }
 
   return (
-    <div className="container-fa py-10 max-w-xl">
+    <div className="container-ma py-10 max-w-xl">
       <h1 className="text-2xl font-semibold">{t('rewards:offers_title')}</h1>
       <p className="mt-2 text-slate-600">{t('rewards:offers_intro')}</p>
 
