@@ -130,12 +130,12 @@ export default function CartPage() {
   const pricing = livePricing || { total_amount: localTotal.subtotal, subtotal: localTotal.subtotal, tax_amount: 0 };
 
   if (items.length === 0) {
-    return <div className="container-fa py-10"><p>{t('cart:empty')}</p>
+    return <div className="container-ma py-10"><p>{t('cart:empty')}</p>
       <Link href="/catalog" className="btn mt-4">{t('common:nav.catalog')}</Link></div>;
   }
 
   return (
-    <div className="container-fa py-10 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
+    <div className="container-ma py-10 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
       <div>
         <h1 className="text-2xl font-semibold mb-4">{t('cart:title')}</h1>
         <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">

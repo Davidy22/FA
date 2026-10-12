@@ -27,7 +27,7 @@ body {
 .card {
   @apply rounded-lg border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden;
 }
-.container-fa {
+.container-ma {
   @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8;
 }
 .badge {

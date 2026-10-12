@@ -54,7 +54,7 @@ serve(async (req) => {
       {
         price_data: {
           currency: (pricing.currency as string).toLowerCase(),
-          product_data: { name: 'Fab Anything Order' },
+          product_data: { name: 'Make Anyth.ing Order' },
           unit_amount: Math.round((pricing.total_amount as number) * 100),
         },
         quantity: 1,

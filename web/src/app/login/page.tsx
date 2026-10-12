@@ -27,7 +27,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="container-fa py-16 max-w-md">
+    <div className="container-ma py-16 max-w-md">
       <h1 className="text-2xl font-semibold mb-4">{mode === 'signin' ? t('nav.login') : t('nav.register')}</h1>
       <form onSubmit={submit} className="space-y-3">
         <input required type="email" className="input" placeholder="email@example.com" value={email} onChange={(e)=>setEmail(e.target.value)} />

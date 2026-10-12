@@ -11,7 +11,7 @@ interface LocaleState {
 
 function detectLocale(): Locale {
   if (typeof window === 'undefined') return 'en';
-  const saved = localStorage.getItem('fab.locale');
+  const saved = localStorage.getItem('ma.locale');
   if (saved && SUPPORTED_LOCALES.includes(saved as Locale)) return saved as Locale;
   for (const t of navigator.languages || []) {
     const l = normalizeLocale(t);
@@ -36,6 +36,6 @@ export const useLocale = create<LocaleState>()(
         set({ locale: l });
       },
     }),
-    { name: 'fab.locale', partialize: (s) => ({ locale: s.locale }) }
+    { name: 'ma.locale', partialize: (s) => ({ locale: s.locale }) }
   )
 );

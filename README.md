@@ -1,4 +1,4 @@
-# Fab Anything
+# Make Anyth.ing
 
 Multi-location 3D printing service — static SPA on GitHub Pages + Supabase Postgres/Auth/Storage/Edge Functions.
 

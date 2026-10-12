@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('home loads and shows app name', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('body')).toContainText('Fab Anything');
+  await expect(page.locator('body')).toContainText('Make Anyth.ing');
 });
 
 test('locale switch persists', async ({ page }) => {
@@ -15,11 +15,11 @@ test('guests can check out without creating an account', async ({ page }) => {
   // Seed a guest cart + location straight into persisted stores so no login is needed.
   await page.addInitScript(() => {
     localStorage.setItem(
-      'fab.location',
+      'ma.location',
       JSON.stringify({ state: { selectedLocationId: '00000000-0000-0000-0000-000000000001' }, version: 0 })
     );
     localStorage.setItem(
-      'fab.cart',
+      'ma.cart',
       JSON.stringify({
         state: {
           location_id: '00000000-0000-0000-0000-000000000001',

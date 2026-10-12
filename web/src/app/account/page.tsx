@@ -26,9 +26,9 @@ export default function AccountPage() {
       return data || [];
     },
   });
-  if (!profile) return <div className="container-fa py-10">Please sign in.</div>;
+  if (!profile) return <div className="container-ma py-10">Please sign in.</div>;
   return (
-    <div className="container-fa py-10">
+    <div className="container-ma py-10">
       <h1 className="text-2xl font-semibold">{t('nav.account')}</h1>
       <p className="mt-2 text-slate-600">{profile.email}</p>
       <p className="mt-3 text-sm text-slate-700">

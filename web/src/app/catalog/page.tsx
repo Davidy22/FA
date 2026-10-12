@@ -41,7 +41,7 @@ export default function CatalogPage() {
   });
 
   return (
-    <div className="container-fa py-8 grid grid-cols-1 md:grid-cols-[240px_1fr] gap-8">
+    <div className="container-ma py-8 grid grid-cols-1 md:grid-cols-[240px_1fr] gap-8">
       <aside aria-label={t('catalog:filters')} className="space-y-4">
         <div>
           <label className="label">{t('common:search')}</label>

@@ -1,5 +1,5 @@
 {
-  "app_name": "Fab Anything",
+  "app_name": "Make Anyth.ing",
   "tagline": "3D prints on demand, made near you.",
   "nav": {
     "home": "Home",
@@ -17,7 +17,7 @@
   },
   "location": {
     "title": "Choose a location",
-    "prompt": "Pick a Fab location near you to see available colors and materials.",
+    "prompt": "Pick a Make Anyth.ing location near you to see available colors and materials.",
     "selected": "Location",
     "none_selected": "Select a location",
     "change": "Change",

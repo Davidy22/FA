@@ -1,4 +1,4 @@
-project_id = "fab-anything-local"
+project_id = "make-anything-local"
 
 [api]
 enabled = true

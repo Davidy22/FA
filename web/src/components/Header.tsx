@@ -37,10 +37,10 @@ export function Header() {
 
   return (
     <header className="border-b border-slate-200 bg-white sticky top-0 z-20">
-      <div className="container-fa flex h-16 items-center justify-between gap-4">
+      <div className="container-ma flex h-16 items-center justify-between gap-4">
         <div className="flex items-center gap-6">
-          <Link href="/" className="text-xl font-bold text-brand-700" aria-label="Fab Anything">
-            F<span className="text-slate-800">ab</span>
+          <Link href="/" className="text-xl font-bold text-brand-700" aria-label="Make Anyth.ing">
+            Make<span className="text-slate-800">Anyth.ing</span>
           </Link>
           <nav className="hidden md:flex gap-4 text-sm">
             <Link href="/catalog" className="text-slate-700 hover:text-brand-700">{t('nav.catalog')}</Link>
