@@ -73,6 +73,8 @@ export default function CartPage() {
           // default pricing: no option pricing on cart (simplified)
           subtotal += price * it.quantity;
         }
+      } else if (it.kind === 'document') {
+        subtotal += (it.pages || 0) * (it.color === 'color' ? 1 : .5) * it.quantity;
       } else if (it.kind === 'custom') {
         const q = quotes?.find((x) => x.id === it.quote_request_id);
         if (q?.estimated_price != null) subtotal += q.estimated_price * it.quantity / Math.max(q.quantity||1,1);
@@ -162,6 +164,11 @@ export default function CartPage() {
                   </div>
                 </li>
               );
+            } else if (it.kind === 'document') {
+              return <li key={idx} className="p-4 flex flex-wrap items-center justify-between gap-3">
+                <div><p className="font-medium">A4 document printing</p><p className="text-sm text-slate-600">{it.pages} sides · {it.color} · {it.duplex ? 'Double-sided' : 'Single-sided'} · {it.quantity} copies</p></div>
+                <button onClick={() => removeItem(idx)} className="btn-outline">{t('cart:remove')}</button>
+              </li>;
             } else {
               const q = quotes?.find((x) => x.id === it.quote_request_id);
               const m = materials?.find((x) => x.id === it.material_id);

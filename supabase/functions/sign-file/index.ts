@@ -29,12 +29,18 @@ serve(async (req) => {
     else {
       // Customer access: own model (prefix matches user id)
       const pathUid = path.split('/')[0];
-      if ((bucket === 'models' || bucket === 'option-uploads' || bucket === 'submission-assets')
+      if ((bucket === 'models' || bucket === 'option-uploads' || bucket === 'submission-assets' || bucket === 'document-prints')
           && pathUid === u.id) allowed = true;
       // Staff access via order linkage
-      if (!allowed && order_id && role !== 'customer' && (bucket==='models'||bucket==='product-files'||bucket==='option-uploads')) {
+      if (!allowed && order_id && role !== 'customer' && (bucket==='models'||bucket==='product-files'||bucket==='option-uploads'||bucket==='document-prints')) {
         const { data: order } = await svc.from('orders').select('location_id').eq('id', order_id).maybeSingle();
-        if (order && (role === 'manager' || role === 'employee') && order.location_id === myLoc) allowed = true;
+        if (order && (role === 'manager' || role === 'employee') && order.location_id === myLoc) {
+          if (bucket !== 'document-prints') allowed = true;
+          else {
+            const { data: lines } = await svc.from('order_items').select('item_snapshot').eq('order_id', order_id);
+            allowed = !!lines?.some((line) => line.item_snapshot?.file_path === path);
+          }
+        }
       }
     }
     if (!allowed) return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 });

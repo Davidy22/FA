@@ -16,6 +16,7 @@ export function Header() {
   const { items } = useCart();
   const { selectedLocationId } = useLocation();
   const setCartLocation = useCart((s) => s.setLocation);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
@@ -37,20 +38,21 @@ export function Header() {
 
   return (
     <header className="border-b border-slate-200 bg-white sticky top-0 z-20">
-      <div className="container-ma flex h-16 items-center justify-between gap-4">
+      <div className="container-ma flex min-h-16 flex-wrap items-center justify-between gap-2 py-2">
         <div className="flex items-center gap-6">
           <Link href="/" className="text-xl font-bold text-brand-700" aria-label="Make Anyth.ing">
             Make<span className="text-slate-800">Anyth.ing</span>
           </Link>
-          <nav className="hidden md:flex gap-4 text-sm">
+          <nav className="hidden lg:flex gap-4 text-sm">
             <Link href="/catalog" className="text-slate-700 hover:text-brand-700">{t('nav.catalog')}</Link>
             <Link href="/quote" className="text-slate-700 hover:text-brand-700">{t('nav.quote')}</Link>
             <Link href="/rewards" className="text-slate-700 hover:text-brand-700">{t('nav.rewards')}</Link>
           </nav>
         </div>
-        <div className="flex items-center gap-3">
-          <LocationSelector />
-          <LocaleSwitcher />
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="hidden sm:block"><LocationSelector />
+          </div>
+          <div className="hidden sm:block"><LocaleSwitcher /></div>
           <Link href="/cart" className="relative inline-flex items-center px-3 py-2 text-sm rounded-md hover:bg-slate-100" aria-label={t('nav.cart')}>
             <span aria-hidden>🛒</span>
             {itemCount > 0 && (
@@ -61,27 +63,38 @@ export function Header() {
           </Link>
           {profile ? (
             <div className="flex items-center gap-2 text-sm">
-              <Link href="/account" className="text-slate-700 hover:text-brand-700">
+              <Link href="/account" className="hidden lg:block max-w-32 truncate text-slate-700 hover:text-brand-700">
                 {profile.display_name || profile.email}
               </Link>
               {profile.role !== 'customer' && (
-                <Link href="/employee" className="text-slate-700 hover:text-brand-700">{t('nav.employee_portal')}</Link>
+                <Link href="/employee" className="hidden lg:block text-slate-700 hover:text-brand-700">{t('nav.employee_portal')}</Link>
               )}
               {profile.role === 'admin' && (
-                <Link href="/admin" className="text-slate-700 hover:text-brand-700">{t('nav.admin')}</Link>
+                <Link href="/admin" className="hidden lg:block text-slate-700 hover:text-brand-700">{t('nav.admin')}</Link>
               )}
               {profile.is_creator && (
-                <Link href="/creator" className="text-slate-700 hover:text-brand-700">{t('nav.creator_dashboard')}</Link>
+                <Link href="/creator" className="hidden lg:block text-slate-700 hover:text-brand-700">{t('nav.creator_dashboard')}</Link>
               )}
               <button
-                className="text-slate-500 hover:text-red-600"
+                className="hidden lg:block text-slate-500 hover:text-red-600"
                 onClick={() => supabase().auth.signOut()}
               >{t('nav.logout')}</button>
             </div>
           ) : (
             <Link href="/login" className="btn-outline text-sm">{t('nav.login')}</Link>
           )}
+          <button type="button" className="btn-outline lg:hidden" aria-expanded={menuOpen} aria-controls="mobile-navigation" onClick={() => setMenuOpen(!menuOpen)}>Menu</button>
         </div>
+        {menuOpen && <nav id="mobile-navigation" className="w-full flex flex-col gap-3 border-t pt-3 lg:hidden" onClick={() => setMenuOpen(false)}>
+          <div className="flex flex-wrap gap-3"><LocationSelector /><LocaleSwitcher /></div>
+          <Link href="/catalog">{t('nav.catalog')}</Link><Link href="/quote">{t('nav.quote')}</Link>
+          <Link href="/document-printing">Document printing</Link><Link href="/referrals">Referrals</Link>
+          <Link href="/rewards">{t('nav.rewards')}</Link><Link href="/account">{t('nav.account')}</Link>
+          {profile?.role !== 'customer' && profile && <Link href="/employee">{t('nav.employee_portal')}</Link>}
+          {profile?.role === 'admin' && <Link href="/admin">{t('nav.admin')}</Link>}
+          {profile?.is_creator && <Link href="/creator">{t('nav.creator_dashboard')}</Link>}
+          {profile && <button className="text-left" onClick={() => { supabase().auth.signOut(); setProfile(null); }}>{t('nav.logout')}</button>}
+        </nav>}
       </div>
     </header>
   );

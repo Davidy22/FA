@@ -1,0 +1,62 @@
+'use client';
+import { useState } from 'react';
+import { PDFDocument } from 'pdf-lib';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import { useCart } from '@/store/cart';
+export default function DocumentPrintingPage() {
+  const router = useRouter();
+  const addItem = useCart(s => s.addItem);
+  const [file, setFile] = useState<File | null>(null);
+  const [pages, setPages] = useState<number | null>(null);
+  const [reading, setReading] = useState(false);
+  const [copies, setCopies] = useState(1);
+  const [color, setColor] = useState<'grayscale' | 'color'>('grayscale');
+  const [duplex, setDuplex] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  async function selectFile(selected: File | null) {
+    setFile(null); setPages(null); setError('');
+    if (!selected) return;
+    if (selected.type !== 'application/pdf' || selected.size > 20 * 1024 * 1024) {
+      setError('Choose a PDF smaller than 20 MB.'); return;
+    }
+    setReading(true);
+    try {
+      const pdf = await PDFDocument.load(await selected.arrayBuffer());
+      const count = pdf.getPageCount();
+      if (count < 1 || count > 500) throw new Error('PDF must have between 1 and 500 pages.');
+      setPages(count); setFile(selected);
+    } catch { setError('Could not read this PDF. Please choose a valid, unencrypted PDF.'); }
+    finally { setReading(false); }
+  }
+  async function submit(e: React.FormEvent) {
+    e.preventDefault(); setError(''); setBusy(true);
+    try {
+      const { data: { user } } = await supabase().auth.getUser();
+      if (!user) throw new Error('Sign in before uploading your document.');
+      if (!file || file.type !== 'application/pdf' || file.size > 20 * 1024 * 1024) throw new Error('Choose a PDF smaller than 20 MB.');
+      if (pages === null || !Number.isInteger(copies) || copies < 1 || copies > 99) throw new Error('Enter a valid number of sides and copies.');
+      const path = `${user.id}/${crypto.randomUUID()}.pdf`;
+      const { error: uploadError } = await supabase().storage.from('document-prints').upload(path, file, { contentType: 'application/pdf' });
+      if (uploadError) throw uploadError;
+      addItem({ kind: 'document', file_path: path, pages, quantity: copies, color, duplex });
+      router.push('/cart');
+    } catch (err) { setError((err as Error).message); } finally { setBusy(false); }
+  }
+  return <div className="container-ma max-w-xl py-10">
+    <h1 className="text-2xl font-semibold">A4 document printing</h1>
+    <p className="mt-2 text-slate-600">$0.50 per grayscale side or $1 per color side. Double-sided printing saves paper; every printed side is charged. Pickup at your selected location.</p>
+    <form onSubmit={submit} className="mt-6 space-y-4">
+      <label className="label">PDF (up to 20 MB)<input className="input mt-1" type="file" accept="application/pdf" required onChange={e => void selectFile(e.target.files?.[0] || null)} /></label>
+      <p aria-live="polite" className="text-sm text-slate-600">{reading ? 'Reading PDF…' : pages === null ? 'Select a PDF to see its page count.' : `${pages} printed ${pages === 1 ? 'side' : 'sides'} per copy, read from your PDF.`}</p>
+      <label className="label">Copies<input className="input mt-1" type="number" min="1" max="99" required value={copies} onChange={e => setCopies(Number(e.target.value))} /></label>
+      <label className="label">Ink<select className="input mt-1" value={color} onChange={e => setColor(e.target.value as 'grayscale' | 'color')}><option value="grayscale">Grayscale · $0.50/side</option><option value="color">Color · $1/side</option></select></label>
+      <label className="flex items-center gap-2"><input type="checkbox" checked={duplex} onChange={e => setDuplex(e.target.checked)} /> Double-sided (when possible)</label>
+      <p className="font-semibold">Printing subtotal: ${((pages ?? 0) * copies * (color === 'color' ? 1 : .5)).toFixed(2)} (before tax and minimum order fee)</p>
+      {error && <p role="alert" className="text-red-700">{error} <Link className="underline" href="/login">Sign in</Link></p>}
+      <button className="btn" disabled={busy || reading || pages === null}>{busy ? 'Uploading…' : 'Add to cart'}</button>
+    </form>
+  </div>;
+}
