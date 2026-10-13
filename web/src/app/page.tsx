@@ -18,14 +18,12 @@ export default function HomePage() {
   });
   return (
     <div className="container-ma py-10">
-      <section className="rounded-2xl bg-gradient-to-br from-brand-50 to-white border border-brand-100 p-8 md:p-12">
-        <h1 className="text-3xl md:text-5xl font-bold tracking-tight">{t('common:app_name')}</h1>
-        <p className="mt-3 text-lg text-slate-600 max-w-2xl">{t('common:tagline')}</p>
-        <div className="mt-6 flex gap-3 flex-wrap">
-          <Link href="/catalog" className="btn">{t('catalog:browse')}</Link>
-          <Link href="/quote" className="btn-outline">{t('common:nav.quote')}</Link>
-        </div>
-      </section>
+      {/* Reserved for a future promotions carousel; no redundant brand hero. */}
+      <div id="promotions" aria-label="Promotions" className="empty:hidden" />
+      <div className="flex flex-wrap gap-3">
+        <Link href="/document-printing" className="btn-outline">Document printing · from $0.50/side</Link>
+        <Link href="/referrals" className="btn-outline">Refer a friend</Link>
+      </div>
 
       <section className="mt-12">
         <h2 className="text-2xl font-semibold mb-4">{t('catalog:browse')}</h2>

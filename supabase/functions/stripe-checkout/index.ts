@@ -7,6 +7,7 @@
 
 import { serve } from 'https://deno.land/std@0.207.0/http/server.ts';
 import Stripe from 'https://esm.sh/stripe@14.12.0?target=deno';
+import { PDFDocument } from 'https://esm.sh/pdf-lib@1.17.1?target=deno';
 import { corsHeaders, handleCors } from '../_shared/cors.ts';
 import { supabaseServiceClient, supabaseUserClient } from '../_shared/supabase.ts';
 
@@ -44,6 +45,24 @@ serve(async (req) => {
     cart.user_id = verifiedUserId; // authoritative: verified id or null
 
     const sb = supabaseServiceClient();
+
+    // Never trust a page count supplied by the browser (or a modified cart).
+    // Download each private, owner-scoped PDF and replace the count before both
+    // charging Stripe and persisting the cart used by the payment webhook.
+    for (const item of cart.items ?? []) {
+      if (item.kind !== 'document') continue;
+      if (!verifiedUserId || typeof item.file_path !== 'string' ||
+          !item.file_path.startsWith(`${verifiedUserId}/`)) {
+        throw new Error('Sign in and upload your own PDF before checkout.');
+      }
+      const { data: file, error: fileError } = await sb.storage.from('document-prints').download(item.file_path);
+      if (fileError || !file) throw new Error('Could not read the uploaded document.');
+      let count: number;
+      try { count = (await PDFDocument.load(await file.arrayBuffer())).getPageCount(); }
+      catch { throw new Error('Could not read this PDF. Upload a valid, unencrypted PDF.'); }
+      if (count < 1 || count > 500) throw new Error('PDF must have between 1 and 500 pages.');
+      item.pages = count;
+    }
 
     // Authoritative pricing via the price_cart RPC (service role)
     const { data: pricing, error: pErr } = await sb.rpc('price_cart', { p_cart: cart });

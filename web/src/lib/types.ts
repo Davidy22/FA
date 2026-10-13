@@ -181,7 +181,11 @@ export type ModelSubmission = {
 };
 
 export type CartLineInput = {
-  kind: 'premade' | 'custom';
+  kind: 'premade' | 'custom' | 'document';
+  pages?: number;
+  color?: 'grayscale' | 'color';
+  duplex?: boolean;
+  file_path?: string;
   product_id?: string;
   quote_request_id?: string;
   material_id?: string | null;

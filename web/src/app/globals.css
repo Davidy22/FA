@@ -48,3 +48,12 @@ body {
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
 }
+
+/* Keep wide admin tables usable without pushing controls off narrow viewports. */
+main { min-width: 0; max-width: 100%; overflow-x: clip; }
+main table { display: block; max-width: 100%; overflow-x: auto; }
+@media (max-width: 640px) {
+  .container-ma { min-width: 0; }
+  .container-ma input, .container-ma select { max-width: 100%; }
+  .container-ma > .grid { min-width: 0; }
+}

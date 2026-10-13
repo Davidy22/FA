@@ -151,7 +151,7 @@ export default function RewardsPage() {
         {!coupons?.length ? (
           <p className="mt-3 text-slate-500">{t('rewards:no_coupons')}</p>
         ) : (
-          <table className="mt-3 w-full text-sm">
+          <div className="overflow-x-auto"><table className="mt-3 w-full text-sm">
             <thead className="text-left text-slate-500">
               <tr>
                 <th className="py-2">{t('rewards:coupon_code')}</th>
@@ -176,7 +176,7 @@ export default function RewardsPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </section>
 
@@ -185,7 +185,7 @@ export default function RewardsPage() {
         {!activity?.length ? (
           <p className="mt-3 text-slate-500">{t('rewards:no_activity')}</p>
         ) : (
-          <table className="mt-3 w-full text-sm">
+          <div className="overflow-x-auto"><table className="mt-3 w-full text-sm">
             <thead className="text-left text-slate-500">
               <tr>
                 <th className="py-2">{t('rewards:date')}</th>
@@ -204,7 +204,7 @@ export default function RewardsPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </section>
     </div>

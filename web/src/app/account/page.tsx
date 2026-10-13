@@ -35,13 +35,14 @@ export default function AccountPage() {
         {t('rewards:balance_label')}: <strong>{t('rewards:points', { count: profile.points_balance ?? 0 })}</strong>
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
+        <Link href="/referrals" className="btn-outline inline-block">My referral code</Link>
         <Link href="/rewards" className="btn-outline inline-block">{t('nav.rewards')}</Link>
         <Link href="/offers" className="btn-outline inline-block">{t('rewards:offers_promo_cta')}</Link>
         {profile.is_creator && <Link href="/creator" className="btn-outline inline-block">{t('nav.creator_dashboard')}</Link>}
       </div>
       <h2 className="mt-8 text-xl font-medium">{t('orders:title')}</h2>
       {!orders?.length ? <p className="text-slate-500 mt-3">{t('orders:none')}</p> : (
-        <table className="mt-4 w-full text-sm">
+        <div className="overflow-x-auto"><table className="mt-4 w-full text-sm">
           <thead className="text-left text-slate-500">
             <tr><th className="py-2">#</th><th>Date</th><th>Status</th><th className="text-right">Total</th></tr>
           </thead>
@@ -55,7 +56,7 @@ export default function AccountPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
     </div>
   );
