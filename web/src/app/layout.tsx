@@ -8,6 +8,7 @@ import { I18nextProvider } from 'react-i18next';
 import i18n from '@/lib/i18n';
 import { LocationPrompt } from '@/components/LocationPrompt';
 import { ClientOnly } from '@/components/ClientOnly';
+import { withBasePath } from '@/lib/paths';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 60_000, refetchOnWindowFocus: false } },
@@ -22,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href={withBasePath('/favicon.svg')} type="image/svg+xml" />
         <title>Make Anyth.ing — 3D prints on demand</title>
       </head>
       <body className="min-h-screen flex flex-col">

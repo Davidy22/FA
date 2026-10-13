@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Location } from '@/lib/types';
+import { withBasePath } from '@/lib/paths';
 
 export default function CheckoutPage() {
   const { t } = useTranslation(['common','checkout','errors','rewards']);
@@ -90,8 +91,8 @@ export default function CheckoutPage() {
       const { data, error } = await supabase().functions.invoke('stripe-checkout', {
         body: {
           cart,
-          success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${origin}/cart`,
+          success_url: `${origin}${withBasePath('/checkout/success/')}?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${origin}${withBasePath('/cart/')}`,
           contact_email: email,
           contact_name: name,
           locale,

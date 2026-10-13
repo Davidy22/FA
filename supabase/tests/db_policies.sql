@@ -3,8 +3,8 @@
 
 create extension if not exists pgtap;
 
--- Plan count
-select plan(17);
+-- Plan count (including the legacy-prefix order-number regression test)
+select plan(18);
 
 -- RLS is enabled on key tables
 select tables_are('public', array[

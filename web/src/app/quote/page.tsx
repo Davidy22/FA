@@ -1,6 +1,7 @@
 'use client';
 import { useTranslation } from 'react-i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useLocation } from '@/store/location';
@@ -19,6 +20,7 @@ const DEFAULT_CONSTANTS = {
 
 export default function QuotePage() {
   const { t } = useTranslation(['common','quote','errors']);
+  const router = useRouter();
   const locale = useLocale((s) => s.locale);
   const locationId = useLocation((s) => s.selectedLocationId);
   const addItem = useCart((s) => s.addItem);
@@ -166,7 +168,7 @@ export default function QuotePage() {
       quantity,
       options: { infill, layer_height: layerHeight, filename: file!.name },
     });
-    window.location.href = '/cart';
+    router.push('/cart');
   }
 
   useEffect(() => { if (typeof window !== 'undefined' && !workerRef.current) {

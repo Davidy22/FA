@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const { t } = useTranslation('common');
@@ -33,7 +34,7 @@ export default function LoginPage() {
       <form onSubmit={submit} className="space-y-3">
         <input required type="email" className="input" placeholder="email@example.com" value={email} onChange={(e)=>setEmail(e.target.value)} />
         <input required type="password" className="input" placeholder="password" minLength={8} value={password} onChange={(e)=>setPassword(e.target.value)} />
-        {mode === 'signup' && <div><label htmlFor="referral" className="label">Referral code (optional)</label><input id="referral" className="input" maxLength={12} value={referral} onChange={e => setReferral(e.target.value)} /><a href="/referrals" className="text-sm text-brand-700 underline">How referrals work</a></div>}
+        {mode === 'signup' && <div><label htmlFor="referral" className="label">Referral code (optional)</label><input id="referral" className="input" maxLength={12} value={referral} onChange={e => setReferral(e.target.value)} /><Link href="/referrals" className="text-sm text-brand-700 underline">How referrals work</Link></div>}
         {error && <p className="text-red-700 text-sm">{error}</p>}
         <button type="submit" className="btn w-full" disabled={busy}>
           {mode === 'signin' ? t('nav.login') : t('nav.register')}

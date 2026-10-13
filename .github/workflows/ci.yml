@@ -34,6 +34,12 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost' }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'anon' }}
+          # Exercise a project-site prefix even when CI has no deployment config.
+          NEXT_PUBLIC_BASE_PATH: /pages-test
+      - run: node scripts/check-pages-export.mjs
+        working-directory: ${{ github.workspace }}
+        env:
+          NEXT_PUBLIC_BASE_PATH: /pages-test
 
   db:
     runs-on: ubuntu-latest
