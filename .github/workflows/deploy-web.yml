@@ -5,39 +5,90 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      environment:
+        description: Supabase environment to build against
+        required: true
+        default: staging
+        type: choice
+        options: [staging, prod]
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
+# There is one Pages site for this repository, regardless of branch/environment.
+# Do not cancel a deployment that is already publishing the site.
 concurrency:
-  group: pages-${{ github.ref }}
-  cancel-in-progress: true
+  group: pages
+  cancel-in-progress: false
 
 jobs:
-  build-deploy:
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
     environment:
-      name: ${{ github.event_name == 'release' ? 'prod' : 'staging' }}
+      name: ${{ inputs.environment || (github.event_name == 'release' && 'prod' || 'staging') }}
     defaults:
       run:
         working-directory: web
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
-        with: { version: 9 }
-      - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: pnpm }
-      - run: pnpm install --frozen-lockfile || pnpm install
-      - run: pnpm build
+      - name: Check public frontend configuration
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
-          NEXT_PUBLIC_BASE_PATH: ${{ vars.NEXT_PUBLIC_BASE_PATH }}
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          missing=0
+          for name in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error title=Missing frontend configuration::Set ${name} as an Actions variable (or secret) in the selected staging/prod environment or at repository level. See docs/GETTING_STARTED.md."
+              missing=1
+            fi
+          done
+          exit "$missing"
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build static site
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY || secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          # Pages supplies /FA for this project site, or '' for a custom domain.
+          # This must be set at build time, not after the static export.
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+      - name: Verify Pages export
+        run: node scripts/check-pages-export.mjs
+        working-directory: ${{ github.workspace }}
+        env:
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
           path: web/out
-      - uses: actions/deploy-pages@v4
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

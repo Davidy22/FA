@@ -1,9 +1,9 @@
 'use client';
 import { useTranslation } from 'react-i18next';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useLocation } from '@/store/location';
 import { useLocale } from '@/store/locale';
@@ -128,18 +128,69 @@ export default function QuotePage() {
     }
   }
 
-  if (!user) {
-    return (
-      <div className="container-ma py-10 max-w-xl">
-        <h1 className="text-3xl font-bold">{t('quote:title')}</h1>
-        <p className="mt-2 text-slate-600">{t('quote:subtitle')}</p>
-        <div className="mt-6 rounded-lg border border-brand-200 bg-brand-50 p-6 text-center">
-          <p className="font-medium">{t('quote:signin_needed')}</p>
-          <p className="mt-1 text-sm text-slate-600">{t('quote:signin_hint')}</p>
-          <Link href="/login" className="btn mt-4 inline-block">{t('common:nav.login')}</Link>
-        </div>
-      </div>
-    );
+  async function addToCart() {
+    if (!parsed || !quote || !material || !filament || !location) return;
+    // Upload model to storage
+    const userResp = await supabase().auth.getUser();
+    const uid = userResp.data.user?.id || 'anon';
+    const filePath = `${uid}/${Date.now()}-${file?.name || 'model'}`;
+    const ab = await file!.arrayBuffer();
+    const { error: upErr } = await supabase().storage.from('models').upload(filePath, ab, {
+      contentType: file!.type || 'application/octet-stream',
+    });
+    if (upErr) { setError(upErr.message); return; }
+
+    const { data: uploaded, error: insErr } = await supabase().from('uploaded_models').insert({
+      user_id: userResp.data.user?.id || null,
+      file_path: filePath,
+      original_filename: file!.name,
+      model_sha256: parsed.sha256,
+      volume_cm3: parsed.metrics.volume_cm3,
+      surface_cm2: parsed.metrics.surface_cm2,
+      bbox: parsed.metrics.bbox,
+      triangle_count: parsed.metrics.triangle_count,
+    }).select().single();
+    if (insErr) { setError(insErr.message); return; }
+
+    // Call verify-model edge function (server-side re-parse, anti-tamper).
+    const { data: verify, error: vErr } = await supabase().functions.invoke('verify-model', {
+      body: { uploaded_model_id: uploaded.id },
+    });
+    if (vErr) { setError(vErr.message); return; }
+
+    const { data: qr, error: qErr } = await supabase().from('quote_requests').insert({
+      user_id: userResp.data.user?.id || null,
+      uploaded_model_id: uploaded.id,
+      material_id: material.id,
+      filament_id: filament.id,
+      infill_percent: infill,
+      layer_height: layerHeight,
+      quantity,
+      engine: 'heuristic',
+      status: 'complete',
+      estimated_price: quote.unit_price * quantity,
+      price_breakdown: {
+        material_cost: quote.material_cost,
+        machine_cost: quote.machine_cost,
+        handling_fee: quote.handling_fee,
+        grams: quote.grams,
+        print_time_min: quote.print_time_minutes,
+      },
+      material_usage_grams: quote.grams,
+      print_time_minutes: quote.print_time_minutes,
+    }).select().single();
+    if (qErr) { setError(qErr.message); return; }
+
+    setCartLocation(locationId);
+    addItem({
+      kind: 'custom',
+      quote_request_id: qr.id,
+      material_id: material.id,
+      color_filament_id: filament.id,
+      quantity,
+      options: { infill, layer_height: layerHeight, filename: file!.name },
+    });
+    router.push('/cart');
   }
 
   return (

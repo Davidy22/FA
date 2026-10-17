@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { authErrorKind, providerLabel, rememberReferral, type SocialProviderId } from '@/lib/auth';
 import { SocialAuthButtons } from '@/components/SocialAuthButtons';
 
