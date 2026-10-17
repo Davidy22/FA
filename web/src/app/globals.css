@@ -44,6 +44,39 @@ body {
   @apply block text-sm font-medium text-slate-700 mb-1;
 }
 
+/* CSS-only Leaflet pins (no marker image assets). */
+.ma-map-marker {
+  background: transparent;
+  border: 0;
+}
+.ma-map-pin {
+  position: relative;
+  display: block;
+  width: 26px;
+  height: 26px;
+  margin: 2px auto 0;
+  border: 2px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  background: #0284c7;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 35%);
+  transform: rotate(-45deg);
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+.ma-map-pin::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border-radius: 9999px;
+  background: #fff;
+}
+.ma-map-pin--selected {
+  background: #f59e0b;
+  transform: rotate(-45deg) scale(1.14);
+}
+.leaflet-popup-content p {
+  margin: 0;
+}
+
 /* Prefers reduced motion */
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }

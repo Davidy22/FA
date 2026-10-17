@@ -1,36 +1,35 @@
 'use client';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
-import { useLocation } from '@/store/location';
+import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
-import type { Location } from '@/lib/types';
+import { useLocations } from '@/hooks/useLocations';
+import { useLocation } from '@/store/location';
 
 export function LocationSelector() {
   const { t } = useTranslation('common');
-  const { data: locations } = useQuery<Location[]>({
-    queryKey: ['locations'],
-    queryFn: async () => {
-      const { data } = await supabase().from('locations').select('*').eq('is_active', true).order('name');
-      return data || [];
-    },
-  });
+  const { data: locations } = useLocations();
   const selectedId = useLocation((s) => s.selectedLocationId);
   const setLocation = useLocation((s) => s.setLocation);
-  const selected = locations?.find((l) => l.id === selectedId);
+
+  // With zero or one location there is nothing to choose; LocationSync picks the only one.
+  if (!locations || locations.length <= 1) return null;
+
   return (
-    <label className="flex items-center gap-2 text-sm">
+    <div className="flex items-center gap-2 text-sm">
       <span aria-hidden>📍</span>
       <select
         aria-label={t('location.title')}
-        className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm max-w-[200px]"
+        className="max-w-[200px] rounded-md border border-slate-300 bg-white px-2 py-1 text-sm"
         value={selectedId || ''}
         onChange={(e) => setLocation(e.target.value || null)}
       >
         <option value="">{t('location.none_selected')}</option>
-        {locations?.map((l) => (
-          <option key={l.id} value={l.id}>{l.name}</option>
+        {locations.map((location) => (
+          <option key={location.id} value={location.id}>{location.name}</option>
         ))}
       </select>
-    </label>
+      <Link href="/locations" className="whitespace-nowrap text-xs text-brand-700 underline">
+        {t('location.view_map')}
+      </Link>
+    </div>
   );
 }
