@@ -4,7 +4,7 @@
 create extension if not exists pgtap;
 
 -- Plan count
-select plan(17);
+select plan(18);
 
 -- RLS is enabled on key tables
 select tables_are('public', array[

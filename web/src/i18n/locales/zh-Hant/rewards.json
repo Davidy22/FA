@@ -39,5 +39,18 @@
   "coupon_placeholder": "優惠券代碼",
   "coupon_apply": "套用",
   "coupon_applied": "已套用優惠券",
-  "coupon_remove": "移除優惠券"
+  "coupon_remove": "移除優惠券",
+  "referral_title": "推薦朋友",
+  "referral_desc": "把推薦碼分享給新朋友。對方註冊時你可獲得 10 點，對方首次購買後再獲得 50 點。",
+  "referral_my_code": "你的推薦碼",
+  "referral_copy": "複製推薦碼",
+  "referral_copied": "已複製！",
+  "referral_copy_error": "無法自動複製，請選取推薦碼後手動複製。",
+  "referral_signin_cta": "登入以取得你的推薦碼",
+  "referral_how_title": "推薦方式",
+  "referral_step_share": "把推薦碼傳給朋友。",
+  "referral_step_signup": "朋友建立帳號時輸入推薦碼。",
+  "referral_step_reward": "註冊時你可獲得 10 點，對方首次下單後再獲得 50 點。",
+  "referral_terms": "每位新客戶只能推薦一次；推薦碼須於註冊後 24 小時內使用。",
+  "referral_redirecting": "推薦資訊已整合到獎勵頁面。"
 }

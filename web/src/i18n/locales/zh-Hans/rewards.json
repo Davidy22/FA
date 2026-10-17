@@ -39,5 +39,18 @@
   "coupon_placeholder": "优惠券代码",
   "coupon_apply": "应用",
   "coupon_applied": "已应用优惠券",
-  "coupon_remove": "移除优惠券"
+  "coupon_remove": "移除优惠券",
+  "referral_title": "推荐朋友",
+  "referral_desc": "把推荐码分享给新朋友。对方注册时你可获得 10 积分，对方首次购买后再获得 50 积分。",
+  "referral_my_code": "你的推荐码",
+  "referral_copy": "复制推荐码",
+  "referral_copied": "已复制！",
+  "referral_copy_error": "无法自动复制，请选取推荐码后手动复制。",
+  "referral_signin_cta": "登录以获取你的推荐码",
+  "referral_how_title": "推荐方式",
+  "referral_step_share": "把推荐码发给朋友。",
+  "referral_step_signup": "朋友创建账号时输入推荐码。",
+  "referral_step_reward": "注册时你可获得 10 积分，对方首次下单后再获得 50 积分。",
+  "referral_terms": "每位新客户只能推荐一次；推荐码须在注册后 24 小时内使用。",
+  "referral_redirecting": "推荐信息已整合到积分奖励页面。"
 }

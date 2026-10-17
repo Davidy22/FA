@@ -22,7 +22,6 @@ export default function HomePage() {
       <div id="promotions" aria-label="Promotions" className="empty:hidden" />
       <div className="flex flex-wrap gap-3">
         <Link href="/document-printing" className="btn-outline">Document printing · from $0.50/side</Link>
-        <Link href="/referrals" className="btn-outline">Refer a friend</Link>
       </div>
 
       <section className="mt-12">

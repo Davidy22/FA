@@ -11,6 +11,7 @@ import {
   couponDiscountLabel,
   parseRedeemOptions,
 } from '@/lib/rewards';
+import { ReferralCard } from '@/components/ReferralCard';
 import type { Coupon, Profile, RewardTransaction } from '@/lib/types';
 
 export default function RewardsPage() {
@@ -83,10 +84,11 @@ export default function RewardsPage() {
   if (isLoading) return <div className="container-ma py-10">{t('common:loading')}</div>;
   if (!profile) {
     return (
-      <div className="container-ma py-10">
+      <div className="container-ma py-10 max-w-3xl">
         <h1 className="text-2xl font-semibold">{t('rewards:title')}</h1>
         <p className="mt-3 text-slate-600">{t('rewards:sign_in_required')}</p>
         <Link href="/login" className="btn mt-4 inline-block">{t('common:nav.login')}</Link>
+        <ReferralCard />
       </div>
     );
   }
@@ -105,6 +107,8 @@ export default function RewardsPage() {
         <p className="mt-1 text-3xl font-semibold text-brand-700">{t('rewards:points', { count: balance })}</p>
         <p className="mt-2 text-sm text-slate-600">{t('rewards:earn_rate', { count: pointsPerDollar })}</p>
       </section>
+
+      <ReferralCard code={profile.referral_code} />
 
       <section className="mt-8">
         <h2 className="text-xl font-medium">{t('rewards:redeem_title')}</h2>

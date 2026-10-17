@@ -13,6 +13,8 @@ export type Profile = {
   is_creator: boolean;
   is_active: boolean;
   points_balance: number;
+  referral_code: string;
+  referred_by: string | null;
 };
 
 export type Coupon = {
@@ -33,7 +35,7 @@ export type RewardTransaction = {
   id: string;
   user_id: string;
   points: number;
-  type: 'order_earn' | 'redeem' | 'adjustment';
+  type: 'order_earn' | 'redeem' | 'adjustment' | 'referral_signup' | 'referral_purchase';
   order_id: string | null;
   coupon_id: string | null;
   memo: string | null;
@@ -45,6 +47,9 @@ export type Location = {
   name: string;
   address: string | null;
   phone: string | null;
+  photo_url: string | null;
+  lat: number | null;
+  lng: number | null;
   timezone: string;
   hourly_machine_rate: number;
   tax_rate: number;
