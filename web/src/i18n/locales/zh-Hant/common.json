@@ -14,7 +14,8 @@
     "creator_dashboard": "創作者儀表板",
     "employee_portal": "員工入口",
     "admin": "管理後台",
-    "document_printing": "文件列印"
+    "document_printing": "文件列印",
+    "tickets": "工單"
   },
   "location": {
     "title": "選擇門市",

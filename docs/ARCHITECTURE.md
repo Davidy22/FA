@@ -6,6 +6,6 @@ Make Anyth.ing is a static SPA on GitHub Pages backed by a single Supabase free-
 - Backend: Supabase Postgres + RLS + RPCs + Auth + Storage + Deno Edge Functions.
 - Payments: Stripe Checkout hosted redirect + webhook.
 - i18n: react-i18next + ICU with three locales (en, zh-Hant, zh-Hans). Parity enforced by `scripts/i18n-check.mjs`.
-- Quotation: client-side heuristic in pure TypeScript (web worker stub present) — server re-parses via `verify-model`.
+- Quotation: client-side heuristic in pure TypeScript (web worker stub present) — server re-parses via `verify-model`. The `/quote` page is a contact form that opens a ticket (`tickets` / `ticket_messages` / `ticket_attachments` / `ticket_quotes`); staff reply in the thread and quote a price, which the customer accepts into the cart (`price_cart` kind `ticket`).
 
 See `supabase/migrations/` for the schema and RLS; see `supabase/functions/` for Stripe integration, model verification, and admin actions.

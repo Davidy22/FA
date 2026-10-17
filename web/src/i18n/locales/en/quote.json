@@ -1,22 +1,8 @@
 {
-  "title": "Upload your 3D model",
-  "dropzone": "Drop STL / OBJ / 3MF here or click to browse",
-  "supported_formats": "STL, OBJ, 3MF — up to 50 MB",
-  "calculating": "Calculating price…",
-  "estimate_disclaimer": "Estimate, ±20%. Final price confirmed by the store before printing.",
-  "material": "Material",
-  "color": "Color",
-  "infill": "Infill",
-  "layer_height": "Layer height (mm)",
-  "breakdown": {
-    "title": "Price breakdown",
-    "material": "Material",
-    "machine_time": "Machine time",
-    "handling": "Handling",
-    "minimum_fee": "Minimum order fee",
-    "grams": "{{g}} g of material",
-    "print_time": "Estimated {{min}} min print time"
-  },
-  "preview": "3D preview",
-  "error_parse": "Could not parse the model. Please check the file."
+  "title": "Get a quote",
+  "subtitle": "Tell us what you need printed. Our team will reply with a price you can add to your cart.",
+  "signin_needed": "Sign in to request a quote",
+  "signin_hint": "Requesting a quote opens a ticket where our staff can reply, ask questions, and send you a price.",
+  "submit": "Send request",
+  "response_hint": "Staff at your selected location usually reply within a day."
 }

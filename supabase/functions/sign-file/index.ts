@@ -1,10 +1,11 @@
 // sign-file Edge Function: returns a 5-minute signed URL for a file after role checks.
-// Body: { bucket, path, kind, order_id?, submission_id? }
+// Body: { bucket, path, kind, order_id?, submission_id?, ticket_id? }
 // kind can be:
 //   - product-file: staff of location that has an order containing the product, or admin
 //   - model: owner or staff via order linkage or admin
 //   - option-upload: owner or staff via order linkage or admin
 //   - submission: owner or admin
+//   - ticket-upload: owner, staff at the ticket's location, or admin
 
 import { serve } from 'https://deno.land/std@0.207.0/http/server.ts';
 import { corsHeaders, handleCors } from '../_shared/cors.ts';
@@ -13,7 +14,7 @@ import { supabaseUserClient, supabaseServiceClient } from '../_shared/supabase.t
 serve(async (req) => {
   const c = handleCors(req); if (c) return c;
   try {
-    const { bucket, path, order_id } = await req.json();
+    const { bucket, path, order_id, ticket_id } = await req.json();
     const user = supabaseUserClient(req);
     const svc = supabaseServiceClient();
 
@@ -31,6 +32,13 @@ serve(async (req) => {
       const pathUid = path.split('/')[0];
       if ((bucket === 'models' || bucket === 'option-uploads' || bucket === 'submission-assets' || bucket === 'document-prints')
           && pathUid === u.id) allowed = true;
+      // Ticket attachments: staff at the ticket's location
+      if (!allowed && ticket_id && (bucket==='ticket-uploads')) {
+        const { data: ticket } = await svc.from('tickets').select('location_id').eq('id', ticket_id).maybeSingle();
+        if (ticket && (role === 'manager' || role === 'employee') && ticket.location_id === myLoc) {
+          allowed = true;
+        }
+      }
       // Staff access via order linkage
       if (!allowed && order_id && role !== 'customer' && (bucket==='models'||bucket==='product-files'||bucket==='option-uploads'||bucket==='document-prints')) {
         const { data: order } = await svc.from('orders').select('location_id').eq('id', order_id).maybeSingle();

@@ -16,7 +16,7 @@ docs/                Architecture & getting started
 
 ## Quick start (local)
 ```bash
-pnpm install
+pnpm setup                 # installs all workspace dependencies (web + tooling) in one go
 cp .env.example .env       # optional: Google/Facebook/GitHub OAuth credentials for local Supabase
 supabase start && supabase db reset
 cd web

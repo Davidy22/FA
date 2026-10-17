@@ -1,22 +1,8 @@
 {
-  "title": "上傳你的 3D 模型",
-  "dropzone": "拖放 STL / OBJ / 3MF 到這裡，或點擊選取檔案",
-  "supported_formats": "STL、OBJ、3MF，最大 50 MB",
-  "calculating": "報價計算中…",
-  "estimate_disclaimer": "此為估計價格，誤差約 ±20%，實際價格由門市確認。",
-  "material": "材料",
-  "color": "顏色",
-  "infill": "填充率",
-  "layer_height": "層高（公厘）",
-  "breakdown": {
-    "title": "價格明細",
-    "material": "材料",
-    "machine_time": "機台時間",
-    "handling": "處理費",
-    "minimum_fee": "最低訂單費",
-    "grams": "{{g}} 克材料",
-    "print_time": "預估列印時間 {{min}} 分鐘"
-  },
-  "preview": "3D 預覽",
-  "error_parse": "無法解析模型，請確認檔案格式。"
+  "title": "索取報價",
+  "subtitle": "告訴我們您想列印什麼，我們的團隊會回覆報價，您可以直接加入購物車。",
+  "signin_needed": "登入後即可索取報價",
+  "signin_hint": "索取報價會建立一張工單，我們的工作人員可以在工單中回覆、詢問細節並提供報價。",
+  "submit": "送出需求",
+  "response_hint": "您選擇據點的工作人員通常會在一天內回覆。"
 }

@@ -14,7 +14,8 @@
     "creator_dashboard": "创作者仪表板",
     "employee_portal": "员工入口",
     "admin": "管理后台",
-    "document_printing": "文件打印"
+    "document_printing": "文件打印",
+    "tickets": "工单"
   },
   "location": {
     "title": "选择门店",

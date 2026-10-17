@@ -14,7 +14,8 @@
     "creator_dashboard": "Creator Dashboard",
     "employee_portal": "Employee Portal",
     "admin": "Admin",
-    "document_printing": "Document printing"
+    "document_printing": "Document printing",
+    "tickets": "Tickets"
   },
   "location": {
     "title": "Choose a location",

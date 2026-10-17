@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { formatMoney, t_db, formatMaterial } from '@/lib/format';
 import { useLocation } from '@/store/location';
 import { useMemo, useState, useEffect } from 'react';
-import type { Filament, Material, PremadeProduct, QuoteRequest } from '@/lib/types';
+import type { Filament, Material, PremadeProduct, QuoteRequest, TicketQuote } from '@/lib/types';
 
 export default function CartPage() {
   const { t } = useTranslation(['common','cart','quote','errors','rewards']);
@@ -23,6 +23,7 @@ export default function CartPage() {
 
   const productIds = items.filter(i => i.kind==='premade').map(i=>i.product_id!).filter(Boolean);
   const quoteIds = items.filter(i => i.kind==='custom').map(i=>i.quote_request_id!).filter(Boolean);
+  const ticketQuoteIds = items.filter(i => i.kind==='ticket').map(i=>i.ticket_quote_id!).filter(Boolean);
 
   const { data: products } = useQuery<PremadeProduct[]>({
     queryKey: ['products_by_ids', productIds],
@@ -60,6 +61,15 @@ export default function CartPage() {
     },
   });
 
+  const { data: ticketQuotes } = useQuery<TicketQuote[]>({
+    queryKey: ['ticket_quotes', ticketQuoteIds],
+    enabled: ticketQuoteIds.length>0,
+    queryFn: async () => {
+      const { data } = await supabase().from('ticket_quotes').select('*').in('id', ticketQuoteIds);
+      return data || [];
+    },
+  });
+
   // Compute authoritative pricing from local estimate, same formula as server (for display only).
   const localTotal = useMemo(() => {
     let subtotal = 0;
@@ -78,10 +88,13 @@ export default function CartPage() {
       } else if (it.kind === 'custom') {
         const q = quotes?.find((x) => x.id === it.quote_request_id);
         if (q?.estimated_price != null) subtotal += q.estimated_price * it.quantity / Math.max(q.quantity||1,1);
+      } else if (it.kind === 'ticket') {
+        const q = ticketQuotes?.find((x) => x.id === it.ticket_quote_id);
+        if (q) subtotal += q.unit_price * q.quantity;
       }
     }
     return { subtotal: Math.round(subtotal*100)/100 };
-  }, [items, products, materials, quotes]);
+  }, [items, products, materials, quotes, ticketQuotes]);
 
   useEffect(() => {
     async function run() {
@@ -169,6 +182,23 @@ export default function CartPage() {
                 <div><p className="font-medium">A4 document printing</p><p className="text-sm text-slate-600">{it.pages} sides · {it.color} · {it.duplex ? 'Double-sided' : 'Single-sided'} · {it.quantity} copies</p></div>
                 <button onClick={() => removeItem(idx)} className="btn-outline">{t('cart:remove')}</button>
               </li>;
+            } else if (it.kind === 'ticket') {
+              const q = ticketQuotes?.find((x) => x.id === it.ticket_quote_id);
+              return (
+                <li key={idx} className="p-4 flex gap-4 items-center">
+                  <div className="h-16 w-16 bg-slate-100 rounded flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-medium">{t('cart:ticket_item')}</p>
+                    <p className="text-sm text-slate-600">
+                      {(it.options as any)?.description}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="number" min={1} max={99} value={it.quantity} readOnly className="w-16 input" />
+                    <button onClick={() => removeItem(idx)} aria-label={t('cart:remove')} className="text-slate-400 hover:text-red-600">✕</button>
+                  </div>
+                </li>
+              );
             } else {
               const q = quotes?.find((x) => x.id === it.quote_request_id);
               const m = materials?.find((x) => x.id === it.material_id);

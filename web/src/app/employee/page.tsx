@@ -73,7 +73,10 @@ export default function EmployeePortal() {
             {t(`common:status.${s}`)}
           </button>
         ))}
-        <Link href="#filament" className="ml-auto btn-outline text-sm">{t('employee:filament_stock')}</Link>
+        <div className="ml-auto flex gap-2">
+          <Link href="/employee/tickets" className="btn-outline text-sm">{t('employee:tickets')}</Link>
+          <Link href="#filament" className="btn-outline text-sm">{t('employee:filament_stock')}</Link>
+        </div>
       </div>
       <table className="mt-6 w-full text-sm">
         <thead className="text-left text-slate-500"><tr>

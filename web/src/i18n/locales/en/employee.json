@@ -11,5 +11,8 @@
   "download_model": "Download model",
   "customer": "Customer",
   "mark_shipped": "Mark shipped",
-  "tracking": "Tracking number"
+  "tracking": "Tracking number",
+  "tickets": "Quote tickets",
+  "back_to_portal": "Back to portal",
+  "no_location": "You are not assigned to a location yet."
 }
