@@ -17,6 +17,7 @@ docs/                Architecture & getting started
 ## Quick start (local)
 ```bash
 pnpm install
+cp .env.example .env       # optional: Google/Facebook/GitHub OAuth credentials for local Supabase
 supabase start && supabase db reset
 cd web
 NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321 \
@@ -34,7 +35,7 @@ pnpm dev
 See `docs/GETTING_STARTED.md` and `docs/ARCHITECTURE.md` for details.
 
 ## Roles & data flow
-Customer (anon or registered) browses catalog, gets instant quotes (client heuristic in a Web Worker), checks out via Stripe — **guest checkout works without an account** (contact name/email only); webhook creates the order atomically, snapshots prices (including any coupon discount), writes creator earnings, and credits reward points (1 point per US$1 spent, registered accounts only). Registered customers manage points and coupons on `/rewards` and claim promo offer codes on `/offers`; offer codes and point redemptions both issue single-use coupons, which can be applied in the cart/checkout. Staff manage own-location orders + filament stock. Admins manage everything chain-wide and approve community submissions (auto-publishing products with 85% creator revenue share).
+Customer (anon or registered) browses catalog, gets instant quotes (client heuristic in a Web Worker), checks out via Stripe — **guest checkout works without an account** (contact name/email only); webhook creates the order atomically, snapshots prices (including any coupon discount), writes creator earnings, and credits reward points (1 point per US$1 spent, registered accounts only). Customers can sign in with email/password, Google, Facebook, or GitHub, and link/unlink providers on `/account` (see `docs/GETTING_STARTED.md` §7). Registered customers manage points, referral codes, and coupons on `/rewards` and claim promo offer codes on `/offers`; offer codes and point redemptions both issue single-use coupons, which can be applied in the cart/checkout. Staff manage own-location orders + filament stock. Admins manage everything chain-wide and approve community submissions (auto-publishing products with 85% creator revenue share).
 
 ## Deployment
 - Frontend: GitHub Pages static export (`output: 'export'`, trailing slash, `.nojekyll`). See the [Pages deployment walkthrough](docs/GETTING_STARTED.md#7-deploy-the-frontend-to-github-pages) for required Actions configuration and how to publish.

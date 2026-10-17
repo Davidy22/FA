@@ -3,7 +3,7 @@
 
 create extension if not exists pgtap;
 
--- Plan count (including the legacy-prefix order-number regression test)
+-- Plan count
 select plan(18);
 
 -- RLS is enabled on key tables

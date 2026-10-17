@@ -6,5 +6,6 @@
   "custom_print": "自定义 3D 打印",
   "shipping": "MVP 阶段仅供门店取件",
   "pickup_location": "取件门店",
-  "item_total": "小计"
+  "item_total": "小计",
+  "pickup_only": "仅限门店取件"
 }

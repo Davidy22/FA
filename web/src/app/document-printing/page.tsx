@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import { PDFDocument } from 'pdf-lib';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -24,11 +23,21 @@ export default function DocumentPrintingPage() {
     }
     setReading(true);
     try {
+      // Loaded on demand: keeps pdf-lib out of the initial page bundle and gives
+      // a friendly message if the dependency is missing from an outdated install.
+      const { PDFDocument } = await import('pdf-lib');
       const pdf = await PDFDocument.load(await selected.arrayBuffer());
       const count = pdf.getPageCount();
       if (count < 1 || count > 500) throw new Error('PDF must have between 1 and 500 pages.');
       setPages(count); setFile(selected);
-    } catch { setError('Could not read this PDF. Please choose a valid, unencrypted PDF.'); }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '';
+      setError(
+        message === 'PDF must have between 1 and 500 pages.'
+          ? message
+          : 'Could not read this PDF. Please choose a valid, unencrypted PDF. If the PDF reader failed to load, run "pnpm install" and restart the app.'
+      );
+    }
     finally { setReading(false); }
   }
   async function submit(e: React.FormEvent) {

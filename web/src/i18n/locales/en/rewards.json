@@ -39,5 +39,18 @@
   "coupon_placeholder": "Coupon code",
   "coupon_apply": "Apply",
   "coupon_applied": "Coupon applied",
-  "coupon_remove": "Remove coupon"
+  "coupon_remove": "Remove coupon",
+  "referral_title": "Refer a friend",
+  "referral_desc": "Share your code with someone new. You get 10 points when they sign up and 50 more after their first purchase.",
+  "referral_my_code": "Your referral code",
+  "referral_copy": "Copy code",
+  "referral_copied": "Copied!",
+  "referral_copy_error": "Couldn't copy automatically. Select the code and copy it.",
+  "referral_signin_cta": "Sign in to get your referral code",
+  "referral_how_title": "How it works",
+  "referral_step_share": "Send your code to a friend.",
+  "referral_step_signup": "They enter it when creating an account.",
+  "referral_step_reward": "You earn 10 points at sign-up and 50 after their first order.",
+  "referral_terms": "Referral points are awarded once per new customer. Codes can only be claimed within 24 hours of sign-up.",
+  "referral_redirecting": "Referral details are now part of your rewards."
 }

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useCart } from '@/store/cart';
 import { useLocation } from '@/store/location';
 import { useLocale } from '@/store/locale';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { LocationSelector } from './LocationSelector';
 import { LocaleSwitcher } from './LocaleSwitcher';
@@ -16,23 +16,32 @@ export function Header() {
   const { items } = useCart();
   const { selectedLocationId } = useLocation();
   const setCartLocation = useCart((s) => s.setLocation);
+  const queryClient = useQueryClient();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [profile, setProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
     setCartLocation(selectedLocationId);
   }, [selectedLocationId, setCartLocation]);
 
-  useQuery({
+  const { data: profile } = useQuery<Profile | null>({
     queryKey: ['me'],
     queryFn: async () => {
       const { data: { user } } = await supabase().auth.getUser();
       if (!user) return null;
       const { data } = await supabase().from('profiles').select('*').eq('id', user.id).single();
-      setProfile(data);
-      return data;
+      return (data as Profile) ?? null;
     },
   });
+
+  // Keep the header in sync with email/password and OAuth sign-in/sign-out.
+  useEffect(() => {
+    const { data: { subscription } } = supabase().auth.onAuthStateChange(() => {
+      void queryClient.invalidateQueries({ queryKey: ['me'] });
+      void queryClient.invalidateQueries({ queryKey: ['me_account'] });
+      void queryClient.invalidateQueries({ queryKey: ['auth_user'] });
+    });
+    return () => subscription.unsubscribe();
+  }, [queryClient]);
 
   const itemCount = items.reduce((n, i) => n + i.quantity, 0);
 
@@ -46,6 +55,7 @@ export function Header() {
           <nav className="hidden lg:flex gap-4 text-sm">
             <Link href="/catalog" className="text-slate-700 hover:text-brand-700">{t('nav.catalog')}</Link>
             <Link href="/quote" className="text-slate-700 hover:text-brand-700">{t('nav.quote')}</Link>
+            <Link href="/document-printing" className="text-slate-700 hover:text-brand-700">{t('nav.document_printing')}</Link>
             <Link href="/rewards" className="text-slate-700 hover:text-brand-700">{t('nav.rewards')}</Link>
           </nav>
         </div>
@@ -77,7 +87,7 @@ export function Header() {
               )}
               <button
                 className="hidden lg:block text-slate-500 hover:text-red-600"
-                onClick={() => supabase().auth.signOut()}
+                onClick={() => void supabase().auth.signOut()}
               >{t('nav.logout')}</button>
             </div>
           ) : (
@@ -88,12 +98,12 @@ export function Header() {
         {menuOpen && <nav id="mobile-navigation" className="w-full flex flex-col gap-3 border-t pt-3 lg:hidden" onClick={() => setMenuOpen(false)}>
           <div className="flex flex-wrap gap-3"><LocationSelector /><LocaleSwitcher /></div>
           <Link href="/catalog">{t('nav.catalog')}</Link><Link href="/quote">{t('nav.quote')}</Link>
-          <Link href="/document-printing">Document printing</Link><Link href="/referrals">Referrals</Link>
+          <Link href="/document-printing">{t('nav.document_printing')}</Link>
           <Link href="/rewards">{t('nav.rewards')}</Link><Link href="/account">{t('nav.account')}</Link>
           {profile?.role !== 'customer' && profile && <Link href="/employee">{t('nav.employee_portal')}</Link>}
           {profile?.role === 'admin' && <Link href="/admin">{t('nav.admin')}</Link>}
           {profile?.is_creator && <Link href="/creator">{t('nav.creator_dashboard')}</Link>}
-          {profile && <button className="text-left" onClick={() => { supabase().auth.signOut(); setProfile(null); }}>{t('nav.logout')}</button>}
+          {profile && <button className="text-left" onClick={() => void supabase().auth.signOut()}>{t('nav.logout')}</button>}
         </nav>}
       </div>
     </header>

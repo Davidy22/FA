@@ -28,10 +28,10 @@ port = 54323
 api_url = "http://127.0.0.1"
 openapi_url = "http://127.0.0.1"
 
-[inbucket]
+# Local email testing server (Mailpit). The old [inbucket] section name is deprecated.
+[local_smtp]
 enabled = true
 port = 54324
-pop3_port = 54320
 
 [storage]
 enabled = true
@@ -40,9 +40,20 @@ file_size_limit = "52428800"
 [auth]
 enabled = true
 site_url = "http://localhost:3000"
-additional_redirect_urls = ["http://localhost:3000", "https://*.e2b.app"]
+# OAuth redirects return to /auth/callback/ (trailing slash because the web app uses static export).
+# Add your deployed origin here as well (for GitHub Pages, https://<user>.github.io/<repo>/**).
+additional_redirect_urls = [
+  "http://localhost:3000",
+  "http://localhost:3000/**",
+  "https://*.e2b.app",
+  "https://*.e2b.app/**",
+  "https://*.github.io",
+  "https://*.github.io/**"
+]
 jwt_expiry = 3600
 enable_signup = true
+# Required for "connect a sign-in method" on the account page (supabase.auth.linkIdentity).
+enable_manual_linking = true
 
 [auth.email]
 enable_signup = true
@@ -53,6 +64,13 @@ enable_confirmations = false
 enabled = false
 client_id = "env(SUPABASE_AUTH_GOOGLE_CLIENT_ID)"
 secret = "env(SUPABASE_AUTH_GOOGLE_SECRET)"
+redirect_uri = "http://localhost:54321/auth/v1/callback"
+skip_nonce_check = false
+
+[auth.external.facebook]
+enabled = false
+client_id = "env(SUPABASE_AUTH_FACEBOOK_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_FACEBOOK_SECRET)"
 redirect_uri = "http://localhost:54321/auth/v1/callback"
 
 [auth.external.github]
