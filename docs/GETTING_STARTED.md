@@ -2,8 +2,11 @@
 
 ## 1. Install
 ```
-pnpm install
+pnpm setup                 # one-shot install of every workspace dependency
+# (equivalent to: pnpm install)
 ```
+All runtime dependencies (including `pdf-lib` and `leaflet`) are declared in
+`web/package.json`, so a single install at the repository root is enough.
 
 ## 2. Start Supabase (requires Docker)
 ```
@@ -141,3 +144,9 @@ Sign-in providers appear on `/login`; connected methods are managed on `/account
 ## 10. Document printing
 - PDF page counts are read in the browser with `pdf-lib` (loaded on demand). If you see `Module not found: Can't resolve 'pdf-lib'`, run `pnpm install` at the repository root and restart the dev server.
 
+## 11. Quote tickets
+- `/quote` is a contact form (subject, message, up to 5 attachments) that opens a support/quote ticket. Sign-in is required so the thread persists.
+- Customers reply on `/tickets`; staff reply, quote a price, and resolve tickets from the Employee Portal → Quote tickets (`/employee/tickets`).
+- A staff quote has a description, unit price, and quantity, and is valid for 7 days. The customer accepts it from `/tickets`, which adds the quoted item to the cart (`kind: 'ticket'`).
+- Ticket prices are authoritative server-side: `price_cart` reads the `ticket_quotes` row (status must be `accepted`, unexpired, and the cart user must own the ticket). Fulfilling the order marks the quote `ordered` and links `order_items.ticket_quote_id`.
+- Attachments live in the private `ticket-uploads` storage bucket under `<user-id>/<ticket-id>/<file>`; downloads go through the `sign-file` Edge Function (owner, staff at the ticket's location, or admin).

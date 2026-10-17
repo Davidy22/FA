@@ -11,5 +11,8 @@
   "download_model": "下载模型",
   "customer": "客户",
   "mark_shipped": "标记为已发货",
-  "tracking": "物流单号"
+  "tracking": "物流单号",
+  "tickets": "报价工单",
+  "back_to_portal": "返回员工入口",
+  "no_location": "您尚未指派门店。"
 }

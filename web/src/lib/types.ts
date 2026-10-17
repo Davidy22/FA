@@ -154,6 +154,54 @@ export type QuoteRequest = {
   print_time_minutes: number | null;
 };
 
+export type Ticket = {
+  id: string;
+  user_id: string;
+  customer_name: string | null;
+  customer_email: string | null;
+  location_id: string | null;
+  subject: string;
+  status: 'open' | 'answered' | 'resolved';
+  created_at: string;
+  updated_at: string;
+};
+
+export type TicketMessage = {
+  id: string;
+  ticket_id: string;
+  author_id: string;
+  author_name: string | null;
+  author_role: 'customer' | 'employee' | 'manager' | 'admin';
+  body: string;
+  created_at: string;
+};
+
+export type TicketAttachment = {
+  id: string;
+  ticket_id: string;
+  file_path: string;
+  original_filename: string;
+  file_size: number | null;
+  uploaded_by: string;
+  created_at: string;
+};
+
+export type TicketQuote = {
+  id: string;
+  ticket_id: string;
+  staff_id: string;
+  staff_name: string | null;
+  description: string;
+  unit_price: number;
+  quantity: number;
+  status: 'pending' | 'accepted' | 'rejected' | 'expired' | 'ordered';
+  expires_at: string;
+  order_id: string | null;
+  created_at: string;
+  updated_at: string;
+  staff?: { display_name: string | null };
+};
+
 export type Order = {
   id: string;
   order_number: string;
@@ -186,13 +234,14 @@ export type ModelSubmission = {
 };
 
 export type CartLineInput = {
-  kind: 'premade' | 'custom' | 'document';
+  kind: 'premade' | 'custom' | 'document' | 'ticket';
   pages?: number;
   color?: 'grayscale' | 'color';
   duplex?: boolean;
   file_path?: string;
   product_id?: string;
   quote_request_id?: string;
+  ticket_quote_id?: string;
   material_id?: string | null;
   color_filament_id?: string | null;
   quantity: number;

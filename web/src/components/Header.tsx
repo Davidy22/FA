@@ -57,6 +57,7 @@ export function Header() {
             <Link href="/quote" className="text-slate-700 hover:text-brand-700">{t('nav.quote')}</Link>
             <Link href="/document-printing" className="text-slate-700 hover:text-brand-700">{t('nav.document_printing')}</Link>
             <Link href="/rewards" className="text-slate-700 hover:text-brand-700">{t('nav.rewards')}</Link>
+            {profile && <Link href="/tickets" className="text-slate-700 hover:text-brand-700">{t('nav.tickets')}</Link>}
           </nav>
         </div>
         <div className="flex items-center gap-2 min-w-0">
@@ -100,6 +101,7 @@ export function Header() {
           <Link href="/catalog">{t('nav.catalog')}</Link><Link href="/quote">{t('nav.quote')}</Link>
           <Link href="/document-printing">{t('nav.document_printing')}</Link>
           <Link href="/rewards">{t('nav.rewards')}</Link><Link href="/account">{t('nav.account')}</Link>
+          {profile && <Link href="/tickets">{t('nav.tickets')}</Link>}
           {profile?.role !== 'customer' && profile && <Link href="/employee">{t('nav.employee_portal')}</Link>}
           {profile?.role === 'admin' && <Link href="/admin">{t('nav.admin')}</Link>}
           {profile?.is_creator && <Link href="/creator">{t('nav.creator_dashboard')}</Link>}
