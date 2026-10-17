@@ -125,7 +125,6 @@ export default function AccountPage() {
         {t('rewards:balance_label')}: <strong>{t('rewards:points', { count: profile?.points_balance ?? 0 })}</strong>
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
-        <Link href="/rewards#referrals" className="btn-outline inline-block">{t('rewards:referral_my_code')}</Link>
         <Link href="/rewards" className="btn-outline inline-block">{t('nav.rewards')}</Link>
         <Link href="/offers" className="btn-outline inline-block">{t('rewards:offers_promo_cta')}</Link>
         {profile?.is_creator && <Link href="/creator" className="btn-outline inline-block">{t('nav.creator_dashboard')}</Link>}

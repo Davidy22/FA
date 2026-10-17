@@ -31,11 +31,7 @@ insert into public.materials(id, slug, name, adjective, density_g_cm3, default_f
  ('11111111-1111-1111-1111-000000000004','tpu',
   '{"en":"TPU","zh-Hant":"TPU","zh-Hans":"TPU"}'::jsonb,
   '{"en":"Flexible and rubber-like","zh-Hant":"柔韌有彈性","zh-Hans":"柔韧有弹性"}'::jsonb,
-  1.21, 3.5, true, 40),
- ('11111111-1111-1111-1111-000000000005','resin',
-  '{"en":"Resin","zh-Hant":"樹脂","zh-Hans":"树脂"}'::jsonb,
-  '{"en":"Ultra-fine detail","zh-Hant":"超高細節","zh-Hans":"超高细节"}'::jsonb,
-  1.10, 5.0, true, 50)
+  1.21, 3.5, true, 40)
 on conflict (id) do nothing;
 
 -- 12 Filaments

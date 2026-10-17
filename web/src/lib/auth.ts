@@ -1,11 +1,10 @@
 /** Shared helpers for OAuth sign-in, account linking, and the static-export callback route. */
 
-export type SocialProviderId = 'google' | 'facebook' | 'github';
+export type SocialProviderId = 'google' | 'facebook';
 
 export const SOCIAL_PROVIDERS: ReadonlyArray<{ id: SocialProviderId; label: string }> = [
   { id: 'google', label: 'Google' },
-  { id: 'facebook', label: 'Facebook' },
-  { id: 'github', label: 'GitHub' },
+  { id: 'facebook', label: 'Facebook' }
 ];
 
 export const PENDING_REFERRAL_KEY = 'ma.pending_referral';

@@ -48,7 +48,8 @@ additional_redirect_urls = [
   "https://*.e2b.app",
   "https://*.e2b.app/**",
   "https://*.github.io",
-  "https://*.github.io/**"
+  "https://*.github.io/**",
+  "https://davidy22.github.io/FA/**"
 ]
 jwt_expiry = 3600
 enable_signup = true

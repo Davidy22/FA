@@ -62,7 +62,7 @@ export default function DocumentPrintingPage() {
       <p aria-live="polite" className="text-sm text-slate-600">{reading ? 'Reading PDF…' : pages === null ? 'Select a PDF to see its page count.' : `${pages} printed ${pages === 1 ? 'side' : 'sides'} per copy, read from your PDF.`}</p>
       <label className="label">Copies<input className="input mt-1" type="number" min="1" max="99" required value={copies} onChange={e => setCopies(Number(e.target.value))} /></label>
       <label className="label">Ink<select className="input mt-1" value={color} onChange={e => setColor(e.target.value as 'grayscale' | 'color')}><option value="grayscale">Grayscale · $0.50/side</option><option value="color">Color · $1/side</option></select></label>
-      <label className="flex items-center gap-2"><input type="checkbox" checked={duplex} onChange={e => setDuplex(e.target.checked)} /> Double-sided (when possible)</label>
+      <label className="flex items-center gap-2"><input type="checkbox" checked={duplex} onChange={e => setDuplex(e.target.checked)} /> Double-sided</label>
       <p className="font-semibold">Printing subtotal: ${((pages ?? 0) * copies * (color === 'color' ? 1 : .5)).toFixed(2)} (before tax and minimum order fee)</p>
       {error && <p role="alert" className="text-red-700">{error} <Link className="underline" href="/login">Sign in</Link></p>}
       <button className="btn" disabled={busy || reading || pages === null}>{busy ? 'Uploading…' : 'Add to cart'}</button>
