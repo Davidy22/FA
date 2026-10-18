@@ -27,6 +27,7 @@ pnpm dev
 
 ## Scripts
 - `pnpm test` — Vitest unit tests (pricing golden, format material, slug, i18n helpers)
+- `pnpm test:db` — embedded Postgres migration/admin/checkout smoke tests (no Docker)
 - `pnpm i18n:check` — en/zh-Hant/zh-Hans key parity
 - `supabase test db` — pgTAP RLS/RPC tests
 - `pnpm build` — static export to `web/out`
@@ -36,6 +37,19 @@ See `docs/GETTING_STARTED.md` and `docs/ARCHITECTURE.md` for details.
 
 ## Roles & data flow
 Customer (anon or registered) browses catalog, gets instant quotes (client heuristic in a Web Worker), checks out via Stripe — **guest checkout works without an account** (contact name/email only); webhook creates the order atomically, snapshots prices (including any coupon discount), writes creator earnings, and credits reward points (1 point per US$1 spent, registered accounts only). Customers can sign in with email/password, Google, Facebook, or GitHub, and link/unlink providers on `/account` (see `docs/GETTING_STARTED.md` §7). Registered customers manage points, referral codes, and coupons on `/rewards` and claim promo offer codes on `/offers`; offer codes and point redemptions both issue single-use coupons, which can be applied in the cart/checkout. Staff manage own-location orders + filament stock. Admins manage everything chain-wide and approve community submissions (auto-publishing products with 85% creator revenue share).
+
+## Local test accounts
+`supabase db reset` applies `supabase/seed.sql` **after** migrations, so these local-only email/password accounts are ready to sign in at `/login` on every reset:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin | `admin@example.test` | `LocalTest123!` |
+| Employee (Taipei) | `employee@example.test` | `LocalTest123!` |
+| Customer | `customer@example.test` | `LocalTest123!` |
+
+These are public demo credentials: **never use them on a hosted database**. `supabase db push` does not run `seed.sql`. For a hosted project's first admin, use the verified-email `ADMIN_BOOTSTRAP_EMAIL` flow instead; see [Getting Started §5](docs/GETTING_STARTED.md#5-first-admin-account-and-staff). Existing admins can manage accounts and invite staff from **Users** without editing tables.
+
+The admin console provides forms for locations (including map coordinates and rates), materials and filaments, stock by location, products and options, submissions, orders, tickets, users, payouts, offers/coupons, and platform pricing. The header's location name links to the existing searchable location picker at `/locations` rather than changing locations via a dropdown.
 
 ## Deployment
 - Frontend: GitHub Pages static export (`output: 'export'`, trailing slash, `.nojekyll`). See the [Pages deployment walkthrough](docs/GETTING_STARTED.md#7-deploy-the-frontend-to-github-pages) for required Actions configuration and how to publish.

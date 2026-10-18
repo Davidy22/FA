@@ -200,14 +200,15 @@ select ok(
   'reward ledger records the order earn'
 );
 
--- (15) a consumed coupon cannot be reused
-select throws_ok(
-  $$select public.create_order_from_cart('rw-cs-bob',
+-- (15) webhook retries return the same order without charging/crediting twice.
+select ok(
+  (select o.id = (select id from public.orders where stripe_session_id = 'rw-cs-bob')
+       and (select count(*) from public.orders where stripe_session_id = 'rw-cs-bob') = 1
+     from public.create_order_from_cart('rw-cs-bob',
        'bbbbbbbb-0000-0000-0000-0000000000f2',
        '00000000-0000-0000-0000-000000000001',
-       'rw.bob@example.com', 'Bob', 'en')$$,
-  'P0001', 'Coupon already used',
-  'a consumed coupon cannot be reused'
+       'rw.bob@example.com', 'Bob', 'en') o),
+  'fulfilment is idempotent even after the coupon was consumed'
 );
 
 -- (16) not enough points to redeem yet (balance 13 < 100)

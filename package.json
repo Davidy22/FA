@@ -10,10 +10,14 @@
     "lint": "pnpm --filter ./web lint",
     "typecheck": "pnpm --filter ./web typecheck",
     "test": "pnpm --filter ./web test",
+    "test:db": "node scripts/db-smoke-test.mjs",
     "test:e2e": "pnpm --filter ./web test:e2e",
     "i18n:check": "node scripts/i18n-check.mjs"
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.10"
   }
 }

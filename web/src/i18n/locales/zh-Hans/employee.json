@@ -14,5 +14,17 @@
   "tracking": "物流单号",
   "tickets": "报价工单",
   "back_to_portal": "返回员工入口",
-  "no_location": "您尚未指派门店。"
+  "no_location": "您尚未指派门店。",
+  "admin_all_locations": "管理员可在管理后台管理所有门店。",
+  "download_document": "下载文件",
+  "download_option": "下载选项文件",
+  "download_failed": "无法打开文件。",
+  "view_ticket": "查看工单",
+  "order_not_found": "找不到订单，或您无权查看。",
+  "status": "状态",
+  "items": "项目",
+  "premade": "商品",
+  "document": "文件打印",
+  "custom": "自定义打印",
+  "internal_notes": "内部备注"
 }

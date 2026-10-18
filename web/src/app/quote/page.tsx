@@ -28,6 +28,7 @@ export default function QuotePage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [user, setUser] = useState<{ id: string; email: string | null } | null>(null);
+  const [userLoading, setUserLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
@@ -46,12 +47,14 @@ export default function QuotePage() {
 
   useEffect(() => {
     void (async () => {
-      const { data: { user: u } } = await supabase().auth.getUser();
-      if (!u) return;
-      setUser({ id: u.id, email: u.email ?? null });
-      const { data: p } = await supabase()
-        .from('profiles').select('display_name, email').eq('id', u.id).single();
-      if (p) setProfile(p as Profile);
+      try {
+        const { data: { user: u } } = await supabase().auth.getUser();
+        if (!u) return;
+        setUser({ id: u.id, email: u.email ?? null });
+        const { data: p } = await supabase()
+          .from('profiles').select('display_name, email').eq('id', u.id).single();
+        if (p) setProfile(p as Profile);
+      } finally { setUserLoading(false); }
     })();
   }, []);
 
@@ -128,70 +131,12 @@ export default function QuotePage() {
     }
   }
 
-  async function addToCart() {
-    if (!parsed || !quote || !material || !filament || !location) return;
-    // Upload model to storage
-    const userResp = await supabase().auth.getUser();
-    const uid = userResp.data.user?.id || 'anon';
-    const filePath = `${uid}/${Date.now()}-${file?.name || 'model'}`;
-    const ab = await file!.arrayBuffer();
-    const { error: upErr } = await supabase().storage.from('models').upload(filePath, ab, {
-      contentType: file!.type || 'application/octet-stream',
-    });
-    if (upErr) { setError(upErr.message); return; }
 
-    const { data: uploaded, error: insErr } = await supabase().from('uploaded_models').insert({
-      user_id: userResp.data.user?.id || null,
-      file_path: filePath,
-      original_filename: file!.name,
-      model_sha256: parsed.sha256,
-      volume_cm3: parsed.metrics.volume_cm3,
-      surface_cm2: parsed.metrics.surface_cm2,
-      bbox: parsed.metrics.bbox,
-      triangle_count: parsed.metrics.triangle_count,
-    }).select().single();
-    if (insErr) { setError(insErr.message); return; }
-
-    // Call verify-model edge function (server-side re-parse, anti-tamper).
-    const { data: verify, error: vErr } = await supabase().functions.invoke('verify-model', {
-      body: { uploaded_model_id: uploaded.id },
-    });
-    if (vErr) { setError(vErr.message); return; }
-
-    const { data: qr, error: qErr } = await supabase().from('quote_requests').insert({
-      user_id: userResp.data.user?.id || null,
-      uploaded_model_id: uploaded.id,
-      material_id: material.id,
-      filament_id: filament.id,
-      infill_percent: infill,
-      layer_height: layerHeight,
-      quantity,
-      engine: 'heuristic',
-      status: 'complete',
-      estimated_price: quote.unit_price * quantity,
-      price_breakdown: {
-        material_cost: quote.material_cost,
-        machine_cost: quote.machine_cost,
-        handling_fee: quote.handling_fee,
-        grams: quote.grams,
-        print_time_min: quote.print_time_minutes,
-      },
-      material_usage_grams: quote.grams,
-      print_time_minutes: quote.print_time_minutes,
-    }).select().single();
-    if (qErr) { setError(qErr.message); return; }
-
-    setCartLocation(locationId);
-    addItem({
-      kind: 'custom',
-      quote_request_id: qr.id,
-      material_id: material.id,
-      color_filament_id: filament.id,
-      quantity,
-      options: { infill, layer_height: layerHeight, filename: file!.name },
-    });
-    router.push('/cart');
-  }
+  if (userLoading) return <div className="container-ma py-10">{t('common:loading')}</div>;
+  if (!user) return <div className="container-ma py-10">
+    <p>{t('quote:signin_needed')}</p>
+    <Link href="/login" className="btn mt-4">{t('common:nav.login')}</Link>
+  </div>;
 
   return (
     <div className="container-ma py-10 max-w-2xl">

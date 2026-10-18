@@ -1,89 +1,86 @@
 'use client';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
-import { useTranslation } from 'react-i18next';
-import { t_db } from '@/lib/format';
-import { useLocale } from '@/store/locale';
 import { useState } from 'react';
-import type { ModelSubmission, Profile } from '@/lib/types';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import { supabase } from '@/lib/supabase';
+import type { Profile } from '@/lib/types';
+import { AdminSubmissions } from '@/components/admin/Submissions';
+import { AdminLocations } from '@/components/admin/Locations';
+import { AdminMaterials } from '@/components/admin/Materials';
+import { AdminProducts } from '@/components/admin/Products';
+import { AdminOrders } from '@/components/admin/Orders';
+import { AdminTickets } from '@/components/admin/Tickets';
+import { AdminUsers } from '@/components/admin/Users';
+import { AdminPayouts } from '@/components/admin/Payouts';
+import { AdminOffers } from '@/components/admin/Offers';
+import { AdminSettings } from '@/components/admin/Settings';
+import { AdminFeedback, useAdminAction } from '@/components/admin/Shared';
+
+const TABS = [
+  'submissions', 'locations', 'materials_filaments', 'products', 'orders',
+  'tickets', 'users', 'payouts', 'offers', 'settings',
+] as const;
+type AdminTab = typeof TABS[number];
 
 export default function AdminPage() {
-  const { t } = useTranslation(['common','admin','creator']);
-  const locale = useLocale((s) => s.locale);
-  const [tab, setTab] = useState<'submissions'|'products'|'users'|'payouts'|'settings'>('submissions');
-
-  const { data: profile } = useQuery<Profile|null>({
-    queryKey: ['me_admin'],
+  const { t } = useTranslation(['common', 'admin']);
+  const queryClient = useQueryClient();
+  const activation = useAdminAction();
+  const [tab, setTab] = useState<AdminTab>('submissions');
+  const { data: profile, isPending, error } = useQuery<Profile | null>({
+    queryKey: ['me'],
     queryFn: async () => {
-      const { data: { user } } = await supabase().auth.getUser();
+      const { data: { user }, error: authError } = await supabase().auth.getUser();
+      if (authError) throw authError;
       if (!user) return null;
-      return (await supabase().from('profiles').select('*').eq('id', user.id).single()).data as Profile;
+      const { data, error: profileError } = await supabase().from('profiles').select('*').eq('id', user.id).single();
+      if (profileError) throw profileError;
+      return data as Profile;
     },
   });
 
-  const { data: submissions, refetch } = useQuery<ModelSubmission[]>({
-    queryKey: ['submissions_queue'],
-    enabled: profile?.role === 'admin',
-    queryFn: async () => (await supabase().from('model_submissions')
-      .select('*').in('status', ['pending_review','changes_requested']).order('submitted_at')).data || [],
-  });
-
-  async function decide(id: string, action: 'approve'|'reject'|'changes_requested', notes='') {
-    const { error } = await supabase().functions.invoke('submissions-decide', {
-      body: { action, submission_id: id, notes }
-    });
-    if (!error) refetch();
-    else alert(error.message);
-  }
-
-  if (!profile || profile.role !== 'admin') {
-    return <div className="container-ma py-10">Admin only.</div>;
+  if (isPending) return <div className="container-ma py-10">{t('common:loading')}</div>;
+  if (error) return <div className="container-ma py-10 text-red-700" role="alert">{error.message}</div>;
+  if (profile?.role !== 'admin' || !profile.is_active) {
+    return <div className="container-ma py-10">
+      <p>{t('admin:admin_only')}</p>
+      {profile?.is_active && <>
+        <p className="mt-4 max-w-xl text-sm text-slate-600">{t('admin:bootstrap_hint')}</p>
+        <button type="button" className="btn mt-3" disabled={activation.busy} onClick={() => void activation.run(async () => {
+          const { data, error } = await supabase().functions.invoke('bootstrap-admin');
+          if (error) throw error;
+          if (data?.error) throw new Error(data.error);
+          await queryClient.invalidateQueries({ queryKey: ['me'] });
+        })}>{activation.busy ? t('common:loading') : t('admin:bootstrap_action')}</button>
+        <AdminFeedback error={activation.error} notice={activation.notice} />
+      </>}
+    </div>;
   }
 
   return (
     <div className="container-ma py-10">
       <h1 className="text-2xl font-semibold">{t('admin:title')}</h1>
-      <div className="mt-4 flex gap-2 flex-wrap">
-        {(['submissions','products','users','payouts','settings'] as const).map(k => (
-          <button key={k} onClick={()=>setTab(k)}
-            className={'px-3 py-1 rounded-full text-sm ' + (tab===k?'bg-brand-600 text-white':'bg-slate-100')}>
-            {t(`admin:${k}`)}
+      <nav className="mt-5 flex flex-wrap gap-2" aria-label={t('admin:title')}>
+        {TABS.map((key) => (
+          <button key={key} type="button" onClick={() => setTab(key)} aria-current={tab === key ? 'page' : undefined}
+            className={'rounded-full px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 ' +
+              (tab === key ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-800 hover:bg-slate-200')}>
+            {t(`admin:${key}`)}
           </button>
         ))}
-      </div>
-
-      {tab === 'submissions' && (
-        <div className="mt-6 space-y-3">
-          {(submissions||[]).map((s) => (
-            <div key={s.id} className="rounded border p-4 flex items-start justify-between gap-3">
-              <div>
-                <p className="font-semibold">{t_db(s.title, locale)}</p>
-                <p className="text-sm text-slate-600">{t(`creator:status.${s.status}`)} — {s.category}</p>
-                {s.review_notes && <p className="text-sm mt-1">Note: {s.review_notes}</p>}
-              </div>
-              <div className="flex gap-2">
-                <button className="btn" onClick={()=>decide(s.id,'approve')}>{t('admin:approve')}</button>
-                <button className="btn-outline" onClick={()=>decide(s.id,'changes_requested', prompt('Notes')||'')}>{t('admin:request_changes')}</button>
-                <button className="btn-outline text-red-700" onClick={()=>decide(s.id,'reject', prompt('Reason')||'')}>{t('admin:reject')}</button>
-              </div>
-            </div>
-          ))}
-          {(submissions||[]).length === 0 && <p className="text-slate-500">Nothing in queue.</p>}
-        </div>
-      )}
-
-      {tab === 'products' && (
-        <p className="mt-6 text-slate-600">Product editor (CRUD): coming soon in this MVP. Use Supabase Studio or SQL for now.</p>
-      )}
-      {tab === 'users' && (
-        <p className="mt-6 text-slate-600">User management UI: coming soon. Use create-staff Edge Function to invite staff.</p>
-      )}
-      {tab === 'payouts' && (
-        <p className="mt-6 text-slate-600">Payouts queue: admin marks manual payouts as paid (SQL).</p>
-      )}
-      {tab === 'settings' && (
-        <p className="mt-6 text-slate-600">Platform settings are managed via the platform_settings table.</p>
-      )}
+      </nav>
+      <section className="mt-7 min-w-0" aria-label={t(`admin:${tab}`)}>
+        {tab === 'submissions' && <AdminSubmissions />}
+        {tab === 'locations' && <AdminLocations />}
+        {tab === 'materials_filaments' && <AdminMaterials />}
+        {tab === 'products' && <AdminProducts />}
+        {tab === 'orders' && <AdminOrders />}
+        {tab === 'tickets' && <AdminTickets />}
+        {tab === 'users' && <AdminUsers currentUserId={profile.id} />}
+        {tab === 'payouts' && <AdminPayouts />}
+        {tab === 'offers' && <AdminOffers />}
+        {tab === 'settings' && <AdminSettings />}
+      </section>
     </div>
   );
 }

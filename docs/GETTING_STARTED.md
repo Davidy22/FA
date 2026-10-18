@@ -25,14 +25,31 @@ pnpm dev
 ## 4. Run tests
 ```
 pnpm test                       # Vitest (pricing, i18n helpers, formatters)
-supabase test db                # pgTAP (RLS matrix, helpers)
+pnpm test:db                    # embedded PostgreSQL migrations/admin/checkout smoke tests; no Docker
+supabase test db                # pgTAP (full Supabase/RLS matrix; requires Docker)
 node scripts/i18n-check.mjs     # locale key parity
 pnpm test:e2e                   # Playwright smoke
 ```
 
-## 5. Seed users (local)
-The Supabase `seed.sql` migration inserts materials, filaments, locations and products, but not auth users.
-Create admin/staff users via the dashboard or `create-staff` Edge Function.
+## 5. First admin account and staff
+### Local accounts, automatically restored by reset
+`supabase db reset` applies the catalog migrations, then `supabase/seed.sql`. The seed creates confirmed email/password accounts (including their Auth identities and profiles), with the employee assigned to the seeded Taipei location. Sign in at `/login` with:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin | `admin@example.test` | `LocalTest123!` |
+| Employee | `employee@example.test` | `LocalTest123!` |
+| Customer | `customer@example.test` | `LocalTest123!` |
+
+The seed can be rerun locally without duplicate accounts. Use `supabase db reset --no-seed` to opt out. **These published credentials are only for disposable local development databases:** never use this seed or these passwords on staging/production, and do not commit real credentials. `supabase db push` applies migrations but does **not** run `seed.sql`.
+
+### First admin on a hosted project (without demo passwords)
+1. Deploy database migrations and Edge Functions (`supabase db push` and `supabase functions deploy`). Do not expose your Supabase service-role key to the web app.
+2. Configure the **Edge Function secret** `ADMIN_BOOTSTRAP_EMAIL` with the exact email address that will own the first admin account: `supabase secrets set ADMIN_BOOTSTRAP_EMAIL=your-test-email@example.com`. If testing this flow locally without the seeded accounts, put it in the ignored `supabase/functions/.env` before starting/serving functions. This value is server-side only.
+3. Register that email at `/login` and confirm it if email confirmation is enabled. Sign in, open `/admin`, and select **Activate initial admin account**. Only a verified session for the configured address succeeds, and the operation is disabled once any active admin exists.
+4. Thereafter, use `/admin` → **Users** to promote existing accounts, assign staff to a location, disable/re-enable users, or invite new staff. Leave the invitation password blank for an email invite; if using a temporary password, communicate it securely.
+
+The admin console also manages locations and their map coordinates, available materials/filaments and location stock, product listings/options, review decisions, orders, tickets, payouts, offers/coupons and platform settings. The header's location control is a **link** to `/locations`, the existing searchable/map picker. Changing the location for a customer does not require any admin permission.
 
 ## 6. Rewards & coupons (local)
 - Points settings live in `platform_settings`: `rewards.points_per_dollar`, `rewards.redeem_options`, `rewards.coupon_days_valid`.
@@ -138,7 +155,7 @@ variable(s) in the selected build environment and start a new run. If it stops a
 Sign-in providers appear on `/login`; connected methods are managed on `/account`. If a provider is not enabled, the page shows a setup hint instead of failing silently.
 
 ## 9. Location map
-- The map pins use `locations.lat` / `locations.lng` and OpenStreetMap tiles (no API key). Set coordinates in Supabase Studio; locations without coordinates still appear in the searchable list.
+- The map pins use `locations.lat` / `locations.lng` and OpenStreetMap tiles (no API key). Set coordinates from `/admin` → **Locations**; locations without coordinates still appear in the searchable list.
 - With zero or one active location the picker, prompt, and map are hidden automatically; the only location is selected for the user.
 
 ## 10. Document printing

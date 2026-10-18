@@ -10,5 +10,11 @@
   "designer": "Designer",
   "select_color": "Select a color",
   "select_material": "Select a material",
-  "base_price": "Base price"
+  "base_price": "Base price",
+  "file_invalid": "Choose an allowed file within the size limit.",
+  "file_sign_in": "Sign in before uploading a product option file.",
+  "file_hint": "Accepted: {{types}}; up to {{size}} MB.",
+  "added_to_cart": "Added to cart.",
+  "product_unavailable": "This product is no longer available.",
+  "product_load_error": "Could not load product options"
 }

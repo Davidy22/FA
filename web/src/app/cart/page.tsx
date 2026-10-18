@@ -9,6 +9,7 @@ import { formatMoney, t_db, formatMaterial } from '@/lib/format';
 import { useLocation } from '@/store/location';
 import { useMemo, useState, useEffect } from 'react';
 import type { Filament, Material, PremadeProduct, QuoteRequest, TicketQuote } from '@/lib/types';
+import { DEFAULT_DOCUMENT_PRICES, useDocumentPrices } from '@/hooks/useDocumentPrices';
 
 export default function CartPage() {
   const { t } = useTranslation(['common','cart','quote','errors','rewards']);
@@ -20,6 +21,7 @@ export default function CartPage() {
   const [couponInput, setCouponInput] = useState('');
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponBusy, setCouponBusy] = useState(false);
+  const { data: documentPrices } = useDocumentPrices();
 
   const productIds = items.filter(i => i.kind==='premade').map(i=>i.product_id!).filter(Boolean);
   const quoteIds = items.filter(i => i.kind==='custom').map(i=>i.quote_request_id!).filter(Boolean);
@@ -84,7 +86,7 @@ export default function CartPage() {
           subtotal += price * it.quantity;
         }
       } else if (it.kind === 'document') {
-        subtotal += (it.pages || 0) * (it.color === 'color' ? 1 : .5) * it.quantity;
+        subtotal += (it.pages || 0) * (documentPrices || DEFAULT_DOCUMENT_PRICES)[it.color || 'grayscale'] * it.quantity;
       } else if (it.kind === 'custom') {
         const q = quotes?.find((x) => x.id === it.quote_request_id);
         if (q?.estimated_price != null) subtotal += q.estimated_price * it.quantity / Math.max(q.quantity||1,1);
@@ -94,7 +96,7 @@ export default function CartPage() {
       }
     }
     return { subtotal: Math.round(subtotal*100)/100 };
-  }, [items, products, materials, quotes, ticketQuotes]);
+  }, [items, products, materials, quotes, ticketQuotes, documentPrices]);
 
   useEffect(() => {
     async function run() {

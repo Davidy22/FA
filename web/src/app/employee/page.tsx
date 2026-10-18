@@ -1,5 +1,5 @@
 'use client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from '@/store/locale';
@@ -12,15 +12,17 @@ export default function EmployeePortal() {
   const { t } = useTranslation(['common','employee']);
   const locale = useLocale((s) => s.locale);
   const [statusFilter, setStatusFilter] = useState<string>('pending');
-  const { data: profile } = useQuery<Profile|null>({
-    queryKey: ['me_emp'],
+  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const { data: profile, isPending: profileLoading } = useQuery<Profile|null>({
+    queryKey: ['me'],
     queryFn: async () => {
       const { data: { user } } = await supabase().auth.getUser();
       if (!user) return null;
       return (await supabase().from('profiles').select('*').eq('id', user.id).single()).data as Profile;
     },
   });
-  const { data: orders, refetch } = useQuery<Order[]>({
+  const { data: orders } = useQuery<Order[]>({
     queryKey: ['emp_orders', statusFilter, profile?.location_id],
     enabled: !!profile?.location_id,
     queryFn: async () => {
@@ -50,22 +52,41 @@ export default function EmployeePortal() {
     const { error } = await supabase().from('location_filaments').upsert(
       { location_id: loc, filament_id, in_stock: next }, { onConflict: 'location_id,filament_id' }
     );
-    if (!error) refetch();
+    if (error) setError(error.message);
+    else {
+      setError(null);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['emp_filaments'] }),
+        queryClient.invalidateQueries({ queryKey: ['available_filaments'] }),
+      ]);
+    }
   }
 
   async function updateStatus(id: string, status: string, tracking?: string) {
-    // @ts-ignore
-    const { error } = await supabase().from('orders').update({ status, tracking_number: tracking }).eq('id', id);
-    if (!error) refetch();
+    const { error } = await supabase().from('orders').update({ status, tracking_number: tracking || null }).eq('id', id).select().single();
+    if (error) setError(error.message);
+    else {
+      setError(null);
+      await queryClient.invalidateQueries({ queryKey: ['emp_orders'] });
+    }
   }
 
-  if (!profile || !['employee','manager','admin'].includes(profile.role)) {
+  if (profileLoading) return <div className="container-ma py-10">{t('common:loading')}</div>;
+  if (!profile || !profile.is_active || !['employee','manager','admin'].includes(profile.role)) {
     return <div className="container-ma py-10">Access denied.</div>;
+  }
+  if (profile.role === 'admin' && !profile.location_id) {
+    return <div className="container-ma py-10"><h1 className="text-2xl font-semibold">{t('employee:title')}</h1>
+      <p className="mt-3 text-slate-600">{t('employee:admin_all_locations')}</p>
+      <div className="mt-4 flex gap-2"><Link className="btn" href="/admin">{t('common:nav.admin')}</Link>
+        <Link className="btn-outline" href="/employee/tickets">{t('employee:tickets')}</Link></div>
+    </div>;
   }
 
   return (
     <div className="container-ma py-10">
       <h1 className="text-2xl font-semibold">{t('employee:title')}</h1>
+      {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}
       <div className="mt-4 flex gap-2 items-center flex-wrap">
         {['pending','printing','completed','shipped','cancelled'].map(s => (
           <button key={s} onClick={()=>setStatusFilter(s)}

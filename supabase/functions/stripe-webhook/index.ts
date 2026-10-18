@@ -44,8 +44,9 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    await sb.from('stripe_events').insert({ id: event.id, payload: event as unknown as Record<string, unknown> });
-
+    // Record the event only after fulfillment succeeds. A failed database write
+    // must be retried by Stripe rather than treated as a completed duplicate.
+    let confirmation: { email: string; locale: string; orderNumber: string; total: number } | null = null;
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
       const sessionId = session.id;
@@ -73,23 +74,35 @@ serve(async (req) => {
       });
       if (rErr) throw new Error(`create_order_from_cart: ${rErr.message}`);
 
-      // Send confirmation email (best effort)
-      if (RESEND_KEY && contactEmail) {
-        const orderNum = (order as unknown as { order_number: string }).order_number;
-        const total = (order as unknown as { total_amount: number }).total_amount;
-        await fetch('https://api.resend.com/emails', {
+      if (contactEmail) confirmation = {
+        email: contactEmail, locale,
+        orderNumber: (order as { order_number: string }).order_number,
+        total: Number((order as { total_amount: number }).total_amount),
+      };
+    }
+
+    const { error: eventError } = await sb.from('stripe_events').insert({
+      id: event.id, payload: event as unknown as Record<string, unknown>,
+    });
+    if (eventError && eventError.code !== '23505') throw eventError;
+    if (!eventError && RESEND_KEY && confirmation) {
+      // Email is best-effort, after the durable event record, so a retry does
+      // not send a second confirmation for an already-fulfilled payment.
+      const { email, locale, orderNumber, total } = confirmation;
+      try {
+        const result = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             from: 'Make Anyth.ing <no-reply@makeanyth.ing>',
-            to: [contactEmail],
+            to: [email],
             subject: LOCALIZED_SUBJECT[locale] ?? LOCALIZED_SUBJECT.en,
-            html: `<p>${orderNum}</p><p>Total: US$${total.toFixed(2)}</p>`,
+            html: `<p>${orderNumber}</p><p>Total: US$${total.toFixed(2)}</p>`,
           }),
-        }).catch((e) => console.warn('Resend send failed', e));
-      }
+        });
+        if (!result.ok) console.warn('Resend send failed', result.status);
+      } catch (error) { console.warn('Resend send failed', error); }
     }
-
     return new Response(JSON.stringify({ received: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

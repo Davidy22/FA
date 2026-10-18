@@ -8,8 +8,9 @@ import { useLocation } from '@/store/location';
 import { useCart } from '@/store/cart';
 import { useTranslation } from 'react-i18next';
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import type {
-  Filament, Material, PremadeProduct, ProductMaterial,
+  FileOptionConfig, Filament, Material, PremadeProduct, ProductMaterial,
   ProductOptionChoice, ProductOptionGroup, TextOptionConfig,
 } from '@/lib/types';
 import { Suspense } from 'react';
@@ -20,73 +21,101 @@ function ProductDetail({ slug }: { slug: string }) {
   const locationId = useLocation((s) => s.selectedLocationId);
   const addItem = useCart((s) => s.addItem);
 
-  const { data: product, isLoading } = useQuery<PremadeProduct>({
+  const { data: product, isPending: productPending, error: productError } = useQuery<PremadeProduct | null>({
     queryKey: ['product', slug],
     queryFn: async () => {
-      const { data } = await supabase().from('premade_products').select('*')
-        .eq('slug', slug).eq('status','published').single();
-      return data as PremadeProduct;
+      const { data, error } = await supabase().from('premade_products').select('*')
+        .eq('slug', slug).eq('status', 'published').single();
+      if (error && error.code !== 'PGRST116') throw error;
+      return data as PremadeProduct | null;
     },
   });
 
-  const { data: materials } = useQuery<(ProductMaterial & { material: Material })[]>({
+  const { data: materials, error: materialsError } = useQuery<(ProductMaterial & { material: Material })[]>({
     queryKey: ['product_materials', product?.id],
     enabled: !!product,
     queryFn: async () => {
-      const { data } = await supabase().from('product_materials')
+      const { data, error } = await supabase().from('product_materials')
         .select('*, material:materials(*)').eq('product_id', product!.id);
-      return data as any;
+      if (error) throw error;
+      return (data || []).filter((row) => row.material?.is_active) as (ProductMaterial & { material: Material })[];
     },
   });
 
   const [materialId, setMaterialId] = useState<string | null>(null);
   const [filamentId, setFilamentId] = useState<string | null>(null);
   const [options, setOptions] = useState<Record<string, any>>({});
+  const [files, setFiles] = useState<Record<string, File | null>>({});
+  const [adding, setAdding] = useState(false);
+  const [fileInputRevision, setFileInputRevision] = useState(0);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [added, setAdded] = useState(false);
 
-  const selectedMaterialId = materialId || product?.default_material_id || materials?.[0]?.material_id || null;
+  const selectedMaterialId = materialId ||
+    materials?.find((row) => row.material_id === product?.default_material_id)?.material_id ||
+    materials?.[0]?.material_id || null;
 
-  const { data: colors } = useQuery<Filament[]>({
+  const { data: colors, error: colorsError } = useQuery<Filament[]>({
     queryKey: ['available_filaments', locationId, selectedMaterialId],
     enabled: !!locationId && !!selectedMaterialId,
     queryFn: async () => {
-      const { data } = await supabase().rpc('available_filaments', {
+      const { data, error } = await supabase().rpc('available_filaments', {
         p_location_id: locationId, p_material_id: selectedMaterialId,
       });
-      return (data || []) as unknown as Filament[];
+      if (error) throw error;
+      // The RPC calls the primary key filament_id, unlike the filaments table.
+      return (data || []).map((row: { filament_id: string }) => ({ ...row, id: row.filament_id })) as Filament[];
     },
   });
 
-  const { data: groups } = useQuery<ProductOptionGroup[]>({
+  const { data: groups, error: groupsError } = useQuery<ProductOptionGroup[]>({
     queryKey: ['groups', product?.id],
     enabled: !!product,
     queryFn: async () => {
-      const { data } = await supabase().from('product_option_groups')
+      const { data, error } = await supabase().from('product_option_groups')
         .select('*').eq('product_id', product!.id).order('sort_order');
+      if (error) throw error;
       return data || [];
     },
   });
 
-  const { data: choicesByGroup } = useQuery<Record<string, ProductOptionChoice[]>>({
-    queryKey: ['choices', product?.id],
-    enabled: !!product,
+  const { data: choicesByGroup, error: choicesError } = useQuery<Record<string, ProductOptionChoice[]>>({
+    queryKey: ['choices', product?.id, groups?.map((group) => group.id)],
+    enabled: !!product && !!groups,
     queryFn: async () => {
-      const { data } = await supabase().from('product_option_choices')
-        .select('*').in('group_id', (groups || []).map((g) => g.id));
+      if (!groups?.length) return {};
+      const { data, error } = await supabase().from('product_option_choices')
+        .select('*').in('group_id', groups.map((g) => g.id));
+      if (error) throw error;
       const out: Record<string, ProductOptionChoice[]> = {};
       for (const c of data || []) (out[c.group_id] ||= []).push(c);
       return out;
     },
   });
 
-  const { data: textConfigs } = useQuery<Record<string, TextOptionConfig>>({
-    queryKey: ['text_configs', product?.id],
-    enabled: !!product,
+  const { data: textConfigs, error: textConfigsError } = useQuery<Record<string, TextOptionConfig>>({
+    queryKey: ['text_configs', product?.id, groups?.map((group) => group.id)],
+    enabled: !!product && !!groups,
     queryFn: async () => {
-      const { data } = await supabase().from('text_option_config')
-        .select('*').in('group_id', (groups || []).map((g) => g.id));
+      if (!groups?.length) return {};
+      const { data, error } = await supabase().from('text_option_config')
+        .select('*').in('group_id', groups.map((g) => g.id));
+      if (error) throw error;
       const out: Record<string, TextOptionConfig> = {};
       for (const c of data || []) out[c.group_id] = c;
       return out;
+    },
+  });
+
+  const { data: fileConfigs, error: fileConfigsError } = useQuery<Record<string, FileOptionConfig>>({
+    queryKey: ['file_configs', product?.id, groups?.map((group) => group.id)],
+    enabled: !!product && !!groups,
+    queryFn: async () => {
+      if (!groups?.length) return {};
+      const { data, error } = await supabase().from('file_option_config')
+        .select('*').in('group_id', groups.map((group) => group.id));
+      if (error) throw error;
+      return Object.fromEntries((data || []).map((config) => [config.group_id, config]));
     },
   });
 
@@ -106,7 +135,7 @@ function ProductDetail({ slug }: { slug: string }) {
           const c = choicesByGroup?.[g.id]?.find((x) => x.id === cid);
           if (c) p += c.price_modifier;
         }
-      } else if (g.option_type === 'text' && sel.text) {
+      } else if (g.option_type === 'text' && sel.text?.trim()) {
         const cfg = textConfigs?.[g.id];
         if (cfg) p += cfg.price_modifier;
       }
@@ -115,20 +144,63 @@ function ProductDetail({ slug }: { slug: string }) {
   }, [product, materials, selectedMaterialId, groups, options, choicesByGroup, textConfigs]);
 
   const canAdd = useMemo(() => {
-    if (!product) return false;
-    if (!locationId) return false;
-    if (!filamentId) return false;
-    for (const g of groups || []) {
-      if (!g.required) continue;
-      const sel = options[g.id];
-      if (!sel) return false;
-      if (g.option_type === 'select_one' && !sel.choice_id) return false;
-      if (g.option_type === 'select_many' && (!sel.choice_ids || sel.choice_ids.length === 0)) return false;
+    if (!product || !locationId || !filamentId || !colors?.some((color) => color.id === filamentId) || !groups) return false;
+    if (groups.some((group) => group.option_type === 'file') && !fileConfigs) return false;
+    for (const group of groups) {
+      if (!group.required && !fileConfigs?.[group.id]?.required) continue;
+      const selected = options[group.id];
+      if (group.option_type === 'select_one' && !selected?.choice_id) return false;
+      if (group.option_type === 'select_many' && !selected?.choice_ids?.length) return false;
+      if (group.option_type === 'text' && !selected?.text?.trim()) return false;
+      if (group.option_type === 'file' && !files[group.id] && !selected?.file_path) return false;
     }
     return true;
-  }, [product, locationId, filamentId, groups, options]);
+  }, [product, locationId, filamentId, colors, groups, options, files, fileConfigs]);
 
-  if (isLoading || !product) return <div className="container-ma py-8">{t('common:loading')}</div>;
+  async function addToCart() {
+    if (!product || !canAdd || adding) return;
+    setAdding(true);
+    setAddError(null);
+    const uploaded: string[] = [];
+    try {
+      const nextOptions = { ...options };
+      for (const group of groups || []) {
+        const file = files[group.id];
+        if (group.option_type !== 'file' || !file) continue;
+        const config = fileConfigs?.[group.id];
+        if (!config || !config.allowed_mime_types.includes(file.type) || file.size > config.max_size_bytes) {
+          throw new Error(t('catalog:file_invalid'));
+        }
+        const { data: { user } } = await supabase().auth.getUser();
+        if (!user) throw new Error(t('catalog:file_sign_in'));
+        const extension = file.name.match(/\.[a-zA-Z0-9]{1,8}$/)?.[0]?.toLowerCase() || '';
+        const path = `${user.id}/${crypto.randomUUID()}${extension}`;
+        const { error } = await supabase().storage.from('option-uploads').upload(path, file, { contentType: file.type });
+        if (error) throw error;
+        uploaded.push(path);
+        nextOptions[group.id] = { file_path: path };
+      }
+      addItem({ kind: 'premade', product_id: product.id, material_id: selectedMaterialId,
+        color_filament_id: filamentId, quantity: 1, options: nextOptions });
+      setOptions(nextOptions);
+      setFiles({});
+      setFileInputRevision((previous) => previous + 1);
+      setAdded(true);
+    } catch (error) {
+      if (uploaded.length) await supabase().storage.from('option-uploads').remove(uploaded);
+      setAddError((error as Error).message);
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  if (productPending) return <div className="container-ma py-8">{t('common:loading')}</div>;
+  if (productError) return <div className="container-ma py-8 text-red-700" role="alert">{productError.message}</div>;
+  if (!product) return <div className="container-ma py-8">
+    <p>{t('catalog:product_unavailable')}</p>
+    <Link className="mt-2 inline-block text-brand-700 underline" href="/catalog">{t('catalog:browse')}</Link>
+  </div>;
+  const detailError = materialsError || colorsError || groupsError || choicesError || textConfigsError || fileConfigsError;
 
   return (
     <div className="container-ma py-8 grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -143,6 +215,7 @@ function ProductDetail({ slug }: { slug: string }) {
         {product.submitted_by && <p className="mt-1 text-sm text-emerald-700">{t('common:community_design')}</p>}
         <p className="mt-3 text-slate-700 whitespace-pre-wrap">{t_db(product.description, locale)}</p>
         <p className="mt-4 text-2xl font-semibold">{formatMoney(price, locale)}</p>
+        {detailError && <p role="alert" className="mt-3 text-sm text-red-700">{t('catalog:product_load_error')}: {detailError.message}</p>}
 
         {!locationId && <p className="mt-4 p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded text-sm">{t('errors:select_location_first')}</p>}
 
@@ -185,20 +258,20 @@ function ProductDetail({ slug }: { slug: string }) {
               <label className="label">{t_db(g.label, locale)}{g.required && <span aria-hidden="true"> *</span>}</label>
               {g.option_type === 'select_one' && (
                 <div className="space-y-2">
-                  {cs.sort((a,b)=>a.sort_order-b.sort_order).map((c) => (
+                  {[...cs].sort((a,b)=>a.sort_order-b.sort_order).map((c) => (
                     <label key={c.id} className="flex items-center gap-2">
                       <input type="radio" name={`g-${g.id}`}
                         checked={options[g.id]?.choice_id === c.id}
                         onChange={() => setOptions((o) => ({ ...o, [g.id]: { choice_id: c.id } }))}
                       />
-                      <span>{t_db(c.label, locale)} {c.price_modifier ? `+$${c.price_modifier.toFixed(2)}` : ''}</span>
+                      <span>{t_db(c.label, locale)} {c.price_modifier ? `${c.price_modifier > 0 ? '+' : '−'}${formatMoney(Math.abs(c.price_modifier), locale)}` : ''}</span>
                     </label>
                   ))}
                 </div>
               )}
               {g.option_type === 'select_many' && (
                 <div className="space-y-2">
-                  {cs.sort((a,b)=>a.sort_order-b.sort_order).map((c) => {
+                  {[...cs].sort((a,b)=>a.sort_order-b.sort_order).map((c) => {
                     const sel = new Set<string>(options[g.id]?.choice_ids || []);
                     return (
                       <label key={c.id} className="flex items-center gap-2">
@@ -210,28 +283,42 @@ function ProductDetail({ slug }: { slug: string }) {
                             setOptions((o) => ({ ...o, [g.id]: { choice_ids: Array.from(next) } }));
                           }}
                         />
-                        <span>{t_db(c.label, locale)} {c.price_modifier ? `+$${c.price_modifier.toFixed(2)}` : ''}</span>
+                        <span>{t_db(c.label, locale)} {c.price_modifier ? `${c.price_modifier > 0 ? '+' : '−'}${formatMoney(Math.abs(c.price_modifier), locale)}` : ''}</span>
                       </label>
                     );
                   })}
                 </div>
               )}
               {g.option_type === 'text' && (
-                <input className="input" maxLength={textConfigs?.[g.id]?.max_length || 100}
+                <input className="input" aria-label={t_db(g.label, locale)} maxLength={textConfigs?.[g.id]?.max_length || 100}
                   value={options[g.id]?.text || ''}
                   onChange={(e) => setOptions((o) => ({ ...o, [g.id]: { text: e.target.value } }))}
                 />
               )}
+              {g.option_type === 'file' && <>
+                <input key={fileInputRevision} type="file" className="block w-full text-sm" aria-label={t_db(g.label, locale)}
+                  accept={fileConfigs?.[g.id]?.allowed_mime_types.join(',')}
+                  onChange={(event) => {
+                    setFiles((previous) => ({ ...previous, [g.id]: event.target.files?.[0] || null }));
+                    setOptions((previous) => { const next = { ...previous }; delete next[g.id]; return next; });
+                  }} />
+                {fileConfigs?.[g.id] && <p className="mt-1 text-xs text-slate-500">
+                  {t('catalog:file_hint', {
+                    types: fileConfigs[g.id].allowed_mime_types.join(', '),
+                    size: (fileConfigs[g.id].max_size_bytes / 1024 / 1024).toFixed(1),
+                  })}
+                </p>}
+              </>}
             </div>
           );
         })}
 
-        <button className="btn mt-8 w-full" disabled={!canAdd}
-          onClick={() => addItem({
-            kind: 'premade', product_id: product.id, material_id: selectedMaterialId,
-            color_filament_id: filamentId, quantity: 1, options,
-          })}>
-          {t('common:add_to_cart')} — {formatMoney(price, locale)}
+        {addError && <p role="alert" className="mt-4 text-sm text-red-700">{addError}{addError === t('catalog:file_sign_in') &&
+          <> <Link href="/login" className="underline">{t('common:nav.login')}</Link></>}</p>}
+        {added && <p role="status" className="mt-4 text-sm text-emerald-700">{t('catalog:added_to_cart')}
+          {' '}<Link href="/cart" className="underline">{t('common:nav.cart')}</Link></p>}
+        <button className="btn mt-8 w-full" disabled={!canAdd || adding} onClick={() => void addToCart()}>
+          {adding ? t('common:loading') : t('common:add_to_cart')} — {formatMoney(price, locale)}
         </button>
 
         <details className="mt-6 rounded border border-slate-200 p-3">
@@ -258,7 +345,7 @@ export default function ProductPage() {
   }
   return (
     <Suspense fallback={<div className="container-ma py-8">Loading…</div>}>
-      <ProductDetail slug={slug} />
+      <ProductDetail key={slug} slug={slug} />
     </Suspense>
   );
 }
