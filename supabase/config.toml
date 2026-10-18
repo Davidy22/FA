@@ -12,6 +12,11 @@ port = 54322
 shadow_port = 54320
 major_version = 15
 
+# Local `supabase db reset` runs this after migrations; db push does not.
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
 [db.pooler]
 enabled = false
 port = 54329
@@ -90,10 +95,16 @@ enabled = false
 
 # Per-function JWT verification (the old global [functions] verify_jwt key no longer parses).
 # Everything verifies except the Stripe webhook, which is called by Stripe directly.
+[functions.bootstrap-admin]
+verify_jwt = true
+
 [functions.create-staff]
 verify_jwt = true
 
 [functions.set-user-active]
+verify_jwt = true
+
+[functions.refund-order]
 verify_jwt = true
 
 [functions.sign-file]

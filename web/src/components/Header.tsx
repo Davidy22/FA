@@ -77,13 +77,13 @@ export function Header() {
               <Link href="/account" className="hidden lg:block max-w-32 truncate text-slate-700 hover:text-brand-700">
                 {profile.display_name || profile.email}
               </Link>
-              {profile.role !== 'customer' && (
+              {profile.is_active && profile.role !== 'customer' && (
                 <Link href="/employee" className="hidden lg:block text-slate-700 hover:text-brand-700">{t('nav.employee_portal')}</Link>
               )}
-              {profile.role === 'admin' && (
+              {profile.is_active && profile.role === 'admin' && (
                 <Link href="/admin" className="hidden lg:block text-slate-700 hover:text-brand-700">{t('nav.admin')}</Link>
               )}
-              {profile.is_creator && (
+              {profile.is_active && profile.is_creator && (
                 <Link href="/creator" className="hidden lg:block text-slate-700 hover:text-brand-700">{t('nav.creator_dashboard')}</Link>
               )}
               <button
@@ -102,9 +102,9 @@ export function Header() {
           <Link href="/document-printing">{t('nav.document_printing')}</Link>
           <Link href="/rewards">{t('nav.rewards')}</Link><Link href="/account">{t('nav.account')}</Link>
           {profile && <Link href="/tickets">{t('nav.tickets')}</Link>}
-          {profile?.role !== 'customer' && profile && <Link href="/employee">{t('nav.employee_portal')}</Link>}
-          {profile?.role === 'admin' && <Link href="/admin">{t('nav.admin')}</Link>}
-          {profile?.is_creator && <Link href="/creator">{t('nav.creator_dashboard')}</Link>}
+          {profile?.is_active && profile.role !== 'customer' && <Link href="/employee">{t('nav.employee_portal')}</Link>}
+          {profile?.is_active && profile.role === 'admin' && <Link href="/admin">{t('nav.admin')}</Link>}
+          {profile?.is_active && profile.is_creator && <Link href="/creator">{t('nav.creator_dashboard')}</Link>}
           {profile && <button className="text-left" onClick={() => void supabase().auth.signOut()}>{t('nav.logout')}</button>}
         </nav>}
       </div>

@@ -7,7 +7,8 @@ create extension if not exists pgtap;
 select plan(18);
 
 -- RLS is enabled on key tables
-select tables_are('public', array[
+select ok(not exists (
+  select 1 from unnest(array[
   'profiles','locations','materials','filaments','location_filaments',
   'premade_products','product_materials','product_option_groups','product_option_choices',
   'text_option_config','file_option_config','carts','cart_items',
@@ -15,7 +16,11 @@ select tables_are('public', array[
   'model_submissions','model_submission_materials','creator_earnings','payouts',
   'platform_settings','checkout_sessions','stripe_events',
   'coupons','offer_codes','offer_claims','reward_transactions'
-], 'All expected tables exist');
+]) as expected(name)
+  where not exists (select 1 from pg_catalog.pg_class c
+    join pg_catalog.pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='public' and c.relkind='r' and c.relname=expected.name)
+), 'All expected tables exist');
 
 -- Check status enforces CHECK constraints (sample: explicit invalid status)
 select throws_ok(

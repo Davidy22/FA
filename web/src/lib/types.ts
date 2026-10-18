@@ -215,6 +215,9 @@ export type Order = {
   tax_amount: number;
   total_amount: number;
   currency: string;
+  tracking_number: string | null;
+  cancel_reason: string | null;
+  stripe_payment_intent_id: string | null;
   created_at: string;
 };
 
@@ -232,6 +235,34 @@ export type ModelSubmission = {
   base_price: number;
   review_notes: string | null;
 };
+
+export type Payout = {
+  id: string;
+  creator_id: string;
+  amount: number;
+  status: 'requested' | 'processing' | 'paid' | 'rejected';
+  method: 'manual' | 'stripe_connect';
+  reference: string | null;
+  processed_by: string | null;
+  processed_at: string | null;
+  created_at: string;
+};
+
+export type OfferCode = {
+  id: string;
+  code: string;
+  description: string | null;
+  discount_type: 'percent' | 'fixed';
+  discount_value: number;
+  max_claims: number | null;
+  claims_count: number;
+  coupon_valid_days: number;
+  starts_at: string | null;
+  expires_at: string | null;
+  is_active: boolean;
+};
+
+export type PlatformSetting = { key: string; value: unknown };
 
 export type CartLineInput = {
   kind: 'premade' | 'custom' | 'document' | 'ticket';

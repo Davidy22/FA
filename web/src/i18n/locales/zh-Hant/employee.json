@@ -14,5 +14,17 @@
   "tracking": "物流單號",
   "tickets": "報價工單",
   "back_to_portal": "返回員工入口",
-  "no_location": "您尚未指派據點。"
+  "no_location": "您尚未指派據點。",
+  "admin_all_locations": "管理員可在管理後台管理所有門市。",
+  "download_document": "下載文件",
+  "download_option": "下載選項檔案",
+  "download_failed": "無法開啟檔案。",
+  "view_ticket": "查看工單",
+  "order_not_found": "找不到訂單，或您無權查看。",
+  "status": "狀態",
+  "items": "項目",
+  "premade": "商品",
+  "document": "文件列印",
+  "custom": "自訂列印",
+  "internal_notes": "內部備註"
 }

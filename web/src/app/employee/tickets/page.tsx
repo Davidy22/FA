@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useLocale } from '@/store/locale';
 import { formatMoney } from '@/lib/format';
@@ -269,19 +270,17 @@ function LocationTicketList({ profile }: { profile: Profile }) {
   const router = useRouter();
   const [filter, setFilter] = useState<string>('open');
 
-  const { data: tickets } = useQuery<Ticket[]>({
-    queryKey: ['location_tickets', filter, profile.location_id],
-    enabled: !!profile.location_id,
+  const { data: tickets, error } = useQuery<(Ticket & { location: Pick<Location, 'name'> | null })[]>({
+    queryKey: ['location_tickets', filter, profile.role, profile.location_id],
+    enabled: profile.role === 'admin' || !!profile.location_id,
     queryFn: async () => {
-      let q = supabase()
-        .from('tickets')
-        .select('*')
-        .eq('location_id', profile.location_id!)
-        .order('updated_at', { ascending: false })
-        .limit(100);
+      let q = supabase().from('tickets').select('*,location:locations(name)')
+        .order('updated_at', { ascending: false }).limit(100);
+      if (profile.role !== 'admin') q = q.eq('location_id', profile.location_id!);
       if (filter && filter !== 'all') q = q.eq('status', filter);
-      const { data } = await q;
-      return (data || []) as Ticket[];
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data || []) as (Ticket & { location: Pick<Location, 'name'> | null })[];
     },
   });
 
@@ -298,6 +297,7 @@ function LocationTicketList({ profile }: { profile: Profile }) {
           </button>
         ))}
       </div>
+      {error && <p role="alert" className="mt-4 text-red-700">{error.message}</p>}
       {tickets?.length === 0 ? (
         <p className="mt-6 text-slate-500">{t('tickets:none')}</p>
       ) : (
@@ -318,7 +318,7 @@ function LocationTicketList({ profile }: { profile: Profile }) {
                     {ticket.subject}
                   </button>
                 </td>
-                <td>{ticket.customer_name || ticket.customer_email}</td>
+                <td>{ticket.customer_name || ticket.customer_email}{profile.role === 'admin' && ticket.location?.name ? ` · ${ticket.location.name}` : ''}</td>
                 <td><StatusBadge status={ticket.status} t={t} /></td>
                 <td>{new Date(ticket.updated_at).toLocaleString(locale)}</td>
               </tr>
@@ -346,10 +346,10 @@ function EmployeeTicketsPage() {
   });
 
   if (!profile) return <div className="container-ma py-10">{t('common:loading')}</div>;
-  if (!['employee', 'manager', 'admin'].includes(profile.role)) {
+  if (!profile.is_active || !['employee', 'manager', 'admin'].includes(profile.role)) {
     return <div className="container-ma py-10">Access denied.</div>;
   }
-  if (!profile.location_id) {
+  if (profile.role !== 'admin' && !profile.location_id) {
     return <div className="container-ma py-10">{t('employee:no_location')}</div>;
   }
 
@@ -357,7 +357,7 @@ function EmployeeTicketsPage() {
     <div className="container-ma py-10 max-w-3xl">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">{t('tickets:title')}</h1>
-        <a href="/employee" className="btn-outline">{t('employee:back_to_portal')}</a>
+        <Link href={profile.role === 'admin' ? '/admin' : '/employee'} className="btn-outline">{t('employee:back_to_portal')}</Link>
       </div>
       <p className="mt-1 text-sm text-slate-600">{t('tickets:staff_subtitle')}</p>
       <div className="mt-6">

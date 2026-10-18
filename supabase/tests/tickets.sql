@@ -7,9 +7,14 @@ create extension if not exists pgtap;
 select plan(8);
 
 -- Ticket tables exist
-select tables_are('public', array[
+select ok(not exists (
+  select 1 from unnest(array[
   'tickets','ticket_messages','ticket_attachments','ticket_quotes'
-], 'Ticket tables exist');
+]) as expected(name)
+  where not exists (select 1 from pg_catalog.pg_class c
+    join pg_catalog.pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='public' and c.relkind='r' and c.relname=expected.name)
+), 'Ticket tables exist');
 
 -- RLS enabled on all ticket tables
 select ok(

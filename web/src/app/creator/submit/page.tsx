@@ -32,32 +32,47 @@ export default function SubmitPage() {
       const { data: { user } } = await supabase().auth.getUser();
       if (!user) throw new Error('Sign in required');
       if (!file) throw new Error('Model file required');
-      const filePath = `${user.id}/${Date.now()}-${file.name}`;
-      const ab = await file.arrayBuffer();
-      const { error: uErr } = await supabase().storage.from('submission-assets').upload(filePath, ab, {
-        contentType: file.type || 'application/octet-stream',
-      });
-      if (uErr) throw uErr;
+      const extension = file.name.split('.').pop()?.toLowerCase();
+      if (!extension || !['stl', 'obj', '3mf'].includes(extension) || file.size > 50 * 1024 * 1024) {
+        throw new Error('Choose an STL, OBJ, or 3MF file smaller than 50 MB.');
+      }
       const mats = Object.entries(selectedMats).map(([material_id, price_modifier]) => ({ material_id, price_modifier }));
-      if (mats.length === 0) throw new Error('Select at least one material');
-      const { data: sub, error: sErr } = await supabase().from('model_submissions').insert({
-        submitter_id: user.id,
-        status: 'pending_review',
-        title: { en: title },
-        description: { en: description },
-        category,
-        tags: [],
-        license,
-        ip_warranty: true,
-        model_path: filePath,
-        preview_urls: [],
-        base_price: price,
-        submitted_at: new Date().toISOString(),
-      }).select().single();
-      if (sErr) throw sErr;
-      await supabase().from('model_submission_materials').insert(
-        mats.map((m) => ({ submission_id: sub.id, ...m }))
-      );
+      if (!mats.length) throw new Error('Select at least one material');
+      if (!Number.isFinite(price) || price < 0) throw new Error('Enter a valid price');
+      const filePath = `${user.id}/${crypto.randomUUID()}.${extension}`;
+      let uploaded = false;
+      let submissionId: string | null = null;
+      try {
+        const { error: uErr } = await supabase().storage.from('submission-assets').upload(filePath, file, {
+          contentType: file.type || 'application/octet-stream',
+        });
+        if (uErr) throw uErr;
+        uploaded = true;
+        // Material writes are allowed on drafts only. Publish to the review
+        // queue after every row is in place, never before.
+        const { data: sub, error: sErr } = await supabase().from('model_submissions').insert({
+          submitter_id: user.id,
+          status: 'draft',
+          title: { en: title.trim() },
+          description: { en: description.trim() },
+          category, tags: [], license, ip_warranty: true,
+          model_path: filePath, preview_urls: [], base_price: price,
+        }).select().single();
+        if (sErr) throw sErr;
+        submissionId = sub.id;
+        const { error: materialError } = await supabase().from('model_submission_materials').insert(
+          mats.map((material) => ({ submission_id: sub.id, ...material }))
+        );
+        if (materialError) throw materialError;
+        const { error: submitError } = await supabase().from('model_submissions').update({
+          status: 'pending_review', submitted_at: new Date().toISOString(),
+        }).eq('id', sub.id).select().single();
+        if (submitError) throw submitError;
+      } catch (uploadOrSaveError) {
+        if (submissionId) await supabase().from('model_submissions').delete().eq('id', submissionId);
+        if (uploaded) await supabase().storage.from('submission-assets').remove([filePath]);
+        throw uploadOrSaveError;
+      }
       router.push('/creator');
     } catch (e) {
       setError((e as Error).message);

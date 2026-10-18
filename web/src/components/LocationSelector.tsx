@@ -4,32 +4,24 @@ import { useTranslation } from 'react-i18next';
 import { useLocations } from '@/hooks/useLocations';
 import { useLocation } from '@/store/location';
 
+/** The header opens the full searchable/map picker; it never changes a location in place. */
 export function LocationSelector() {
   const { t } = useTranslation('common');
   const { data: locations } = useLocations();
   const selectedId = useLocation((s) => s.selectedLocationId);
-  const setLocation = useLocation((s) => s.setLocation);
 
-  // With zero or one location there is nothing to choose; LocationSync picks the only one.
+  // LocationSync selects the sole active location automatically.
   if (!locations || locations.length <= 1) return null;
 
+  const selected = locations.find((location) => location.id === selectedId);
   return (
-    <div className="flex items-center gap-2 text-sm">
-      <span aria-hidden>📍</span>
-      <select
-        aria-label={t('location.title')}
-        className="max-w-[200px] rounded-md border border-slate-300 bg-white px-2 py-1 text-sm"
-        value={selectedId || ''}
-        onChange={(e) => setLocation(e.target.value || null)}
-      >
-        <option value="">{t('location.none_selected')}</option>
-        {locations.map((location) => (
-          <option key={location.id} value={location.id}>{location.name}</option>
-        ))}
-      </select>
-      <Link href="/locations" className="whitespace-nowrap text-xs text-brand-700 underline">
-        {t('location.view_map')}
-      </Link>
-    </div>
+    <Link
+      href="/locations"
+      className="inline-flex max-w-[220px] items-center gap-1.5 rounded-md px-2 py-1 text-sm text-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500"
+      aria-label={`${t('location.title')}: ${selected?.name || t('location.none_selected')}`}
+    >
+      <span aria-hidden="true">📍</span>
+      <span className="truncate">{selected?.name || t('location.none_selected')}</span>
+    </Link>
   );
 }
