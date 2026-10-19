@@ -62,10 +62,11 @@ export type Material = {
   slug: string;
   name: Localized;
   adjective: Localized | null;
+  cost_per_gram: number;
+  notes: string | null;
   density_g_cm3: number;
   default_flow_mm3_s: number;
   is_active: boolean;
-  sort_order: number;
 };
 
 export type Filament = {
@@ -73,9 +74,6 @@ export type Filament = {
   material_id: string;
   color: Localized;
   color_hex: string | null;
-  diameter: number;
-  cost_per_gram: number;
-  manufacturer: string | null;
   is_active: boolean;
 };
 

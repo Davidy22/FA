@@ -31,7 +31,7 @@ create policy "owner cleanup draft submission upload" on storage.objects
 insert into public.materials(id,slug,name,adjective,density_g_cm3,default_flow_mm3_s,is_active,sort_order)
 values ('11111111-1111-1111-1111-000000000005','nylon',
   '{"en":"Nylon","zh-Hant":"尼龍","zh-Hans":"尼龙"}'::jsonb,
-  '{"en":"Strong and wear-resistant","zh-Hant":"堅固耐磨","zh-Hans":"坚固耐磨"}'::jsonb,
+  '{"en":"Strong","zh-Hant":"堅固","zh-Hans":"坚固"}'::jsonb,
   1.14,4.5,true,50)
 on conflict (id) do nothing;
 

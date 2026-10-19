@@ -111,16 +111,17 @@ try {
   await db.exec('set role authenticated');
   await rows(`insert into public.locations(id,name,timezone,hourly_machine_rate,tax_rate)
     values($1,'DB smoke location','Asia/Hong_Kong',10,0.05)`, [newLocation]);
-  await rows(`insert into public.materials(id,slug,name,density_g_cm3)
-    values($1,'db-smoke-pla',$2::jsonb,1.25)`, [newMaterial, '{"en":"Test PLA"}']);
-  await rows(`insert into public.filaments(id,material_id,color,cost_per_gram)
-    values($1,$2,$3::jsonb,0.04)`, [newFilament, newMaterial, '{"en":"Blue"}']);
+  await rows(`insert into public.materials(id,slug,name,density_g_cm3,cost_per_gram)
+    values($1,'db-smoke-pla',$2::jsonb,1.25,0.31)`, [newMaterial, '{"en":"Test PLA"}']);
+  await rows(`insert into public.filaments(id,material_id,color)
+    values($1,$2,$3::jsonb)`, [newFilament, newMaterial, '{"en":"Blue"}']);
   await rows(`insert into public.location_filaments(location_id,filament_id,in_stock)
     values($1,$2,true)`, [newLocation, newFilament]);
   await db.exec('reset role');
   await claims(buyer);
-  const stocked = await rows('select filament_id from public.available_filaments($1,$2)', [newLocation, newMaterial]);
+  const stocked = await rows('select filament_id,cost_per_gram from public.available_filaments($1,$2)', [newLocation, newMaterial]);
   assert.equal(stocked[0].filament_id, newFilament);
+  assert.equal(Number(stocked[0].cost_per_gram), 0.31);
   await db.exec('set role authenticated');
   const blocked = await db.query(`update public.materials set density_g_cm3=8 where id=$1`, [newMaterial]);
   assert.equal(blocked.affectedRows, 0);

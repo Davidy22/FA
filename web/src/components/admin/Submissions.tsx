@@ -134,7 +134,7 @@ export function AdminSubmissions() {
   const materialsQuery = useQuery<Material[]>({
     queryKey: ['admin_materials'],
     queryFn: async () => {
-      const { data, error } = await supabase().from('materials').select('*').order('sort_order');
+      const { data, error } = await supabase().from('materials').select('*').order('name->>en');
       if (error) throw error;
       return (data || []) as Material[];
     },

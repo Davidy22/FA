@@ -204,7 +204,7 @@
     "tax_percent": "稅率 (%)",
     "currency": "貨幣代碼",
     "slug": "網址代稱",
-    "adjective": "描述／形容詞",
+    "adjective": "形容詞",
     "density": "密度 (g/cm³)",
     "flow": "預設流量 (mm³/s)",
     "sort_order": "排序",
@@ -214,7 +214,7 @@
     "color_hex": "顏色色碼",
     "manufacturer": "製造商",
     "diameter": "直徑 (毫米)",
-    "cost_per_gram": "每克成本 (USD)",
+    "cost_per_gram": "材料每克成本 (HKD)",
     "description": "描述",
     "base_price": "基本價格 (USD)",
     "category": "類別",
@@ -251,7 +251,8 @@
     "customer_email": "顧客電郵（選填）",
     "points": "所需點數",
     "setting_key": "設定鍵",
-    "json_value": "JSON 值"
+    "json_value": "JSON 值",
+    "notes": "備註"
   },
   "discount_type": {
     "percent": "百分比 (%)",
@@ -265,5 +266,6 @@
   "bootstrap_hint": "僅供第一位管理員使用：如這是營運方設定並已驗證的帳戶，可在此啟用；否則請向現任管理員索取權限。",
   "bootstrap_action": "啟用首位管理員帳戶",
   "review_adjust_hint": "核准前請檢查基本價格及允許的材料。刊登後仍可在「商品」修改。",
-  "review_notes_required": "拒絕或要求修改前請填寫審核備註。"
+  "review_notes_required": "拒絕或要求修改前請填寫審核備註。",
+  "language_picker": "選擇語言"
 }
