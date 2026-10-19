@@ -18,23 +18,23 @@ on conflict (id) do nothing;
 insert into public.materials(id, slug, name, adjective, density_g_cm3, default_flow_mm3_s, is_active, sort_order) values
  ('11111111-1111-1111-1111-000000000001','pla',
   '{"en":"PLA","zh-Hant":"PLA","zh-Hans":"PLA"}'::jsonb,
-  '{"en":"Easy and eco-friendly","zh-Hant":"環保易印","zh-Hans":"环保易印"}'::jsonb,
+  '{"en":"Standard","zh-Hant":"標準","zh-Hans":"标准"}'::jsonb,
   1.24, 7.5, true, 10),
  ('11111111-1111-1111-1111-000000000002','petg',
   '{"en":"PETG","zh-Hant":"PETG","zh-Hans":"PETG"}'::jsonb,
-  '{"en":"Tough and weather-resistant","zh-Hant":"堅韌耐候","zh-Hans":"坚韧耐候"}'::jsonb,
+  '{"en":"Tough","zh-Hant":"堅韌","zh-Hans":"坚韧"}'::jsonb,
   1.27, 7.0, true, 20),
  ('11111111-1111-1111-1111-000000000003','abs',
   '{"en":"ABS","zh-Hant":"ABS","zh-Hans":"ABS"}'::jsonb,
-  '{"en":"Heat-resistant and sturdy","zh-Hant":"耐熱耐用","zh-Hans":"耐热耐用"}'::jsonb,
+  '{"en":"Sturdy","zh-Hant":"耐熱","zh-Hans":"耐热"}'::jsonb,
   1.04, 6.0, true, 30),
  ('11111111-1111-1111-1111-000000000004','tpu',
   '{"en":"TPU","zh-Hant":"TPU","zh-Hans":"TPU"}'::jsonb,
-  '{"en":"Flexible and rubber-like","zh-Hant":"柔韌有彈性","zh-Hans":"柔韧有弹性"}'::jsonb,
+  '{"en":"Flexible","zh-Hant":"柔韌","zh-Hans":"柔韧"}'::jsonb,
   1.21, 3.5, true, 40),
  ('11111111-1111-1111-1111-000000000005','nylon',
   '{"en":"Nylon","zh-Hant":"尼龍","zh-Hans":"尼龙"}'::jsonb,
-  '{"en":"Strong and wear-resistant","zh-Hant":"堅固耐磨","zh-Hans":"坚固耐磨"}'::jsonb,
+  '{"en":"Strong","zh-Hant":"堅固","zh-Hans":"坚固"}'::jsonb,
   1.14, 4.5, true, 50)
 on conflict (id) do nothing;
 

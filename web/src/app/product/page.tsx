@@ -326,8 +326,7 @@ function ProductDetail({ slug }: { slug: string }) {
           <div className="mt-2 text-sm text-slate-600 space-y-1">
             {materials?.map((pm) => (
               <div key={pm.material_id}>
-                {formatMaterial(pm.material, locale, { technicalFirst: true })}{' '}
-                — density {pm.material.density_g_cm3} g/cm³, flow {pm.material.default_flow_mm3_s} mm³/s
+                {formatMaterial(pm.material, locale, { technicalFirst: true })}
               </div>
             ))}
           </div>

@@ -132,7 +132,7 @@ export default function EmployeePortal() {
               <td className="py-2 font-mono text-xs">{f.id.slice(0,8)}</td>
               <td>{f.material?.name?.en}</td>
               <td><span className="swatch" style={{background:f.color_hex||'#ccc'}}/> {f.color?.en}</td>
-              <td>${f.cost_per_gram.toFixed(3)}</td>
+              <td>HK${Number(f.material?.cost_per_gram || 0).toFixed(2)}</td>
               <td>
                 <label className="inline-flex items-center gap-2">
                   <input type="checkbox" checked={!!f.location_in_stock}

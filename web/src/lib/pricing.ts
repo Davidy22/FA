@@ -7,7 +7,7 @@ export interface MaterialPricing {
 }
 
 export interface FilamentPricing {
-  cost_per_gram: number;       // USD/g
+  cost_per_gram: number;       // HKD/g
 }
 
 export interface LocationPricing {
@@ -96,14 +96,14 @@ export function quoteHeuristic(input: QuoteInput): QuoteBreakdown {
 }
 
 // Golden test constants from spec Appendix D (PLA 1.24 g/cm3, default flow 7.5 mm3/s;
-// cost_per_gram $0.025, hourly rate $8/hr, tax 0, min fee $3, handling $1, setup 3min, wall 0.84mm).
+// cost_per_gram HK$0.195, hourly rate $8/hr, tax 0, min fee $3, handling $1, setup 3min, wall 0.84mm).
 export const GOLDEN_20MM_CUBE_PLA: QuoteInput = (() => {
   // 20 mm cube = 8 cm3, surface 6*2*2 = 24 cm2
   return {
     volume_cm3: 8,
     surface_cm2: 24,
     material: { density_g_cm3: 1.24, default_flow_mm3_s: 7.5 },
-    filament: { cost_per_gram: 0.025 },
+    filament: { cost_per_gram: 0.195 },
     location: { hourly_machine_rate: 8, tax_rate: 0 },
     infill_percent: 20,
     quantity: 1,

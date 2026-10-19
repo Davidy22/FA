@@ -204,7 +204,7 @@
     "tax_percent": "税率 (%)",
     "currency": "货币代码",
     "slug": "网址代称",
-    "adjective": "描述／形容词",
+    "adjective": "形容词",
     "density": "密度 (g/cm³)",
     "flow": "预设流量 (mm³/s)",
     "sort_order": "排序",
@@ -214,7 +214,7 @@
     "color_hex": "颜色色码",
     "manufacturer": "制造商",
     "diameter": "直径 (毫米)",
-    "cost_per_gram": "每克成本 (USD)",
+    "cost_per_gram": "材料每克成本 (HKD)",
     "description": "描述",
     "base_price": "基本价格 (USD)",
     "category": "类别",
@@ -251,7 +251,8 @@
     "customer_email": "顾客电邮（选填）",
     "points": "所需点数",
     "setting_key": "设定键",
-    "json_value": "JSON 值"
+    "json_value": "JSON 值",
+    "notes": "备注"
   },
   "discount_type": {
     "percent": "百分比 (%)",
@@ -265,5 +266,6 @@
   "bootstrap_hint": "仅供第一位管理员使用：如这是运营方设置并已验证的账户，可在此启用；否则请向现任管理员获取权限。",
   "bootstrap_action": "启用首位管理员账户",
   "review_adjust_hint": "批准前请检查基础价格及允许的材料。上架后仍可在“商品”修改。",
-  "review_notes_required": "拒绝或要求修改前请填写审核备注。"
+  "review_notes_required": "拒绝或要求修改前请填写审核备注。",
+  "language_picker": "选择语言"
 }

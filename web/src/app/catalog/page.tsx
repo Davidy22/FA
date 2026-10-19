@@ -35,7 +35,7 @@ export default function CatalogPage() {
   const { data: materials } = useQuery<Material[]>({
     queryKey: ['materials_active'],
     queryFn: async () => {
-      const { data } = await supabase().from('materials').select('*').eq('is_active',true).order('sort_order');
+      const { data } = await supabase().from('materials').select('*').eq('is_active',true).order('name->>en');
       return data || [];
     },
   });

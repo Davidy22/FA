@@ -204,7 +204,7 @@
     "tax_percent": "Tax rate (%)",
     "currency": "Currency code",
     "slug": "Slug",
-    "adjective": "Description/adjective",
+    "adjective": "Adjective",
     "density": "Density (g/cm³)",
     "flow": "Default flow (mm³/s)",
     "sort_order": "Sort order",
@@ -214,7 +214,7 @@
     "color_hex": "Color hex",
     "manufacturer": "Manufacturer",
     "diameter": "Diameter (mm)",
-    "cost_per_gram": "Cost per gram (USD)",
+    "cost_per_gram": "Material cost per gram (HKD)",
     "description": "Description",
     "base_price": "Base price (USD)",
     "category": "Category",
@@ -251,7 +251,8 @@
     "customer_email": "Customer email (optional)",
     "points": "Points required",
     "setting_key": "Setting key",
-    "json_value": "JSON value"
+    "json_value": "JSON value",
+    "notes": "Notes"
   },
   "discount_type": {
     "percent": "Percent (%)",
@@ -265,5 +266,6 @@
   "bootstrap_hint": "First admin only: if this is the confirmed account configured by the operator, activate it here. Otherwise ask an existing admin for access.",
   "bootstrap_action": "Activate initial admin account",
   "review_adjust_hint": "Review the base price and allowed materials before approval. You can edit the published product later in Products.",
-  "review_notes_required": "Add review notes before rejecting or requesting changes."
+  "review_notes_required": "Add review notes before rejecting or requesting changes.",
+  "language_picker": "Choose language"
 }

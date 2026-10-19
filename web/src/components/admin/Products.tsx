@@ -163,6 +163,8 @@ function ProductForm({ product, allowed, materials, onDone }: {
 export function AdminProducts() {
   const { t } = useTranslation(['admin', 'common']);
   const locale = useLocale((state) => state.locale);
+  const queryClient = useQueryClient();
+  const action = useAdminAction();
   const [editing, setEditing] = useState<string | null>(null);
   const [optionsProductId, setOptionsProductId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -177,7 +179,7 @@ export function AdminProducts() {
   const materialsQuery = useQuery<Material[]>({
     queryKey: ['admin_materials'],
     queryFn: async () => {
-      const { data, error } = await supabase().from('materials').select('*').order('sort_order');
+      const { data, error } = await supabase().from('materials').select('*').order('name->>en');
       if (error) throw error;
       return (data || []) as Material[];
     },
@@ -194,11 +196,25 @@ export function AdminProducts() {
   const filtered = products.filter((product) =>
     `${product.slug} ${product.name.en}`.toLowerCase().includes(search.trim().toLowerCase()));
 
+  async function deleteProduct(product: PremadeProduct) {
+    if (!window.confirm(`${t('common:delete')} ${t_db(product.name, locale)}?`)) return;
+    await action.run(async () => {
+      const { error } = await supabase().from('premade_products').delete().eq('id', product.id);
+      if (error) throw error;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['admin_products'] }),
+        queryClient.invalidateQueries({ queryKey: ['admin_product_materials'] }),
+        queryClient.invalidateQueries({ queryKey: ['products'] }),
+      ]);
+    });
+  }
+
   return <>
     <div className="flex flex-wrap items-center justify-between gap-3"><div>
       <h2 className="text-xl font-medium">{t('admin:products')}</h2>
       <p className="text-sm text-slate-600">{t('admin:products_help')}</p>
     </div><button type="button" className="btn text-sm" onClick={() => { setOptionsProductId(null); setEditing('new'); }}>{t('admin:add_product')}</button></div>
+    <AdminFeedback error={action.error} notice={action.notice} />
     <AdminQueryState loading={productsQuery.isPending || materialsQuery.isPending || allowedQuery.isPending}
       error={productsQuery.error || materialsQuery.error || allowedQuery.error} />
     <label className="mt-4 block max-w-sm text-sm">{t('common:search')}<input className="input mt-1" type="search" value={search} onChange={(event) => setSearch(event.target.value)} /></label>
@@ -212,6 +228,8 @@ export function AdminProducts() {
         <div className="mt-3 flex flex-wrap gap-2">
           <button type="button" className="btn-outline text-sm" onClick={() => { setOptionsProductId(null); setEditing(product.id); }}>{t('common:edit')}</button>
           <button type="button" className="btn-outline text-sm" onClick={() => { setEditing(null); setOptionsProductId(product.id); }}>{t('admin:edit_options')}</button>
+          <button type="button" className="text-sm text-red-700 underline" disabled={action.busy}
+            onClick={() => void deleteProduct(product)}>{t('common:delete')}</button>
         </div>
       </article>)}
     </div>

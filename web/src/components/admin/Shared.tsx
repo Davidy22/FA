@@ -68,24 +68,32 @@ export function LocalizedFields({ label, value, onChange, multiline = false, req
   required?: boolean;
 }) {
   const { t } = useTranslation('admin');
+  const [language, setLanguage] = useState<'en' | 'zh-Hant' | 'zh-Hans'>('en');
   return (
     <fieldset className="rounded-md border border-slate-200 p-3">
       <legend className="px-1 text-sm font-medium text-slate-700">{label}</legend>
-      <div className="grid gap-3 sm:grid-cols-3">
-        {(['en', 'zh-Hant', 'zh-Hans'] as const).map((language) => (
-          <label key={language} className="block text-xs text-slate-600">
-            {t(`language.${language}`)}{language === 'en' && required ? ' *' : ''}
-            {multiline ? (
-              <textarea className="input mt-1 min-h-20 text-sm" value={value[language] || ''}
-                required={required && language === 'en'}
-                onChange={(e) => onChange({ ...value, [language]: e.target.value })} />
-            ) : (
-              <input className="input mt-1 text-sm" value={value[language] || ''}
-                required={required && language === 'en'}
-                onChange={(e) => onChange({ ...value, [language]: e.target.value })} />
-            )}
-          </label>
-        ))}
+      <div className="space-y-3">
+        <label className="block text-xs text-slate-600">
+          {t('language_picker')}
+          <select className="input mt-1 max-w-xs text-sm" value={language}
+            onChange={(event) => setLanguage(event.target.value as typeof language)}>
+            {(['en', 'zh-Hans', 'zh-Hant'] as const).map((option) => (
+              <option key={option} value={option}>{t(`language.${option}`)}</option>
+            ))}
+          </select>
+        </label>
+        <label className="block text-xs text-slate-600">
+          {t(`language.${language}`)}{language === 'en' && required ? ' *' : ''}
+          {multiline ? (
+            <textarea className="input mt-1 min-h-20 text-sm" value={value[language] || ''}
+              required={required && language === 'en'}
+              onChange={(e) => onChange({ ...value, [language]: e.target.value })} />
+          ) : (
+            <input className="input mt-1 text-sm" value={value[language] || ''}
+              required={required && language === 'en'}
+              onChange={(e) => onChange({ ...value, [language]: e.target.value })} />
+          )}
+        </label>
       </div>
     </fieldset>
   );
