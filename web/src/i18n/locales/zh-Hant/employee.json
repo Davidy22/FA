@@ -26,5 +26,6 @@
   "premade": "商品",
   "document": "文件列印",
   "custom": "自訂列印",
-  "internal_notes": "內部備註"
+  "internal_notes": "內部備註",
+  "material_slots": "物料部分"
 }

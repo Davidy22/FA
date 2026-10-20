@@ -2,7 +2,7 @@
 import { useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { decimal } from '@/lib/admin';
+import { decimal, isoDateTime, localDateTime } from '@/lib/admin';
 import { formatMoney, t_db } from '@/lib/format';
 import { DEFAULT_REDEEM_OPTIONS, type RedeemOption } from '@/lib/rewards';
 import { supabase } from '@/lib/supabase';
@@ -10,12 +10,9 @@ import { useLocale } from '@/store/locale';
 import type { Coupon, OfferCode, PremadeProduct } from '@/lib/types';
 import { ADMIN_PAGE_SIZE, AdminFeedback, AdminPagination, AdminQueryState, FormActions, useAdminAction, useFormPanel } from './Shared';
 
-function localDate(iso: string | null): string {
-  if (!iso) return '';
-  const date = new Date(iso);
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-}
-function isoDate(value: string): string | null { return value ? new Date(value).toISOString() : null; }
+// Sale/coupon windows are edited with datetime-local inputs.
+const localDate = localDateTime;
+const isoDate = isoDateTime;
 
 /** Conditions shared by offers, single coupons, and generated coupon batches. */
 type Conditions = { minSpend: string; productId: string };

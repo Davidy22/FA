@@ -270,7 +270,13 @@
     "generated_codes": "Generated codes ({{number}})",
     "redeem_product": "Redeem for product (optional)",
     "points": "Points required",
-    "notes": "Notes"
+    "notes": "Notes",
+    "slot_name": "Slot name",
+    "slot_default_material": "Default material",
+    "slot_default_color": "Default colour",
+    "sale_price": "Sale price (HKD)",
+    "sale_starts_at": "Sale starts at",
+    "sale_ends_at": "Sale ends at"
   },
   "discount_type": {
     "percent": "Percent (%)",
@@ -288,5 +294,25 @@
   "language_picker": "Choose language",
   "translations": "Translations",
   "language_help": "English is required. Text left empty in another language falls back to English.",
-  "language_empty": "not filled in"
+  "language_empty": "not filled in",
+  "sale_price": "Sale price",
+  "sale_help": "Customers see the regular price struck through with the sale price next to it. Leave the dates empty for an open-ended sale.",
+  "no_sale": "No sale",
+  "sale_below_price": "The sale price must be lower than the regular price.",
+  "sale_below_modifier": "The sale price must be lower than the regular modifier.",
+  "choice_sale_help": "Discounts this choice while the sale runs; customers see the regular modifier struck through.",
+  "material_slots": "Material slots",
+  "material_slots_help": "For prints made of more than one material: each slot is a named part the customer picks a material and colour for. With no slots the product keeps its single material and colour picker.",
+  "slot_number": "Slot {{number}}",
+  "add_slot": "Add material slot",
+  "slot_materials": "Materials this slot can be printed in",
+  "single_material_hint": "Used when the product has no material slots.",
+  "slots_badge": "{{number}} material slots",
+  "move_up": "Move up",
+  "move_down": "Move down",
+  "first_in_stock": "First colour in stock",
+  "slot_needs_material": "Slot {{number}}: choose at least one material.",
+  "slot_default_required": "Slot {{number}}: choose a default material from this slot's list.",
+  "slot_default_inactive": "Slot {{number}}: the default material must be active to publish.",
+  "slot_default_color_invalid": "Slot {{number}}: the default colour must be a colour of the default material."
 }

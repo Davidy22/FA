@@ -270,7 +270,13 @@
     "generated_codes": "已产生代码（{{number}} 组）",
     "redeem_product": "兑换指定商品（可留空）",
     "points": "所需点数",
-    "notes": "备注"
+    "notes": "备注",
+    "slot_name": "部分名称",
+    "slot_default_material": "默认材料",
+    "slot_default_color": "默认颜色",
+    "sale_price": "特价（HKD）",
+    "sale_starts_at": "特价开始时间",
+    "sale_ends_at": "特价结束时间"
   },
   "discount_type": {
     "percent": "百分比 (%)",
@@ -288,5 +294,25 @@
   "language_picker": "选择语言",
   "translations": "翻译",
   "language_help": "必须填写英文；其他语言留空时会显示英文。",
-  "language_empty": "未填写"
+  "language_empty": "未填写",
+  "sale_price": "特价",
+  "sale_help": "顾客会看到原价被划掉，旁边显示特价。日期留空即为长期特价。",
+  "no_sale": "没有特价",
+  "sale_below_price": "特价必须低于原价。",
+  "sale_below_modifier": "特价必须低于原来的加价。",
+  "choice_sale_help": "特价期间此选项会有折扣，顾客会看到原加价被划掉。",
+  "material_slots": "材料部分",
+  "material_slots_help": "适用于由多种材料组成的打印品：每个部分都有名称，顾客可分别选择材料和颜色。没有部分时，则沿用单一材料／颜色选择。",
+  "slot_number": "部分 {{number}}",
+  "add_slot": "新增材料部分",
+  "slot_materials": "此部分可选的材料",
+  "single_material_hint": "产品没有材料部分时使用。",
+  "slots_badge": "{{number}} 个材料部分",
+  "move_up": "上移",
+  "move_down": "下移",
+  "first_in_stock": "首个现货颜色",
+  "slot_needs_material": "部分 {{number}}：请至少选择一种材料。",
+  "slot_default_required": "部分 {{number}}：请从此部分的材料中选择默认材料。",
+  "slot_default_inactive": "部分 {{number}}：发布前默认材料必须为启用状态。",
+  "slot_default_color_invalid": "部分 {{number}}：默认颜色必须是默认材料的颜色。"
 }

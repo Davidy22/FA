@@ -12,7 +12,7 @@ import type { Location } from '@/lib/types';
 import { withBasePath } from '@/lib/paths';
 
 export default function CheckoutPage() {
-  const { t } = useTranslation(['common','checkout','errors','rewards']);
+  const { t } = useTranslation(['common','checkout','errors','rewards','cart']);
   const locale = useLocale((s) => s.locale);
   const { items, location_id, coupon_code, setCoupon } = useCart();
   const cartLocationId = useLocation((s) => s.selectedLocationId) || location_id;
@@ -159,6 +159,12 @@ export default function CheckoutPage() {
             <h3 className="font-medium mb-2">{t('checkout:review_order')}</h3>
             <dl className="space-y-1">
               <div className="flex justify-between"><dt>{t('common:subtotal')}</dt><dd>{formatMoney(pricing.subtotal, locale, pricing.currency)}</dd></div>
+              {Number(pricing.sale_savings || 0) > 0 && (
+                <div className="flex justify-between text-rose-700">
+                  <dt>{t('cart:sale_savings')}</dt>
+                  <dd>−{formatMoney(Number(pricing.sale_savings), locale, pricing.currency)}</dd>
+                </div>
+              )}
               {pricing.discount_amount > 0 && (
                 <div className="flex justify-between text-green-700">
                   <dt>{t('rewards:discount')}</dt>

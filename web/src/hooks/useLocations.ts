@@ -1,6 +1,7 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useLocation as useLocationStore } from '@/store/location';
 import type { Location } from '@/lib/types';
 
 export const LOCATIONS_QUERY_KEY = ['locations_active'] as const;
@@ -20,4 +21,11 @@ export function useLocations() {
       return (data || []) as Location[];
     },
   });
+}
+
+/** The pickup location the customer chose: its currency prices the storefront. */
+export function useSelectedLocation(): Location | undefined {
+  const { data: locations } = useLocations();
+  const selectedId = useLocationStore((state) => state.selectedLocationId);
+  return locations?.find((location) => location.id === selectedId);
 }

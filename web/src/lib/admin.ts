@@ -30,6 +30,21 @@ export function decimal(value: string, label: string, min: number, max: number, 
   return n;
 }
 
+/** A timestamptz column as a value a datetime-local input accepts. */
+export function localDateTime(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
+/** A datetime-local input value back to UTC for the database; empty means unset. */
+export function isoDateTime(value: string): string | null {
+  if (!value.trim()) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
 export function lines(value: string): string[] {
   return value.split(/[\n,]/).map((item) => item.trim()).filter(Boolean);
 }

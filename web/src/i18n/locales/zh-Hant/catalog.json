@@ -16,5 +16,7 @@
   "file_hint": "接受：{{types}}；最多 {{size}} MB。",
   "added_to_cart": "已加入購物車。",
   "product_unavailable": "此商品目前未有供應。",
-  "product_load_error": "無法載入商品選項"
+  "product_load_error": "無法載入商品選項",
+  "slots_intro": "這款打印品由多個部分組成——請為每個部分選擇物料和顏色。",
+  "no_colors_in_stock": "所選門市沒有此物料的現貨顏色"
 }

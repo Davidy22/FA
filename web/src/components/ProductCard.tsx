@@ -5,11 +5,14 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { t_db, formatMaterial, formatMoney } from '@/lib/format';
 import { useLocale } from '@/store/locale';
+import { useSelectedLocation } from '@/hooks/useLocations';
+import { effectivePrice } from '@/lib/sale';
 import type { Material, PremadeProduct, ProductMaterial } from '@/lib/types';
 
 export function ProductCard({ product }: { product: PremadeProduct }) {
   const { t } = useTranslation('common');
   const locale = useLocale((s) => s.locale);
+  const currency = useSelectedLocation()?.currency;
   const { data: materials } = useQuery<(ProductMaterial & { material: Material })[]>({
     queryKey: ['product_materials', product.id],
     queryFn: async () => {
@@ -22,9 +25,11 @@ export function ProductCard({ product }: { product: PremadeProduct }) {
   const materialsList = materials || [];
   const firstMat = materialsList[0]?.material;
   const multiMat = materialsList.length > 1;
-  const priceStr = multiMat
-    ? t('from_price', { price: formatMoney(product.base_price, locale) })
-    : formatMoney(product.base_price, locale);
+  const label = (amount: number) => multiMat
+    ? t('from_price', { price: formatMoney(amount, locale, currency) })
+    : formatMoney(amount, locale, currency);
+  const salePrice = effectivePrice(product.base_price, product);
+  const onSale = salePrice < product.base_price;
   return (
     <Link href={`/product?slug=${encodeURIComponent(product.slug)}`} className="card block group">
       <div className="aspect-square bg-slate-100 flex items-center justify-center text-slate-400">
@@ -38,7 +43,13 @@ export function ProductCard({ product }: { product: PremadeProduct }) {
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-semibold text-slate-900 group-hover:text-brand-700">{name}</h3>
-          <span className="text-sm font-medium text-slate-900 whitespace-nowrap">{priceStr}</span>
+          <span className="text-sm font-medium text-slate-900 whitespace-nowrap">
+            {onSale ? (<>
+              {/* A sale shows the regular price struck through, sale price beside it. */}
+              <s className="mr-1 font-normal text-slate-400">{label(product.base_price)}</s>
+              <span className="text-rose-700">{label(salePrice)}</span>
+            </>) : label(product.base_price)}
+          </span>
         </div>
         {firstMat && (
           <div className="mt-2">
