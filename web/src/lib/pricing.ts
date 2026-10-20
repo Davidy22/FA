@@ -11,7 +11,7 @@ export interface FilamentPricing {
 }
 
 export interface LocationPricing {
-  hourly_machine_rate: number; // USD/hr
+  hourly_machine_rate: number; // per hour, in the location's currency (HKD in Hong Kong)
   tax_rate: number;            // 0.0 - 1.0
 }
 
@@ -19,7 +19,6 @@ export interface QuoteConstants {
   wall_thickness_mm: number;   // default 0.84
   setup_minutes: number;       // default 3
   handling_fee: number;        // default 1.00
-  min_order_fee: number;       // default 3.00
 }
 
 export interface QuoteInput {
@@ -40,7 +39,6 @@ export interface QuoteBreakdown {
   machine_cost: number;
   handling_fee: number;
   unit_price: number;
-  unit_price_floored: boolean;
   subtotal: number;
   tax_amount: number;
   total: number;
@@ -67,15 +65,14 @@ export function quoteHeuristic(input: QuoteInput): QuoteBreakdown {
 
   const materialCostUnit = gramsUnit * filament.cost_per_gram;
   const machineCostUnit = (printMinUnit / 60) * location.hourly_machine_rate;
-  const unitPriceRaw = materialCostUnit + machineCostUnit + constants.handling_fee;
-  const unitPrice = unitPriceRaw; // per-unit price (floor applied at total level)
+  // Per-unit price: material + machine time + handling, with no order minimum.
+  const unitPrice = materialCostUnit + machineCostUnit + constants.handling_fee;
 
   const materialCost = materialCostUnit * quantity;
   const machineCost = machineCostUnit * quantity;
   const handling = constants.handling_fee * quantity;
-  const subtotalRaw = materialCost + machineCost + handling;
-  const floored = subtotalRaw < constants.min_order_fee;
-  const subtotal = Math.max(subtotalRaw, constants.min_order_fee);
+  // No minimum-order floor: a small print costs exactly what it costs.
+  const subtotal = materialCost + machineCost + handling;
   const tax = Math.round(subtotal * location.tax_rate * 100) / 100;
   const total = Math.round((subtotal + tax) * 100) / 100;
 
@@ -86,7 +83,6 @@ export function quoteHeuristic(input: QuoteInput): QuoteBreakdown {
     machine_cost: Math.round(machineCost * 100) / 100,
     handling_fee: Math.round(handling * 100) / 100,
     unit_price: Math.round(unitPrice * 100) / 100,
-    unit_price_floored: floored,
     subtotal: Math.round(subtotal * 100) / 100,
     tax_amount: tax,
     total,
@@ -96,7 +92,7 @@ export function quoteHeuristic(input: QuoteInput): QuoteBreakdown {
 }
 
 // Golden test constants from spec Appendix D (PLA 1.24 g/cm3, default flow 7.5 mm3/s;
-// cost_per_gram HK$0.195, hourly rate $8/hr, tax 0, min fee $3, handling $1, setup 3min, wall 0.84mm).
+// cost_per_gram HK$0.195, hourly rate $8/hr, tax 0, handling $1, setup 3min, wall 0.84mm).
 export const GOLDEN_20MM_CUBE_PLA: QuoteInput = (() => {
   // 20 mm cube = 8 cm3, surface 6*2*2 = 24 cm2
   return {
@@ -107,6 +103,6 @@ export const GOLDEN_20MM_CUBE_PLA: QuoteInput = (() => {
     location: { hourly_machine_rate: 8, tax_rate: 0 },
     infill_percent: 20,
     quantity: 1,
-    constants: { wall_thickness_mm: 0.84, setup_minutes: 3, handling_fee: 1.00, min_order_fee: 3.00 },
+    constants: { wall_thickness_mm: 0.84, setup_minutes: 3, handling_fee: 1.00 },
   };
 })();

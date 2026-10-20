@@ -26,5 +26,6 @@
   "premade": "Product",
   "document": "Document printing",
   "custom": "Custom print",
-  "internal_notes": "Internal notes"
+  "internal_notes": "Internal notes",
+  "material_slots": "Material slots"
 }

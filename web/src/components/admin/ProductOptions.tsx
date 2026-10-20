@@ -2,15 +2,17 @@
 import { useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { cleanLocalized, decimal, lines, localizedInput } from '@/lib/admin';
-import { t_db } from '@/lib/format';
+import { cleanLocalized, decimal, isoDateTime, lines, localDateTime, localizedInput } from '@/lib/admin';
+import { formatMoney, t_db } from '@/lib/format';
+import { isOnSale } from '@/lib/sale';
 import { supabase } from '@/lib/supabase';
 import { useLocale } from '@/store/locale';
+import type { Locale } from '@/lib/i18n';
 import type {
   FileOptionConfig, Localized, PremadeProduct, ProductOptionChoice,
   ProductOptionGroup, TextOptionConfig,
 } from '@/lib/types';
-import { AdminFeedback, AdminQueryState, FormActions, LocalizedFields, useAdminAction } from './Shared';
+import { AdminFeedback, AdminQueryState, FormActions, LocalizedFields, useAdminAction, useAdminLanguage, useFormPanel } from './Shared';
 
 type OptionDetail = ProductOptionGroup & {
   choices: ProductOptionChoice[];
@@ -55,6 +57,8 @@ function GroupForm({ productId, group, onDone }: { productId: string; group?: Op
   const { t } = useTranslation('admin');
   const queryClient = useQueryClient();
   const action = useAdminAction();
+  const panel = useFormPanel<HTMLFormElement>();
+  const [language, setLanguage] = useAdminLanguage();
   const [label, setLabel] = useState(() => localizedInput(group?.label));
   const [type, setType] = useState<ProductOptionGroup['option_type']>(group?.option_type || 'select_one');
   const [required, setRequired] = useState(group?.required ?? false);
@@ -104,9 +108,11 @@ function GroupForm({ productId, group, onDone }: { productId: string; group?: Op
     }, onDone);
   }
 
-  return <form onSubmit={(event) => void submit(event)} className="mt-3 space-y-3 rounded border border-brand-200 p-3">
+  return <form ref={panel} onSubmit={(event) => void submit(event)} className="mt-3 space-y-3 rounded border border-brand-200 bg-brand-50/30 p-3">
     <h5 className="font-medium">{group ? t('edit_group') : t('add_group')}</h5>
-    <LocalizedFields label={t('fields.option_label')} value={label} onChange={setLabel} />
+    <LocalizedFields language={language} onLanguageChange={setLanguage} fields={[
+      { label: t('fields.option_label'), value: label, onChange: setLabel },
+    ]} />
     <div className="grid gap-3 sm:grid-cols-2">
       <label className="text-sm">{t('fields.option_type')}
         <select className="input mt-1" value={type} disabled={!!group} onChange={(event) => setType(event.target.value as ProductOptionGroup['option_type'])}>
@@ -135,17 +141,29 @@ function ChoiceForm({ productId, groupId, choice, onDone }: {
   const { t } = useTranslation('admin');
   const queryClient = useQueryClient();
   const action = useAdminAction();
+  const panel = useFormPanel<HTMLFormElement>();
+  const [language, setLanguage] = useAdminLanguage();
   const [label, setLabel] = useState<Localized>(() => localizedInput(choice?.label));
   const [modifier, setModifier] = useState(choice?.price_modifier?.toString() || '0');
   const [sort, setSort] = useState(choice?.sort_order?.toString() || '0');
+  const [salePrice, setSalePrice] = useState(choice?.sale_price != null ? choice.sale_price.toString() : '');
+  const [saleStartsAt, setSaleStartsAt] = useState(localDateTime(choice?.sale_starts_at));
+  const [saleEndsAt, setSaleEndsAt] = useState(localDateTime(choice?.sale_ends_at));
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     await action.run(async () => {
+      const priceModifier = decimal(modifier, t('fields.price_modifier'), -99999999, 99999999);
+      const sale = salePrice.trim() === '' ? null : decimal(salePrice, t('fields.sale_price'), -99999999, 99999999);
+      if (sale !== null && sale >= priceModifier) throw new Error(t('sale_below_modifier'));
+      const startsAt = isoDateTime(saleStartsAt);
+      const endsAt = isoDateTime(saleEndsAt);
+      if (startsAt && endsAt && new Date(endsAt) <= new Date(startsAt)) throw new Error(t('invalid_date_range'));
       const payload = {
         group_id: groupId, label: cleanLocalized(label, t('fields.choice_label'))!,
-        price_modifier: decimal(modifier, t('fields.price_modifier'), -99999999, 99999999),
+        price_modifier: priceModifier,
         sort_order: decimal(sort, t('fields.sort_order'), -32768, 32767, true),
+        sale_price: sale, sale_starts_at: startsAt, sale_ends_at: endsAt,
       };
       const result = choice
         ? await supabase().from('product_option_choices').update(payload).eq('id', choice.id).select().single()
@@ -154,15 +172,42 @@ function ChoiceForm({ productId, groupId, choice, onDone }: {
       await invalidateOptions(queryClient, productId);
     }, onDone);
   }
-  return <form onSubmit={(event) => void submit(event)} className="mt-3 space-y-3 rounded border border-brand-200 p-3">
+  return <form ref={panel} onSubmit={(event) => void submit(event)} className="mt-3 space-y-3 rounded border border-brand-200 bg-brand-50/30 p-3">
     <h5 className="font-medium">{choice ? t('edit_choice') : t('add_choice')}</h5>
-    <LocalizedFields label={t('fields.choice_label')} value={label} onChange={setLabel} />
+    <LocalizedFields language={language} onLanguageChange={setLanguage} fields={[
+      { label: t('fields.choice_label'), value: label, onChange: setLabel },
+    ]} />
     <div className="grid gap-3 sm:grid-cols-2">
       <label className="text-sm">{t('fields.price_modifier')}<input className="input mt-1" type="number" step="0.01" value={modifier} onChange={(event) => setModifier(event.target.value)} /></label>
       <label className="text-sm">{t('fields.sort_order')}<input className="input mt-1" type="number" step="1" value={sort} onChange={(event) => setSort(event.target.value)} /></label>
     </div>
+    <fieldset className="rounded border p-3"><legend className="px-1 text-sm font-medium">{t('sale_price')}</legend>
+      <p className="text-xs text-slate-600">{t('choice_sale_help')}</p>
+      <div className="mt-2 grid gap-3 sm:grid-cols-3">
+        <label className="text-sm">{t('fields.sale_price')}
+          <input className="input mt-1" type="number" step="0.01" value={salePrice} placeholder={t('no_sale')}
+            onChange={(event) => setSalePrice(event.target.value)} />
+        </label>
+        <label className="text-sm">{t('fields.sale_starts_at')}
+          <input className="input mt-1" type="datetime-local" value={saleStartsAt} onChange={(event) => setSaleStartsAt(event.target.value)} />
+        </label>
+        <label className="text-sm">{t('fields.sale_ends_at')}
+          <input className="input mt-1" type="datetime-local" value={saleEndsAt} onChange={(event) => setSaleEndsAt(event.target.value)} />
+        </label>
+      </div>
+    </fieldset>
     <AdminFeedback error={action.error} notice={action.notice} /><FormActions busy={action.busy} onCancel={onDone} />
   </form>;
+}
+
+/** A choice's modifier, with the regular one struck through while on sale. */
+function ChoicePrice({ choice, locale }: { choice: ProductOptionChoice; locale: Locale }) {
+  const signed = (amount: number) => `${amount >= 0 ? '+' : '−'}${formatMoney(Math.abs(amount), locale)}`;
+  if (!isOnSale(choice)) return <>{signed(choice.price_modifier)}</>;
+  return <>
+    <s className="mr-1 text-slate-400">{signed(choice.price_modifier)}</s>
+    <span className="text-rose-700">{signed(Number(choice.sale_price))}</span>
+  </>;
 }
 
 export function ProductOptions({ product, onClose }: { product: PremadeProduct; onClose: () => void }) {
@@ -207,14 +252,18 @@ export function ProductOptions({ product, onClose }: { product: PremadeProduct; 
         {group.option_type === 'file' && <p className="mt-2 text-slate-600">{group.fileConfig?.allowed_mime_types?.join(', ') || '—'} · {(group.fileConfig?.max_size_bytes || 5242880) / 1024 / 1024} MB</p>}
         {editingGroup === group.id && <GroupForm key={group.id} productId={product.id} group={group} onDone={() => setEditingGroup(null)} />}
         {(group.option_type === 'select_one' || group.option_type === 'select_many') && <>
-          <ul className="mt-3 divide-y">{group.choices.map((choice) => <li key={choice.id} className="flex items-center justify-between gap-2 py-2">
-            <span>{t_db(choice.label, locale)} · {choice.price_modifier >= 0 ? '+' : ''}{choice.price_modifier}</span>
-            <span className="flex gap-2"><button className="text-brand-700 underline" onClick={() => setEditingChoice(choice.id)}>{t('common:edit')}</button>
-              <button className="text-red-700 underline" disabled={action.busy} onClick={() => void remove('product_option_choices', choice.id)}>{t('common:delete')}</button></span>
-          </li>)}</ul>
-          <button className="mt-2 text-brand-700 underline" type="button" onClick={() => { setEditingChoice(null); setNewChoiceGroup(group.id); }}>{t('admin:add_choice')}</button>
+          <div className="mt-3 flex justify-end">
+            <button className="text-brand-700 underline" type="button" onClick={() => { setEditingChoice(null); setNewChoiceGroup(group.id); }}>{t('admin:add_choice')}</button>
+          </div>
           {newChoiceGroup === group.id && <ChoiceForm key={`new-${group.id}`} productId={product.id} groupId={group.id} onDone={() => setNewChoiceGroup(null)} />}
-          {group.choices.map((choice) => editingChoice === choice.id && <ChoiceForm key={choice.id} productId={product.id} groupId={group.id} choice={choice} onDone={() => setEditingChoice(null)} />)}
+          <ul className="mt-2 divide-y">{group.choices.map((choice) => <li key={choice.id} className="py-2">
+            <div className="flex items-center justify-between gap-2">
+              <span>{t_db(choice.label, locale)} · <ChoicePrice choice={choice} locale={locale} /></span>
+              <span className="flex gap-2"><button className="text-brand-700 underline" onClick={() => setEditingChoice(choice.id)}>{t('common:edit')}</button>
+                <button className="text-red-700 underline" disabled={action.busy} onClick={() => void remove('product_option_choices', choice.id)}>{t('common:delete')}</button></span>
+            </div>
+            {editingChoice === choice.id && <ChoiceForm key={choice.id} productId={product.id} groupId={group.id} choice={choice} onDone={() => setEditingChoice(null)} />}
+          </li>)}</ul>
         </>}
       </div>)}
     </div>

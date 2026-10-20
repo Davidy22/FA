@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Localized } from '@/lib/types';
 import { adminError } from '@/lib/admin';
@@ -60,43 +60,82 @@ export function AdminPagination({ page, hasNext, onPageChange }: {
   </nav>;
 }
 
-export function LocalizedFields({ label, value, onChange, multiline = false, required = true }: {
+export const ADMIN_LANGUAGES = ['en', 'zh-Hans', 'zh-Hant'] as const;
+export type AdminLanguage = (typeof ADMIN_LANGUAGES)[number];
+
+/** The one language every localized field of a form is being edited in. */
+export function useAdminLanguage() {
+  return useState<AdminLanguage>('en');
+}
+
+export type LocalizedFieldSpec = {
   label: string;
   value: Localized;
   onChange: (value: Localized) => void;
   multiline?: boolean;
   required?: boolean;
+};
+
+/**
+ * Every localized text box of one item, edited in the language chosen by a
+ * single picker: a material's name and adjective (or a product's name and
+ * description) share one selector instead of one per field.
+ */
+export function LocalizedFields({ fields, language, onLanguageChange, legend }: {
+  fields: LocalizedFieldSpec[];
+  language: AdminLanguage;
+  onLanguageChange: (language: AdminLanguage) => void;
+  legend?: string;
 }) {
   const { t } = useTranslation('admin');
-  const [language, setLanguage] = useState<'en' | 'zh-Hant' | 'zh-Hans'>('en');
+  const isFilled = (option: AdminLanguage) =>
+    fields.some((field) => (field.value[option] || '').trim() !== '');
   return (
     <fieldset className="rounded-md border border-slate-200 p-3">
-      <legend className="px-1 text-sm font-medium text-slate-700">{label}</legend>
-      <div className="space-y-3">
+      <legend className="px-1 text-sm font-medium text-slate-700">{legend || t('translations')}</legend>
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
         <label className="block text-xs text-slate-600">
           {t('language_picker')}
-          <select className="input mt-1 max-w-xs text-sm" value={language}
-            onChange={(event) => setLanguage(event.target.value as typeof language)}>
-            {(['en', 'zh-Hans', 'zh-Hant'] as const).map((option) => (
-              <option key={option} value={option}>{t(`language.${option}`)}</option>
+          <select className="input mt-1 max-w-xs text-sm" value={language} aria-label={t('language_picker')}
+            onChange={(event) => onLanguageChange(event.target.value as AdminLanguage)}>
+            {ADMIN_LANGUAGES.map((option) => (
+              <option key={option} value={option}>
+                {t(`language.${option}`)}
+                {option !== 'en' && !isFilled(option) ? ` · ${t('language_empty')}` : ''}
+              </option>
             ))}
           </select>
         </label>
-        <label className="block text-xs text-slate-600">
-          {t(`language.${language}`)}{language === 'en' && required ? ' *' : ''}
-          {multiline ? (
-            <textarea className="input mt-1 min-h-20 text-sm" value={value[language] || ''}
-              required={required && language === 'en'}
-              onChange={(e) => onChange({ ...value, [language]: e.target.value })} />
-          ) : (
-            <input className="input mt-1 text-sm" value={value[language] || ''}
-              required={required && language === 'en'}
-              onChange={(e) => onChange({ ...value, [language]: e.target.value })} />
-          )}
-        </label>
+        <p className="max-w-md text-xs text-slate-500">{t('language_help')}</p>
+      </div>
+      <div className="mt-3 space-y-3">
+        {fields.map((field) => (
+          <label key={field.label} className="block text-xs text-slate-600">
+            {field.label}{field.required !== false && language === 'en' ? ' *' : ''}
+            {field.multiline ? (
+              <textarea className="input mt-1 min-h-20 text-sm" value={field.value[language] || ''}
+                required={field.required !== false && language === 'en'}
+                onChange={(e) => field.onChange({ ...field.value, [language]: e.target.value })} />
+            ) : (
+              <input className="input mt-1 text-sm" value={field.value[language] || ''}
+                required={field.required !== false && language === 'en'}
+                onChange={(e) => field.onChange({ ...field.value, [language]: e.target.value })} />
+            )}
+          </label>
+        ))}
       </div>
     </fieldset>
   );
+}
+
+/**
+ * Add/edit panels open above their list, so an "Edit" click further down the
+ * page still shows the form: scroll it into view as soon as it mounts.
+ */
+export function useFormPanel<T extends HTMLElement>() {
+  const ref = useRef<T | null>(null);
+  useEffect(() => { ref.current?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' }); }, []);
+  return ref;
 }
 
 export function FormActions({ busy, onCancel, submitLabel }: { busy: boolean; onCancel: () => void; submitLabel?: string }) {

@@ -111,6 +111,9 @@ try {
   await db.exec('set role authenticated');
   await rows(`insert into public.locations(id,name,timezone,hourly_machine_rate,tax_rate)
     values($1,'DB smoke location','Asia/Hong_Kong',10,0.05)`, [newLocation]);
+  // Country defaults to HK, so the trigger drops the rate the form tried to set.
+  assert.equal(Number((await one('select tax_rate from public.locations where id=$1',
+    [newLocation])).tax_rate), 0);
   await rows(`insert into public.materials(id,slug,name,density_g_cm3,cost_per_gram)
     values($1,'db-smoke-pla',$2::jsonb,1.25,0.31)`, [newMaterial, '{"en":"Test PLA"}']);
   await rows(`insert into public.filaments(id,material_id,color)
@@ -164,6 +167,109 @@ try {
     ['smoke-options', buyer, location, 'db-buyer@example.test', 'Buyer', 'en']);
   assert.equal(Number((await one('select count(*) as n from public.order_item_option_values where option_group_id=$1', [group])).n), 2);
   console.log('✓ required options are priced and multi-select choices survive fulfillment');
+
+  // A print can combine materials: named slots, each with its own eligible
+  // materials, price modifiers and default material/colour.
+  const petg = '11111111-1111-1111-1111-000000000002';
+  const tpu = '11111111-1111-1111-1111-000000000004';
+  const plaRed = '22222222-2222-2222-2222-000000000003';
+  const petgClear = '22222222-2222-2222-2222-000000000005';
+  const tpuBlack = '22222222-2222-2222-2222-000000000008';
+  const slotsPayload = [
+    { name: { en: 'Body' }, sort_order: 0, default_material_id: tpu, default_filament_id: tpuBlack,
+      materials: [{ material_id: tpu, price_modifier: 0 }, { material_id: pla, price_modifier: -2 }] },
+    { name: { en: 'Accent' }, sort_order: 1, default_material_id: pla, default_filament_id: plaRed,
+      materials: [{ material_id: pla, price_modifier: 0 }, { material_id: petg, price_modifier: 1.5 }] },
+  ];
+  const slotProduct = await one('select id,slug from public.admin_save_product($1::jsonb,$2::jsonb,$3::jsonb)',
+    [JSON.stringify(exampleProduct({ slug: 'db-smoke-slots', name: { en: 'Smoke slots' }, base_price: 20 })),
+     JSON.stringify([]), JSON.stringify(slotsPayload)]);
+  const slotIds = await rows('select id from public.product_material_slots where product_id=$1 order by sort_order',
+    [slotProduct.id]);
+  assert.equal(slotIds.length, 2);
+
+  // No slots in the cart line: the slot defaults are used and priced.
+  const slotLine = { kind: 'premade', product_id: slotProduct.id, quantity: 1, options: {} };
+  const defaultSlots = await pricing(cart([slotLine]));
+  assert.equal(Number(defaultSlots.lines[0].unit_price), 20); // 20 + TPU 0 + PLA 0
+  assert.equal(defaultSlots.lines[0].item_snapshot.slots.length, 2);
+  assert.equal(defaultSlots.lines[0].item_snapshot.slots[0].name.en, 'Body');
+  assert.equal(defaultSlots.lines[0].item_snapshot.slots[0].color.id, tpuBlack);
+  assert.equal(defaultSlots.lines[0].item_snapshot.slots[1].color.id, plaRed);
+
+  // Picking another eligible material per slot moves the price by its modifier.
+  const customSlots = await pricing(cart([{ ...slotLine, quantity: 2, slots: {
+    [slotIds[0].id]: { material_id: pla, color_filament_id: plaRed },
+    [slotIds[1].id]: { material_id: petg, color_filament_id: petgClear },
+  } }]));
+  assert.equal(Number(customSlots.lines[0].unit_price), 19.5); // 20 - 2 + 1.5
+  assert.equal(customSlots.lines[0].item_snapshot.slots[1].color.color_hex, '#e0f7ff');
+
+  // A material outside the slot's list, or a colour of another material, is refused.
+  await assert.rejects(pricing(cart([{ ...slotLine, slots: { [slotIds[0].id]: { material_id: petg } } }])),
+    /Material not allowed for Body/);
+  await assert.rejects(pricing(cart([{ ...slotLine, slots: {
+    [slotIds[0].id]: { material_id: tpu, color_filament_id: plaRed } } }])),
+    /Color\/material mismatch for Body/);
+
+  // Fulfilment keeps every slot selection so the print can be made as ordered.
+  const slotCart = cart([{ ...slotLine, slots: { [slotIds[1].id]: { material_id: petg } } }]);
+  await rows(`insert into public.checkout_sessions(session_id,cart,user_id,location_id,contact_email,contact_name,locale)
+      values('smoke-slots',$1::jsonb,$2,$3,'db-buyer@example.test','Buyer','en')`,
+    [JSON.stringify(slotCart), buyer, location]);
+  const slotOrder = await one('select id from public.create_order_from_cart($1,$2,$3,$4,$5,$6)',
+    ['smoke-slots', buyer, location, 'db-buyer@example.test', 'Buyer', 'en']);
+  const slotItem = await one('select material_id,material_slots from public.order_items where order_id=$1', [slotOrder.id]);
+  assert.equal(slotItem.material_slots.length, 2);
+  assert.equal(slotItem.material_slots[1].material.name.en, 'PETG');
+  assert.equal(slotItem.material_id, tpu); // the first slot keeps the legacy column
+  await assert.rejects(one('select id from public.admin_save_product($1::jsonb,$2::jsonb,$3::jsonb)',
+    [JSON.stringify(exampleProduct({ id: slotProduct.id, slug: 'db-smoke-slots', base_price: 20 })),
+     JSON.stringify([]),
+     JSON.stringify([{ name: { en: 'Body' }, default_material_id: petg, materials: [{ material_id: tpu, price_modifier: 0 }] }])]),
+  /Default material must be eligible for the slot/);
+  console.log('✓ material slots price per part and survive fulfillment');
+
+  // Sale prices: a product and an option choice can both be discounted, with an
+  // optional window, and price_cart reports the saving.
+  const saleProduct = await saveProduct(exampleProduct({ slug: 'db-smoke-sale', base_price: 30, sale_price: 24 }), materials);
+  const onSale = await pricing(cart([{ kind: 'premade', product_id: saleProduct.id, material_id: pla,
+    quantity: 2, options: {} }]));
+  assert.equal(Number(onSale.lines[0].unit_price), 26); // 24 sale + 2 material
+  assert.equal(Number(onSale.sale_savings), 12);        // (30 - 24) x 2
+  assert.equal(Number(onSale.lines[0].item_snapshot.regular_price), 30);
+  assert.equal(Number(onSale.lines[0].item_snapshot.sale_price), 24);
+
+  const iso = (offsetMs) => new Date(Date.now() + offsetMs).toISOString();
+  const day = 86400000;
+  const futureSale = await saveProduct(exampleProduct({ slug: 'db-smoke-sale-future', base_price: 30,
+    sale_price: 20, sale_starts_at: iso(day) }), materials);
+  const expiredSale = await saveProduct(exampleProduct({ slug: 'db-smoke-sale-expired', base_price: 30,
+    sale_price: 20, sale_starts_at: iso(-2 * day), sale_ends_at: iso(-day) }), materials);
+  const windowSale = await saveProduct(exampleProduct({ slug: 'db-smoke-sale-window', base_price: 30,
+    sale_price: 20, sale_starts_at: iso(-day), sale_ends_at: iso(day) }), materials);
+  for (const [row, expected, savings] of [[futureSale, 32, 0], [expiredSale, 32, 0], [windowSale, 22, 10]]) {
+    const priced = await pricing(cart([{ kind: 'premade', product_id: row.id, material_id: pla,
+      quantity: 1, options: {} }]));
+    assert.equal(Number(priced.lines[0].unit_price), expected);
+    assert.equal(Number(priced.sale_savings), savings);
+  }
+  await assert.rejects(saveProduct(exampleProduct({ slug: 'db-smoke-sale-bad', base_price: 10, sale_price: 12 }),
+    materials), /Sale price must be lower than the regular price/);
+  await assert.rejects(saveProduct(exampleProduct({ slug: 'db-smoke-sale-window-bad', base_price: 10,
+    sale_price: 8, sale_starts_at: iso(day), sale_ends_at: iso(-day) }), materials), /Sale must end after it starts/);
+
+  // The seeded demo sale: phone stand HK$8 -> HK$6, and the planter's Large
+  // option HK$5 -> HK$2.50.
+  const demoSale = await pricing(cart([{ kind: 'premade', product_id: '33333333-3333-3333-3333-000000000002',
+    material_id: pla, quantity: 1, options: {} }]));
+  assert.equal(Number(demoSale.lines[0].unit_price), 6);
+  const demoChoiceSale = await pricing(cart([{ kind: 'premade', product_id: '33333333-3333-3333-3333-000000000003',
+    material_id: pla, quantity: 1,
+    options: { '44444444-4444-4444-4444-000000000001': { choice_id: '55555555-5555-5555-5555-000000000002' } } }]));
+  assert.equal(Number(demoChoiceSale.lines[0].unit_price), 14.5); // 12 + 0 + 2.50 sale on Large
+  assert.equal(Number(demoChoiceSale.sale_savings), 2.5);
+  console.log('✓ sale prices apply within their window and report the saving');
 
   const fileGroup = 'aaaaaaaa-0000-0000-0000-000000000006';
   const filePath = `${buyer}/smoke.png`;
@@ -220,6 +326,87 @@ try {
   assert.equal((await one('select status from public.coupons where code=$1', ['SMOKEDISCOUNT'])).status, 'used');
   assert.equal((await one('select discount_amount from public.orders where id=$1', [couponOrder.id])).discount_amount, '5.00');
   console.log('✓ coupon discount is consumed at fulfillment');
+
+  // The shop is Hong Kong based: the seeded pickup point prices in HKD on Hong
+  // Kong time and adds no sales tax, and a small cart is no longer raised to a
+  // minimum order fee.
+  const seededLocation = await one(
+    'select country,currency,timezone,tax_rate from public.locations where id=$1', [location]);
+  assert.equal(seededLocation.country, 'HK');
+  assert.equal(seededLocation.currency, 'HKD');
+  assert.equal(seededLocation.timezone, 'Asia/Hong_Kong');
+  assert.equal(Number(seededLocation.tax_rate), 0);
+  assert.equal(Number((await pricing(docCart)).total_amount), 1.5);
+
+  // Sales tax is a property of the location's country, so a new Hong Kong row is
+  // forced to zero even when the admin types a rate.
+  const hkLocation = 'dddddddd-0000-0000-0000-000000000002';
+  await rows(`insert into public.locations(id,name,timezone,hourly_machine_rate,tax_rate,country)
+    values($1,'DB smoke Hong Kong','Asia/Hong_Kong',10,0.05,'hk')`, [hkLocation]);
+  const hkLocationRow = await one('select country,tax_rate from public.locations where id=$1', [hkLocation]);
+  assert.equal(hkLocationRow.country, 'HK');
+  assert.equal(Number(hkLocationRow.tax_rate), 0);
+  const hkDocPricing = await pricing({ ...docCart, location_id: hkLocation });
+  assert.equal(Number(hkDocPricing.tax_amount), 0);
+  assert.equal(Number(hkDocPricing.total_amount), 1.5);
+
+  // The tax feature itself is kept for the speculative expansion abroad: a
+  // taxable country still charges its own rate, in its own currency.
+  const abroadLocation = 'dddddddd-0000-0000-0000-000000000003';
+  await rows(`insert into public.locations(id,name,timezone,hourly_machine_rate,tax_rate,currency,country)
+    values($1,'DB smoke abroad','Asia/Taipei',10,0.05,'USD','TW')`, [abroadLocation]);
+  const abroadPricing = await pricing({ ...docCart, location_id: abroadLocation });
+  assert.equal(abroadPricing.country, 'TW');
+  assert.equal(abroadPricing.currency, 'USD');
+  assert.equal(Number(abroadPricing.tax_amount), 0.08);
+  assert.equal(Number(abroadPricing.total_amount), 1.58);
+  console.log('✓ Hong Kong prices tax-free in HKD while a taxable country still charges');
+
+  // Coupons can require a minimum spend or discount a single product only.
+  const keychain = await saveProduct(exampleProduct({ slug: 'db-smoke-keychain',
+    name: { en: 'Smoke keychain' }, base_price: 20 }), [{ material_id: pla, price_modifier: 0 }]);
+  const keychainLine = { kind: 'premade', product_id: keychain.id, material_id: pla, quantity: 1, options: {} };
+  await rows(`insert into public.coupons(code,source,discount_type,discount_value,min_subtotal,user_id)
+    values('SMOKEMINIMUM','admin','fixed',5,50,$1)`, [buyer]);
+  await assert.rejects(pricing(cart([withFile], { coupon_code: 'SMOKEMINIMUM' })), /Spend at least 50/);
+  await rows(`update public.coupons set min_subtotal=20 where code='SMOKEMINIMUM'`);
+  assert.equal((await pricing(cart([withFile], { coupon_code: 'SMOKEMINIMUM' }))).discount_amount, 5);
+  await rows(`insert into public.coupons(code,source,discount_type,discount_value,product_id,user_id)
+    values('SMOKEITEM','admin','percent',50,$1,$2)`, [keychain.id, buyer]);
+  const mixedCart = await pricing(cart([withFile, keychainLine], { coupon_code: 'SMOKEITEM' }));
+  assert.equal(mixedCart.subtotal, 48);        // (9 + 2 + 3) x 2 + 20
+  assert.equal(mixedCart.discount_amount, 10); // half of the keychain only
+  assert.equal(Number(mixedCart.tax_amount), 0); // Hong Kong adds no sales tax
+  assert.equal(Number(mixedCart.total_amount), 38);
+  await assert.rejects(pricing(cart([withFile], { coupon_code: 'SMOKEITEM' })),
+    /only applies to Smoke keychain/);
+  console.log('✓ coupons can require a minimum spend or discount one product only');
+
+  // A batch of single-use codes comes from one admin-only call.
+  const batch = await rows('select coupon_code from public.admin_generate_coupons($1,$2,$3,$4)',
+    [40, 'SMOKE', 'fixed', 3]);
+  assert.equal(batch.length, 40);
+  assert.equal(new Set(batch.map((row) => row.coupon_code)).size, 40);
+  assert.ok(batch.every((row) => /^SMOKE[A-Z2-9]{10}$/.test(row.coupon_code)));
+  await assert.rejects(rows(`insert into public.coupons(code,source,discount_type,discount_value,min_subtotal)
+    values('SMOKEBAD','admin','fixed',5,-1)`), /min_subtotal_check/);
+  await claims(buyer);
+  await assert.rejects(rows('select coupon_code from public.admin_generate_coupons($1,$2,$3,$4)',
+    [5, 'SMOKE', 'fixed', 3]), /Admin only/);
+  console.log('✓ admins can generate a batch of single-use coupon codes');
+
+  // Points can be redeemed for a coupon scoped to one product: a free item.
+  await rows(`update public.platform_settings set value=$1::jsonb where key='rewards.redeem_options'`,
+    [JSON.stringify([{ points: 300, discount_type: 'percent', discount_value: 100, product_id: keychain.id }])]);
+  await rows('update public.profiles set points_balance=400 where id=$1', [buyer]);
+  const redeemed = await one('select code,product_id from public.redeem_rewards(0)');
+  assert.equal(redeemed.product_id, keychain.id);
+  assert.equal(Number((await one('select points_balance from public.profiles where id=$1', [buyer])).points_balance), 100);
+  const freeItem = await pricing(cart([keychainLine], { coupon_code: redeemed.code }));
+  assert.equal(freeItem.discount_amount, 20);
+  assert.equal(Number(freeItem.total_amount), 0);
+  console.log('✓ points can be redeemed for a specific product');
+  await claims(admin);
 
   const submissionId = 'cccccccc-0000-0000-0000-000000000001';
   await db.exec(`grant select,insert,update,delete on public.model_submissions to authenticated;

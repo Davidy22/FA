@@ -119,7 +119,7 @@ export function AdminOrders() {
           <p className="mt-1 text-slate-600">{order.contact_name || order.contact_email} · {order.contact_email}</p>
           <p className="text-slate-500">{locationsQuery.data?.find((location) => location.id === order.location_id)?.name || '—'} · {new Date(order.created_at).toLocaleString(locale)}</p>
           {order.tracking_number && <p className="text-slate-600">{t('admin:fields.tracking')}: {order.tracking_number}</p>}
-        </div><strong>{formatMoney(Number(order.total_amount), locale)}</strong></div>
+        </div><strong>{formatMoney(Number(order.total_amount), locale, order.currency)}</strong></div>
         <div className="mt-3 flex flex-wrap gap-3">
           <Link className="text-brand-700 underline" href={`/employee/order?id=${order.id}`}>{t('admin:order_detail')}</Link>
           {order.status !== 'refunded' && <button type="button" className="text-brand-700 underline" onClick={() => setEditing(order.id)}>{t('admin:update_order')}</button>}

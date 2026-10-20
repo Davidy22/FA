@@ -114,7 +114,7 @@ export default function EmployeePortal() {
                   {['pending','printing','completed','shipped','cancelled'].map(s => <option key={s} value={s}>{t(`common:status.${s}`)}</option>)}
                 </select>
               </td>
-              <td className="text-right">{formatMoney(o.total_amount, locale)}</td>
+              <td className="text-right">{formatMoney(o.total_amount, locale, o.currency)}</td>
               <td className="text-right">
                 <Link href={`/employee/order?id=${o.id}`} className="text-brand-700 underline">Detail</Link>
               </td>

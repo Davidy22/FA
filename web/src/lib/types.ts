@@ -24,6 +24,10 @@ export type Coupon = {
   source: 'reward' | 'offer' | 'admin';
   discount_type: 'percent' | 'fixed';
   discount_value: number;
+  /** Cart subtotal the customer must reach before the coupon applies. */
+  min_subtotal: number | null;
+  /** When set, the coupon only discounts this product. */
+  product_id: string | null;
   status: 'active' | 'used';
   expires_at: string | null;
   used_order_id: string | null;
@@ -52,6 +56,8 @@ export type Location = {
   lng: number | null;
   timezone: string;
   hourly_machine_rate: number;
+  /** ISO 3166-1 alpha-2; drives whether sales tax applies at all. */
+  country: string | null;
   tax_rate: number;
   currency: string;
   is_active: boolean;
@@ -77,7 +83,14 @@ export type Filament = {
   is_active: boolean;
 };
 
-export type PremadeProduct = {
+/** Sale pricing shared by products and option choices. */
+export type SaleFields = {
+  sale_price: number | null;
+  sale_starts_at: string | null;
+  sale_ends_at: string | null;
+};
+
+export type PremadeProduct = SaleFields & {
   id: string;
   slug: string;
   name: Localized;
@@ -99,6 +112,40 @@ export type ProductMaterial = {
   price_modifier: number;
 };
 
+/**
+ * One named part of a multi-material print ("Body", "Wheels"). Each slot lists
+ * the materials it can be printed in and the material/colour it defaults to.
+ */
+export type ProductMaterialSlot = {
+  id: string;
+  product_id: string;
+  name: Localized;
+  sort_order: number;
+  default_material_id: string | null;
+  default_filament_id: string | null;
+};
+
+export type ProductSlotMaterial = {
+  slot_id: string;
+  material_id: string;
+  price_modifier: number;
+};
+
+/** What the customer picked for one slot, sent to price_cart. */
+export type SlotSelection = {
+  material_id?: string | null;
+  color_filament_id?: string | null;
+};
+
+/** A slot as price_cart resolved it; also what order_items.material_slots stores. */
+export type PricedSlot = {
+  slot_id: string;
+  name: Localized;
+  material: { id: string; slug: string; name: Localized; adjective: Localized | null };
+  material_price_modifier: number;
+  color: { id: string; color: Localized; color_hex: string | null } | null;
+};
+
 export type ProductOptionGroup = {
   id: string;
   product_id: string;
@@ -108,7 +155,7 @@ export type ProductOptionGroup = {
   sort_order: number;
 };
 
-export type ProductOptionChoice = {
+export type ProductOptionChoice = SaleFields & {
   id: string;
   group_id: string;
   label: Localized;
@@ -252,6 +299,8 @@ export type OfferCode = {
   description: string | null;
   discount_type: 'percent' | 'fixed';
   discount_value: number;
+  min_subtotal: number | null;
+  product_id: string | null;
   max_claims: number | null;
   claims_count: number;
   coupon_valid_days: number;
@@ -273,6 +322,8 @@ export type CartLineInput = {
   ticket_quote_id?: string;
   material_id?: string | null;
   color_filament_id?: string | null;
+  /** Per-slot material/colour picks, keyed by product_material_slots.id. */
+  slots?: Record<string, SlotSelection>;
   quantity: number;
   options?: Record<string, unknown>;
 };

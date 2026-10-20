@@ -1,24 +1,38 @@
 'use client';
 import { useSearchParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueries } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { t_db, formatMaterial, formatMoney } from '@/lib/format';
 import { useLocale } from '@/store/locale';
 import { useLocation } from '@/store/location';
+import { useSelectedLocation } from '@/hooks/useLocations';
 import { useCart } from '@/store/cart';
 import { useTranslation } from 'react-i18next';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { Price } from '@/components/Price';
+import { effectivePrice } from '@/lib/sale';
 import type {
-  FileOptionConfig, Filament, Material, PremadeProduct, ProductMaterial,
-  ProductOptionChoice, ProductOptionGroup, TextOptionConfig,
+  FileOptionConfig, Filament, Material, PremadeProduct, ProductMaterial, ProductMaterialSlot,
+  ProductOptionChoice, ProductOptionGroup, ProductSlotMaterial, SlotSelection, TextOptionConfig,
 } from '@/lib/types';
 import { Suspense } from 'react';
+
+/** Colours in stock for a material at the chosen location. */
+async function fetchFilaments(locationId: string, materialId: string): Promise<Filament[]> {
+  const { data, error } = await supabase().rpc('available_filaments', {
+    p_location_id: locationId, p_material_id: materialId,
+  });
+  if (error) throw error;
+  // The RPC calls the primary key filament_id, unlike the filaments table.
+  return (data || []).map((row: { filament_id: string }) => ({ ...row, id: row.filament_id })) as Filament[];
+}
 
 function ProductDetail({ slug }: { slug: string }) {
   const { t } = useTranslation(['common','catalog','errors']);
   const locale = useLocale((s) => s.locale);
   const locationId = useLocation((s) => s.selectedLocationId);
+  const currency = useSelectedLocation()?.currency;
   const addItem = useCart((s) => s.addItem);
 
   const { data: product, isPending: productPending, error: productError } = useQuery<PremadeProduct | null>({
@@ -42,8 +56,37 @@ function ProductDetail({ slug }: { slug: string }) {
     },
   });
 
+  // Multi-material prints: each slot is a named part of the print with its own
+  // list of materials it can be printed in, plus a default material and colour.
+  const { data: slots, error: slotsError } = useQuery<ProductMaterialSlot[]>({
+    queryKey: ['product_slots', product?.id],
+    enabled: !!product,
+    queryFn: async () => {
+      const { data, error } = await supabase().from('product_material_slots')
+        .select('*').eq('product_id', product!.id).order('sort_order').order('id');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: slotMaterials, error: slotMaterialsError } = useQuery<Record<string, (ProductSlotMaterial & { material: Material })[]>>({
+    queryKey: ['product_slot_materials', slots?.map((slot) => slot.id)],
+    enabled: !!slots?.length,
+    queryFn: async () => {
+      const { data, error } = await supabase().from('product_slot_materials')
+        .select('*, material:materials(*)').in('slot_id', slots!.map((slot) => slot.id));
+      if (error) throw error;
+      const out: Record<string, (ProductSlotMaterial & { material: Material })[]> = {};
+      for (const row of (data || []).filter((entry) => entry.material?.is_active)) {
+        (out[row.slot_id] ||= []).push(row);
+      }
+      return out;
+    },
+  });
+
   const [materialId, setMaterialId] = useState<string | null>(null);
   const [filamentId, setFilamentId] = useState<string | null>(null);
+  const [slotPicks, setSlotPicks] = useState<Record<string, SlotSelection>>({});
   const [options, setOptions] = useState<Record<string, any>>({});
   const [files, setFiles] = useState<Record<string, File | null>>({});
   const [adding, setAdding] = useState(false);
@@ -51,21 +94,51 @@ function ProductDetail({ slug }: { slug: string }) {
   const [addError, setAddError] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
 
+  const hasSlots = !!slots?.length;
+
+  const eligibleFor = (slot: ProductMaterialSlot) => slotMaterials?.[slot.id] || [];
+
+  /** The material a slot is printed in: the customer's pick, else the default. */
+  function slotMaterialId(slot: ProductMaterialSlot): string | null {
+    const eligible = eligibleFor(slot);
+    const picked = slotPicks[slot.id]?.material_id;
+    if (picked && eligible.some((entry) => entry.material_id === picked)) return picked;
+    if (slot.default_material_id && eligible.some((entry) => entry.material_id === slot.default_material_id)) {
+      return slot.default_material_id;
+    }
+    return eligible[0]?.material_id || null;
+  }
+
+  /** The colour for a slot, from stock at the chosen location. */
+  function slotColorId(slot: ProductMaterialSlot, colors: Filament[] | undefined): string | null {
+    if (!colors?.length) return null;
+    const picked = slotPicks[slot.id]?.color_filament_id;
+    if (picked && colors.some((color) => color.id === picked)) return picked;
+    if (slot.default_filament_id && colors.some((color) => color.id === slot.default_filament_id)) {
+      return slot.default_filament_id;
+    }
+    return null;
+  }
+
   const selectedMaterialId = materialId ||
     materials?.find((row) => row.material_id === product?.default_material_id)?.material_id ||
     materials?.[0]?.material_id || null;
 
   const { data: colors, error: colorsError } = useQuery<Filament[]>({
     queryKey: ['available_filaments', locationId, selectedMaterialId],
-    enabled: !!locationId && !!selectedMaterialId,
-    queryFn: async () => {
-      const { data, error } = await supabase().rpc('available_filaments', {
-        p_location_id: locationId, p_material_id: selectedMaterialId,
-      });
-      if (error) throw error;
-      // The RPC calls the primary key filament_id, unlike the filaments table.
-      return (data || []).map((row: { filament_id: string }) => ({ ...row, id: row.filament_id })) as Filament[];
-    },
+    enabled: !hasSlots && !!locationId && !!selectedMaterialId,
+    queryFn: () => fetchFilaments(locationId!, selectedMaterialId!),
+  });
+
+  const slotColors = useQueries({
+    queries: (slots || []).map((slot) => {
+      const slotMaterial = slotMaterialId(slot);
+      return {
+        queryKey: ['available_filaments', locationId, slotMaterial],
+        enabled: !!locationId && !!slotMaterial,
+        queryFn: () => fetchFilaments(locationId!, slotMaterial!),
+      };
+    }),
   });
 
   const { data: groups, error: groupsError } = useQuery<ProductOptionGroup[]>({
@@ -113,38 +186,54 @@ function ProductDetail({ slug }: { slug: string }) {
     queryFn: async () => {
       if (!groups?.length) return {};
       const { data, error } = await supabase().from('file_option_config')
-        .select('*').in('group_id', groups.map((group) => group.id));
+        .select('*').in('group_id', groups.map((g) => g.id));
       if (error) throw error;
       return Object.fromEntries((data || []).map((config) => [config.group_id, config]));
     },
   });
 
+  /** An estimate for the page; price_cart is the source of truth at checkout. */
   const price = useMemo(() => {
-    if (!product) return 0;
-    let p = product.base_price;
-    const pm = materials?.find((m) => m.material_id === selectedMaterialId);
-    if (pm) p += pm.price_modifier;
+    if (!product) return { regular: 0, now: 0 };
+    let modifiers = 0;
+    if (hasSlots) {
+      for (const slot of slots || []) {
+        const entry = eligibleFor(slot).find((row) => row.material_id === slotMaterialId(slot));
+        if (entry) modifiers += entry.price_modifier;
+      }
+    } else {
+      const pm = materials?.find((m) => m.material_id === selectedMaterialId);
+      if (pm) modifiers += pm.price_modifier;
+    }
     for (const g of groups || []) {
       const sel = options[g.id];
       if (!sel) continue;
       if (g.option_type === 'select_one' && sel.choice_id) {
         const c = choicesByGroup?.[g.id]?.find((x) => x.id === sel.choice_id);
-        if (c) p += c.price_modifier;
+        if (c) modifiers += effectivePrice(c.price_modifier, c);
       } else if (g.option_type === 'select_many' && sel.choice_ids) {
         for (const cid of sel.choice_ids as string[]) {
           const c = choicesByGroup?.[g.id]?.find((x) => x.id === cid);
-          if (c) p += c.price_modifier;
+          if (c) modifiers += effectivePrice(c.price_modifier, c);
         }
       } else if (g.option_type === 'text' && sel.text?.trim()) {
         const cfg = textConfigs?.[g.id];
-        if (cfg) p += cfg.price_modifier;
+        if (cfg) modifiers += cfg.price_modifier;
       }
     }
-    return Math.max(p, 0);
-  }, [product, materials, selectedMaterialId, groups, options, choicesByGroup, textConfigs]);
+    const regular = product.base_price + modifiers;
+    const now = effectivePrice(product.base_price, product) + modifiers;
+    return { regular: Math.max(regular, 0), now: Math.max(now, 0) };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product, materials, selectedMaterialId, slots, slotMaterials, slotPicks, hasSlots,
+      groups, options, choicesByGroup, textConfigs]);
+
+  const everySlotHasColor = !hasSlots || (slots || []).every((slot, index) =>
+    !!slotColorId(slot, slotColors[index]?.data as Filament[] | undefined));
 
   const canAdd = useMemo(() => {
-    if (!product || !locationId || !filamentId || !colors?.some((color) => color.id === filamentId) || !groups) return false;
+    if (!product || !locationId || !groups || !everySlotHasColor) return false;
+    if (!hasSlots && (!filamentId || !colors?.some((color) => color.id === filamentId))) return false;
     if (groups.some((group) => group.option_type === 'file') && !fileConfigs) return false;
     for (const group of groups) {
       if (!group.required && !fileConfigs?.[group.id]?.required) continue;
@@ -155,7 +244,18 @@ function ProductDetail({ slug }: { slug: string }) {
       if (group.option_type === 'file' && !files[group.id] && !selected?.file_path) return false;
     }
     return true;
-  }, [product, locationId, filamentId, colors, groups, options, files, fileConfigs]);
+  }, [product, locationId, groups, everySlotHasColor, hasSlots, filamentId, colors, options, files, fileConfigs]);
+
+  function slotSelections(): Record<string, SlotSelection> {
+    const out: Record<string, SlotSelection> = {};
+    for (const [index, slot] of (slots || []).entries()) {
+      out[slot.id] = {
+        material_id: slotMaterialId(slot),
+        color_filament_id: slotColorId(slot, slotColors[index]?.data as Filament[] | undefined),
+      };
+    }
+    return out;
+  }
 
   async function addToCart() {
     if (!product || !canAdd || adding) return;
@@ -180,8 +280,17 @@ function ProductDetail({ slug }: { slug: string }) {
         uploaded.push(path);
         nextOptions[group.id] = { file_path: path };
       }
-      addItem({ kind: 'premade', product_id: product.id, material_id: selectedMaterialId,
-        color_filament_id: filamentId, quantity: 1, options: nextOptions });
+      const picks = hasSlots ? slotSelections() : undefined;
+      addItem({
+        kind: 'premade',
+        product_id: product.id,
+        // The first slot's material doubles as the line's headline material.
+        material_id: hasSlots ? (picks?.[(slots || [])[0].id]?.material_id ?? null) : selectedMaterialId,
+        color_filament_id: hasSlots ? (picks?.[(slots || [])[0].id]?.color_filament_id ?? null) : filamentId,
+        slots: picks,
+        quantity: 1,
+        options: nextOptions,
+      });
       setOptions(nextOptions);
       setFiles({});
       setFileInputRevision((previous) => previous + 1);
@@ -200,7 +309,8 @@ function ProductDetail({ slug }: { slug: string }) {
     <p>{t('catalog:product_unavailable')}</p>
     <Link className="mt-2 inline-block text-brand-700 underline" href="/catalog">{t('catalog:browse')}</Link>
   </div>;
-  const detailError = materialsError || colorsError || groupsError || choicesError || textConfigsError || fileConfigsError;
+  const detailError = materialsError || slotsError || slotMaterialsError || colorsError || groupsError ||
+    choicesError || textConfigsError || fileConfigsError;
 
   return (
     <div className="container-ma py-8 grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -214,12 +324,61 @@ function ProductDetail({ slug }: { slug: string }) {
         <h1 className="text-3xl font-bold">{t_db(product.name, locale)}</h1>
         {product.submitted_by && <p className="mt-1 text-sm text-emerald-700">{t('common:community_design')}</p>}
         <p className="mt-3 text-slate-700 whitespace-pre-wrap">{t_db(product.description, locale)}</p>
-        <p className="mt-4 text-2xl font-semibold">{formatMoney(price, locale)}</p>
+        <Price className="mt-4 block text-2xl" regular={price.regular} now={price.now} currency={currency} badge />
         {detailError && <p role="alert" className="mt-3 text-sm text-red-700">{t('catalog:product_load_error')}: {detailError.message}</p>}
 
         {!locationId && <p className="mt-4 p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded text-sm">{t('errors:select_location_first')}</p>}
 
-        {materials && materials.length > 1 && (
+        {hasSlots && (
+          <div className="mt-6 space-y-4">
+            <p className="text-sm text-slate-600">{t('catalog:slots_intro')}</p>
+            {(slots || []).map((slot, index) => {
+              const eligible = eligibleFor(slot);
+              const chosenMaterial = slotMaterialId(slot);
+              const slotColorOptions = slotColors[index]?.data as Filament[] | undefined;
+              const chosenColor = slotColorId(slot, slotColorOptions);
+              return (
+                <div key={slot.id} className="rounded border border-slate-200 p-3">
+                  <label className="label">{t_db(slot.name, locale)}</label>
+                  <div className="space-y-2">
+                    {eligible.map((entry) => (
+                      <label key={entry.material_id} className="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name={`slot-material-${slot.id}`}
+                          checked={chosenMaterial === entry.material_id}
+                          onChange={() => setSlotPicks((previous) => ({
+                            ...previous,
+                            [slot.id]: { material_id: entry.material_id, color_filament_id: null },
+                          }))} />
+                        <span>{formatMaterial(entry.material, locale, { priceModifier: entry.price_modifier })}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="mt-3">
+                    <span className="label">{t('catalog:select_color')}</span>
+                    {!slotColorOptions?.length ? <p className="text-sm text-slate-500">{t('catalog:no_colors_in_stock')}</p> : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {slotColorOptions.map((f) => (
+                          <label key={f.id} className={'flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer ' +
+                            (chosenColor === f.id ? 'border-brand-600 bg-brand-50' : 'border-slate-200 hover:border-slate-300')}>
+                            <input type="radio" name={`slot-color-${slot.id}`} className="sr-only" checked={chosenColor === f.id}
+                              onChange={() => setSlotPicks((previous) => ({
+                                ...previous,
+                                [slot.id]: { ...(previous[slot.id] || {}), color_filament_id: f.id },
+                              }))} />
+                            <span className="swatch" style={{ background: f.color_hex || '#ccc' }} />
+                            <span className="text-sm">{t_db(f.color, locale)}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {!hasSlots && materials && materials.length > 1 && (
           <div className="mt-6">
             <label className="label">{t('catalog:select_material')}</label>
             <div className="space-y-2">
@@ -234,25 +393,40 @@ function ProductDetail({ slug }: { slug: string }) {
             </div>
           </div>
         )}
-        {materials && materials.length === 1 && <p className="mt-4 badge">{formatMaterial(materials[0].material, locale)}</p>}
+        {!hasSlots && materials && materials.length === 1 && <p className="mt-4 badge">{formatMaterial(materials[0].material, locale)}</p>}
 
-        <div className="mt-6">
-          <label className="label">{t('catalog:select_color')}</label>
-          {!colors?.length ? <p className="text-sm text-slate-500">—</p> : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {colors.map((f) => (
-                <label key={f.id} className={'flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer ' + (filamentId === f.id ? 'border-brand-600 bg-brand-50' : 'border-slate-200 hover:border-slate-300')}>
-                  <input type="radio" name="color" className="sr-only" checked={filamentId === f.id} onChange={() => setFilamentId(f.id)} />
-                  <span className="swatch" style={{ background: f.color_hex || '#ccc' }} />
-                  <span className="text-sm">{t_db(f.color, locale)}</span>
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
+        {!hasSlots && (
+          <div className="mt-6">
+            <label className="label">{t('catalog:select_color')}</label>
+            {!colors?.length ? <p className="text-sm text-slate-500">—</p> : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {colors.map((f) => (
+                  <label key={f.id} className={'flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer ' + (filamentId === f.id ? 'border-brand-600 bg-brand-50' : 'border-slate-200 hover:border-slate-300')}>
+                    <input type="radio" name="color" className="sr-only" checked={filamentId === f.id} onChange={() => setFilamentId(f.id)} />
+                    <span className="swatch" style={{ background: f.color_hex || '#ccc' }} />
+                    <span className="text-sm">{t_db(f.color, locale)}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {groups?.map((g) => {
           const cs = choicesByGroup?.[g.id] || [];
+          const choiceLabel = (c: ProductOptionChoice) => {
+            const regular = c.price_modifier;
+            const now = effectivePrice(regular, c);
+            const modifier = now ? `${now > 0 ? '+' : '−'}${formatMoney(Math.abs(now), locale, currency)}` : '';
+            return (
+              <span>
+                {t_db(c.label, locale)}{' '}
+                {now !== regular
+                  ? <><s className="text-slate-400">{regular ? `${regular > 0 ? '+' : '−'}${formatMoney(Math.abs(regular), locale, currency)}` : ''}</s> <span className="text-rose-700">{modifier}</span></>
+                  : modifier}
+              </span>
+            );
+          };
           return (
             <div key={g.id} className="mt-6">
               <label className="label">{t_db(g.label, locale)}{g.required && <span aria-hidden="true"> *</span>}</label>
@@ -264,7 +438,7 @@ function ProductDetail({ slug }: { slug: string }) {
                         checked={options[g.id]?.choice_id === c.id}
                         onChange={() => setOptions((o) => ({ ...o, [g.id]: { choice_id: c.id } }))}
                       />
-                      <span>{t_db(c.label, locale)} {c.price_modifier ? `${c.price_modifier > 0 ? '+' : '−'}${formatMoney(Math.abs(c.price_modifier), locale)}` : ''}</span>
+                      {choiceLabel(c)}
                     </label>
                   ))}
                 </div>
@@ -283,7 +457,7 @@ function ProductDetail({ slug }: { slug: string }) {
                             setOptions((o) => ({ ...o, [g.id]: { choice_ids: Array.from(next) } }));
                           }}
                         />
-                        <span>{t_db(c.label, locale)} {c.price_modifier ? `${c.price_modifier > 0 ? '+' : '−'}${formatMoney(Math.abs(c.price_modifier), locale)}` : ''}</span>
+                        {choiceLabel(c)}
                       </label>
                     );
                   })}
@@ -318,17 +492,19 @@ function ProductDetail({ slug }: { slug: string }) {
         {added && <p role="status" className="mt-4 text-sm text-emerald-700">{t('catalog:added_to_cart')}
           {' '}<Link href="/cart" className="underline">{t('common:nav.cart')}</Link></p>}
         <button className="btn mt-8 w-full" disabled={!canAdd || adding} onClick={() => void addToCart()}>
-          {adding ? t('common:loading') : t('common:add_to_cart')} — {formatMoney(price, locale)}
+          {adding ? t('common:loading') : t('common:add_to_cart')} — {formatMoney(price.now, locale, currency)}
         </button>
 
         <details className="mt-6 rounded border border-slate-200 p-3">
           <summary className="cursor-pointer text-sm font-medium text-slate-700">{t('common:advanced_details')}</summary>
           <div className="mt-2 text-sm text-slate-600 space-y-1">
-            {materials?.map((pm) => (
-              <div key={pm.material_id}>
-                {formatMaterial(pm.material, locale, { technicalFirst: true })}
-              </div>
-            ))}
+            {(hasSlots ? (slots || []).flatMap((slot) => eligibleFor(slot)) : (materials || []))
+              .filter((entry, index, all) => all.findIndex((other) => other.material_id === entry.material_id) === index)
+              .map((entry) => (
+                <div key={entry.material_id}>
+                  {formatMaterial(entry.material, locale, { technicalFirst: true })}
+                </div>
+              ))}
           </div>
         </details>
       </div>

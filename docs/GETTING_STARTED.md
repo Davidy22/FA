@@ -33,7 +33,7 @@ pnpm test:e2e                   # Playwright smoke
 
 ## 5. First admin account and staff
 ### Local accounts, automatically restored by reset
-`supabase db reset` applies the catalog migrations, then `supabase/seed.sql`. The seed creates confirmed email/password accounts (including their Auth identities and profiles), with the employee assigned to the seeded Taipei location. Sign in at `/login` with:
+`supabase db reset` applies the catalog migrations, then `supabase/seed.sql`. The seed creates confirmed email/password accounts (including their Auth identities and profiles), with the employee assigned to the seeded Hong Kong location. Sign in at `/login` with:
 
 | Role | Email | Password |
 | --- | --- | --- |
@@ -49,12 +49,16 @@ The seed can be rerun locally without duplicate accounts. Use `supabase db reset
 3. Register that email at `/login` and confirm it if email confirmation is enabled. Sign in, open `/admin`, and select **Activate initial admin account**. Only a verified session for the configured address succeeds, and the operation is disabled once any active admin exists.
 4. Thereafter, use `/admin` → **Users** to promote existing accounts, assign staff to a location, disable/re-enable users, or invite new staff. Leave the invitation password blank for an email invite; if using a temporary password, communicate it securely.
 
-The admin console also manages locations and their map coordinates, available materials/filaments and location stock, product listings/options, review decisions, orders, tickets, payouts, offers/coupons and platform settings. The header's location control is a **link** to `/locations`, the existing searchable/map picker. Changing the location for a customer does not require any admin permission.
+The admin console also manages locations (map coordinates, country and rates — new locations default to Hong Kong, HKD and `Asia/Hong_Kong`, and sales tax follows the location's country, so a Hong Kong location is always tax-free while a location abroad keeps the rate its admin sets), available materials/filaments and location stock, product listings/options (including multi-material slots and sale prices), review decisions, orders, tickets, payouts, offers/coupons (including points redemption and bulk coupon codes) and platform settings. Add/edit panels open **above** the list they belong to. The header's location control is a **link** to `/locations`, the existing searchable/map picker. Changing the location for a customer does not require any admin permission.
 
 ## 6. Rewards & coupons (local)
-- Points settings live in `platform_settings`: `rewards.points_per_dollar`, `rewards.redeem_options`, `rewards.coupon_days_valid`.
-- Two offer codes are seeded so `/offers` works out of the box: `WELCOME10` (10% off) and `HIGHFIVE` ($5 off). Claiming one issues a personal single-use coupon.
+- Points settings live in `platform_settings`: `rewards.points_per_dollar`, `rewards.redeem_options`, `rewards.coupon_days_valid`. Earn rates and coupon validity are edited under **Admin → Platform settings**; the redemption options themselves are edited under **Admin → Offers & coupons**, next to the coupon tools they issue.
+- A redemption option may name a product, so points can be traded for a specific item (100% off that product = a free item). The option's product must be published.
+- Two offer codes are seeded so `/offers` works out of the box: `WELCOME10` (10% off) and `HIGHFIVE` (HK$5 off). Claiming one issues a personal single-use coupon.
+- Coupons and offer codes can carry conditions: a **minimum spend** and/or a **single product** the discount applies to. `price_cart` enforces both, so the cart, checkout and the Stripe webhook all agree.
+- **Admin → Offers & coupons → Bulk generate codes** creates up to 500 single-use codes in one call (`admin_generate_coupons`) and lists them ready to copy; issuing a single coupon with a blank code mints one automatically.
 - Coupons are applied in the cart or checkout; guests can use unassigned (bearer) coupons, while reward/offer coupons are bound to the account that claimed them.
+- There is no minimum-order fee: a US$1 document print totals US$1 (plus sales tax only where the pickup location's country has one).
 - Referral codes live with the points balance on `/rewards#referrals`. A new customer gets 10 points for the referrer at sign-up and 50 more after their first order.
 
 ## 7. Deploy the frontend to GitHub Pages
@@ -167,3 +171,12 @@ Sign-in providers appear on `/login`; connected methods are managed on `/account
 - A staff quote has a description, unit price, and quantity, and is valid for 7 days. The customer accepts it from `/tickets`, which adds the quoted item to the cart (`kind: 'ticket'`).
 - Ticket prices are authoritative server-side: `price_cart` reads the `ticket_quotes` row (status must be `accepted`, unexpired, and the cart user must own the ticket). Fulfilling the order marks the quote `ordered` and links `order_items.ticket_quote_id`.
 - Attachments live in the private `ticket-uploads` storage bucket under `<user-id>/<ticket-id>/<file>`; downloads go through the `sign-file` Edge Function (owner, staff at the ticket's location, or admin).
+
+## 12. Multi-material prints and sale prices
+- **Material slots** — `/admin` → **Products** → a product's **Material slots** section. Each slot has a localized name (what the customer sees, e.g. *Body* / *Collar*), a list of the materials that slot may be printed in with a price modifier per material, a default material, and a default colour. Reorder slots with the up/down buttons; the first slot also fills the legacy single-material columns on the order line.
+- A slot's colours come from stock: the customer picks any filament of the chosen material that is **in stock at their pickup location**, so changing location changes the colour list. Slots are optional — a product without slots still uses its product-level material list and default material.
+- `price_cart` resolves a slot to the customer's pick, else the slot's default, else its first eligible material, and adds every slot's modifier to the unit price. A pick outside the slot's list (or a colour of another material) is rejected server-side, so the cart, checkout and webhook all agree. The resolved slots are snapshotted per line and copied to `order_items.material_slots`, which the Employee Portal order screen prints per slot.
+- The seeded demo has a two-slot print (Flexi Cat: *Body* in TPU with PLA −HK$2, *Collar* in PLA with PETG +HK$1) so the flow is testable right after `supabase db reset`.
+- **Sale prices** — a product (**Admin → Products**) or an individual option choice (**Admin → Products → Options**) can carry a sale price with optional start and end dates. Both dates are entered in the location's local time zone and stored as UTC; leaving them blank means the sale runs from now on, without an end.
+- The storefront renders the regular price struck through with the sale price next to it and a **Sale** badge, and the cart/checkout show a *You save* row whenever anything is discounted. A sale only counts while its window is open (the end is exclusive), and it must be lower than the regular price — the database rejects anything else.
+- Sale pricing is shared by SQL and the storefront: `public.effective_price()` / `sale_is_active()` / `sale_window_open()` are mirrored by `web/src/lib/sale.ts`, so a preview in the admin form matches what the customer is charged.

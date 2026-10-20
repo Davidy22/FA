@@ -5,14 +5,16 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useLocale } from '@/store/locale';
+import { t_db } from '@/lib/format';
 import {
   DEFAULT_POINTS_PER_DOLLAR,
   DEFAULT_REDEEM_OPTIONS,
+  couponConditions,
   couponDiscountLabel,
   parseRedeemOptions,
 } from '@/lib/rewards';
 import { ReferralCard } from '@/components/ReferralCard';
-import type { Coupon, Profile, RewardTransaction } from '@/lib/types';
+import type { Coupon, PremadeProduct, Profile, RewardTransaction } from '@/lib/types';
 
 export default function RewardsPage() {
   const { t } = useTranslation(['common', 'rewards']);
@@ -51,6 +53,20 @@ export default function RewardsPage() {
     queryFn: async () =>
       (await supabase().from('coupons').select('*').order('created_at', { ascending: false }).limit(50)).data || [],
   });
+
+  // Names for the products a coupon or redemption option is restricted to.
+  const productIds = Array.from(new Set([
+    ...(coupons || []).map((coupon) => coupon.product_id),
+    ...(settings?.options || []).map((option) => option.product_id ?? null),
+  ].filter((id): id is string => !!id)));
+  const { data: products } = useQuery<Pick<PremadeProduct, 'id' | 'name' | 'slug'>[]>({
+    queryKey: ['coupon_products', productIds],
+    enabled: productIds.length > 0,
+    queryFn: async () =>
+      (await supabase().from('premade_products').select('id,name,slug').in('id', productIds)).data || [],
+  });
+  const productName = (id: string | null | undefined) =>
+    id ? (t_db(products?.find((product) => product.id === id)?.name, locale) || id) : null;
 
   const { data: activity } = useQuery<RewardTransaction[]>({
     queryKey: ['rewards_activity'],
@@ -123,6 +139,9 @@ export default function RewardsPage() {
                     t,
                   )}
                 </p>
+                {opt.product_id && <p className="text-sm text-brand-700">
+                  {t('rewards:redeem_for_product', { product: productName(opt.product_id) })}
+                </p>}
                 <p className="text-sm text-slate-500">{t('rewards:points', { count: opt.points })}</p>
                 <button
                   className="btn mt-auto w-full"
@@ -168,7 +187,12 @@ export default function RewardsPage() {
               {coupons.map((c) => (
                 <tr key={c.id} className="border-t">
                   <td className="py-2 font-mono">{c.code}</td>
-                  <td>{couponDiscountLabel(c, t)}</td>
+                  <td>
+                    {couponDiscountLabel(c, t)}
+                    {couponConditions(c, productName(c.product_id), t).map((condition) => (
+                      <span key={condition} className="block text-xs text-slate-500">{condition}</span>
+                    ))}
+                  </td>
                   <td>
                     <span className={c.status === 'active' ? 'badge' : 'badge text-slate-500'}>
                       {c.status === 'active' ? t('rewards:status_active') : t('rewards:status_used')}

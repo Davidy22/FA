@@ -75,7 +75,7 @@
     "cancelled": "已取消",
     "refunded": "已退款"
   },
-  "currency_code": "USD",
+  "currency_code": "HKD",
   "auth": {
     "continue_with": "使用 {{provider}} 繼續",
     "redirecting": "重新導向中…",
@@ -112,5 +112,6 @@
     "err_provider_not_enabled": "{{provider}} 登入尚未設定，請聯絡管理員在 Supabase Auth 啟用。",
     "this_provider": "此登入方式",
     "err_last_identity": "你至少需要保留一種登入方式。請先連結其他方式再解除此項。"
-  }
+  },
+  "sale_badge": "特價"
 }

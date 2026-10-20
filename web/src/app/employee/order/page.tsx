@@ -6,8 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useLocale } from '@/store/locale';
-import { formatMoney, t_db } from '@/lib/format';
-import type { Localized } from '@/lib/types';
+import { formatMoney, formatMaterial, t_db } from '@/lib/format';
+import type { Localized, PricedSlot } from '@/lib/types';
 
 type OrderLine = {
   id: string;
@@ -16,6 +16,8 @@ type OrderLine = {
   quantity: number;
   unit_price: number;
   item_snapshot: { kind?: string; name?: Localized; description?: string; model_path?: string; file_path?: string; ticket_id?: string };
+  /** Multi-material prints: one entry per slot, as the customer chose it. */
+  material_slots: PricedSlot[] | null;
   order_item_option_values: { id: string; file_path: string | null; text_value: string | null }[];
   product: { source_model_path: string } | null;
 };
@@ -25,6 +27,7 @@ type OrderDetailRecord = {
   contact_name: string | null;
   contact_email: string;
   status: string;
+  currency: string;
   order_items: OrderLine[];
   order_notes: { id: string; body: string }[];
 };
@@ -90,8 +93,22 @@ function OrderDetail({ id }: { id: string }) {
             <p>{item.premade_product_id
               ? (t_db(item.item_snapshot?.name, locale) || t('employee:premade'))
               : item.item_snapshot?.description || t(`employee:${item.item_snapshot?.kind === 'document' ? 'document' : 'custom'}`)}
-              {' × '}{item.quantity} — {formatMoney(item.unit_price, locale)}
+              {' × '}{item.quantity} — {formatMoney(item.unit_price, locale, order.currency)}
             </p>
+            {item.material_slots?.length ? (
+              <ul className="mt-1 space-y-0.5">
+                {item.material_slots.map((slot) => (
+                  <li key={slot.slot_id} className="flex items-center gap-2">
+                    <span className="font-medium">{t_db(slot.name, locale)}</span>
+                    <span className="text-slate-600">{formatMaterial(slot.material, locale)}</span>
+                    {slot.color && <>
+                      <span className="swatch" style={{ background: slot.color.color_hex || '#ccc' }} />
+                      <span className="text-slate-600">{t_db(slot.color.color, locale)}</span>
+                    </>}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
             {modelPath && <button className="mt-1 underline text-brand-700" onClick={() => void download(bucket, modelPath)}>
               {t('employee:download_model')}
             </button>}

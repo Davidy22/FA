@@ -11,13 +11,16 @@ export function t_db(value: Localized | string | null | undefined, locale: Local
   return value[locale] ?? value.en ?? '';
 }
 
+/** The currency the business prices in: every Hong Kong location uses HKD. */
+export const DEFAULT_CURRENCY = 'HKD';
+
 // formatMaterial: adjective-first by default (customer-facing),
 // technicalFirst=true for staff (PETG - Tough and weather-resistant).
 // zh locales use full-width parentheses.
 export function formatMaterial(
   mat: { name: Localized; adjective?: Localized | null },
   locale: Locale,
-  opts: { technicalFirst?: boolean; priceModifier?: number } = {}
+  opts: { technicalFirst?: boolean; priceModifier?: number; currency?: string | null } = {}
 ): string {
   const name = t_db(mat.name, locale);
   const adj = mat.adjective ? t_db(mat.adjective, locale) : '';
@@ -32,14 +35,24 @@ export function formatMaterial(
   }
   if (opts.priceModifier && opts.priceModifier !== 0) {
     const sign = opts.priceModifier > 0 ? '+' : '−';
-    s += ` ${sign}${formatMoney(Math.abs(opts.priceModifier), locale)}`;
+    s += ` ${sign}${formatMoney(Math.abs(opts.priceModifier), locale, opts.currency ?? DEFAULT_CURRENCY)}`;
   }
   return s;
 }
 
-// USD currency formatting: "US$5.00" for all locales per spec.
-export function formatMoney(n: number, _locale: Locale): string {
-  return `US$${n.toFixed(2)}`;
+// Money is formatted in the location's own currency ("HK$5.00" for the Hong Kong
+// locations this shop runs), so a speculative overseas location still reads
+// correctly. Formatting through an HK region tag keeps a foreign currency
+// unambiguous ("US$5.00" rather than a bare "$5.00").
+export function formatMoney(amount: number, locale: Locale, currency: string | null | undefined = DEFAULT_CURRENCY): string {
+  const value = Number.isFinite(Number(amount)) ? Number(amount) : 0;
+  const code = (currency || '').trim().toUpperCase() || DEFAULT_CURRENCY;
+  try {
+    return new Intl.NumberFormat(`${locale}-HK`, { style: 'currency', currency: code }).format(value);
+  } catch {
+    // An unknown code in a location row must not blank out a price.
+    return `${code} ${value.toFixed(2)}`;
+  }
 }
 
 export function formatMinutes(min: number, locale: Locale): string {

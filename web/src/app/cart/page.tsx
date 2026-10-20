@@ -8,7 +8,8 @@ import { supabase } from '@/lib/supabase';
 import { formatMoney, t_db, formatMaterial } from '@/lib/format';
 import { useLocation } from '@/store/location';
 import { useMemo, useState, useEffect } from 'react';
-import type { Filament, Material, PremadeProduct, QuoteRequest, TicketQuote } from '@/lib/types';
+import { effectivePrice } from '@/lib/sale';
+import type { Filament, Material, PremadeProduct, ProductMaterialSlot, QuoteRequest, TicketQuote } from '@/lib/types';
 import { DEFAULT_DOCUMENT_PRICES, useDocumentPrices } from '@/hooks/useDocumentPrices';
 
 export default function CartPage() {
@@ -44,12 +45,28 @@ export default function CartPage() {
     },
   });
 
+  const slotPicks = items.flatMap((i) => Object.values(i.slots || {}));
+  const filamentIds = Array.from(new Set([
+    ...items.map((i) => i.color_filament_id),
+    ...slotPicks.map((pick) => pick.color_filament_id),
+  ].filter(Boolean))) as string[];
+
   const { data: filaments } = useQuery<Filament[]>({
-    queryKey: ['filaments_by_ids', items.map(i=>i.color_filament_id).filter(Boolean)],
-    enabled: items.some(i => !!i.color_filament_id),
+    queryKey: ['filaments_by_ids', filamentIds],
+    enabled: filamentIds.length > 0,
     queryFn: async () => {
-      const ids = Array.from(new Set(items.map(i=>i.color_filament_id).filter(Boolean))) as string[];
-      const { data } = await supabase().from('filaments').select('*').in('id', ids);
+      const { data } = await supabase().from('filaments').select('*').in('id', filamentIds);
+      return data || [];
+    },
+  });
+
+  // Slot names, so a multi-material line reads "Body: TPU · Black".
+  const { data: productSlots } = useQuery<ProductMaterialSlot[]>({
+    queryKey: ['cart_product_slots', productIds],
+    enabled: productIds.length > 0 && slotPicks.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase().from('product_material_slots')
+        .select('*').in('product_id', productIds).order('sort_order');
       return data || [];
     },
   });
@@ -79,12 +96,9 @@ export default function CartPage() {
       if (it.kind === 'premade') {
         const p = products?.find((x) => x.id === it.product_id);
         if (!p) continue;
-        let price = p.base_price;
-        if (p && materials) {
-          const pm = materials.find(m => m.id === it.material_id);
-          // default pricing: no option pricing on cart (simplified)
-          subtotal += price * it.quantity;
-        }
+        // A running sale is charged by price_cart; mirror it here so the page
+        // is not showing a stale number before the RPC answers.
+        subtotal += effectivePrice(p.base_price, p) * it.quantity;
       } else if (it.kind === 'document') {
         subtotal += (it.pages || 0) * (documentPrices || DEFAULT_DOCUMENT_PRICES)[it.color || 'grayscale'] * it.quantity;
       } else if (it.kind === 'custom') {
@@ -96,7 +110,7 @@ export default function CartPage() {
       }
     }
     return { subtotal: Math.round(subtotal*100)/100 };
-  }, [items, products, materials, quotes, ticketQuotes, documentPrices]);
+  }, [items, products, quotes, ticketQuotes, documentPrices]);
 
   useEffect(() => {
     async function run() {
@@ -145,7 +159,6 @@ export default function CartPage() {
   }
 
   const pricing = livePricing || { total_amount: localTotal.subtotal, subtotal: localTotal.subtotal, tax_amount: 0 };
-
   if (items.length === 0) {
     return <div className="container-ma py-10"><p>{t('cart:empty')}</p>
       <Link href="/catalog" className="btn mt-4">{t('common:nav.catalog')}</Link></div>;
@@ -166,10 +179,27 @@ export default function CartPage() {
                   <div className="h-16 w-16 bg-slate-100 rounded flex-shrink-0" />
                   <div className="flex-1">
                     <p className="font-medium">{p ? t_db(p.name, locale) : '…'}</p>
-                    <p className="text-sm text-slate-600">
-                      {m && formatMaterial(m, locale)}
-                      {f && <> · <span className="inline-block align-middle"><span className="swatch" style={{background:f.color_hex||'#ccc'}}/></span> {t_db(f.color, locale)}</>}
-                    </p>
+                    {it.slots && Object.keys(it.slots).length > 0 ? (
+                      <ul className="mt-0.5 space-y-0.5 text-sm text-slate-600">
+                        {Object.entries(it.slots).map(([slotId, pick]) => {
+                          const slot = productSlots?.find((row) => row.id === slotId);
+                          const slotMaterial = materials?.find((x) => x.id === pick.material_id);
+                          const slotColor = filaments?.find((x) => x.id === pick.color_filament_id);
+                          return (
+                            <li key={slotId}>
+                              {slot ? t_db(slot.name, locale) : '—'}:{' '}
+                              {slotMaterial ? formatMaterial(slotMaterial, locale) : '—'}
+                              {slotColor && <> · <span className="inline-block align-middle"><span className="swatch" style={{background:slotColor.color_hex||'#ccc'}}/></span> {t_db(slotColor.color, locale)}</>}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-slate-600">
+                        {m && formatMaterial(m, locale)}
+                        {f && <> · <span className="inline-block align-middle"><span className="swatch" style={{background:f.color_hex||'#ccc'}}/></span> {t_db(f.color, locale)}</>}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <input type="number" min={1} max={99} value={it.quantity}
@@ -229,15 +259,24 @@ export default function CartPage() {
         <h2 className="font-semibold mb-3">{t('common:total')}</h2>
         {loadingPrice ? <p className="text-sm text-slate-500">{t('common:loading')}</p> : (
           <dl className="space-y-1 text-sm">
-            <div className="flex justify-between"><dt>{t('common:subtotal')}</dt><dd>{formatMoney(pricing.subtotal, locale)}</dd></div>
+            <div className="flex justify-between"><dt>{t('common:subtotal')}</dt><dd>{formatMoney(pricing.subtotal, locale, pricing.currency)}</dd></div>
+            {Number(pricing.sale_savings || 0) > 0 && (
+              <div className="flex justify-between text-rose-700">
+                <dt>{t('cart:sale_savings')}</dt>
+                <dd>−{formatMoney(Number(pricing.sale_savings), locale, pricing.currency)}</dd>
+              </div>
+            )}
             {pricing.discount_amount > 0 && (
               <div className="flex justify-between text-green-700">
                 <dt>{t('rewards:discount')}</dt>
-                <dd>−{formatMoney(pricing.discount_amount, locale)}</dd>
+                <dd>−{formatMoney(pricing.discount_amount, locale, pricing.currency)}</dd>
               </div>
             )}
-            <div className="flex justify-between"><dt>{t('common:tax')}</dt><dd>{formatMoney(pricing.tax_amount || 0, locale)}</dd></div>
-            <div className="flex justify-between font-semibold text-base pt-2 border-t"><dt>{t('common:total')}</dt><dd>{formatMoney(pricing.total_amount, locale)}</dd></div>
+            {/* Hong Kong charges no sales tax, so a zero tax line is omitted entirely. */}
+            {Number(pricing.tax_amount) > 0 && (
+              <div className="flex justify-between"><dt>{t('common:tax')}</dt><dd>{formatMoney(pricing.tax_amount, locale, pricing.currency)}</dd></div>
+            )}
+            <div className="flex justify-between font-semibold text-base pt-2 border-t"><dt>{t('common:total')}</dt><dd>{formatMoney(pricing.total_amount, locale, pricing.currency)}</dd></div>
           </dl>
         )}
         <div className="mt-3 text-sm">

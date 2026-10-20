@@ -75,7 +75,7 @@
     "cancelled": "Cancelled",
     "refunded": "Refunded"
   },
-  "currency_code": "USD",
+  "currency_code": "HKD",
   "auth": {
     "continue_with": "Continue with {{provider}}",
     "redirecting": "Redirecting…",
@@ -112,5 +112,6 @@
     "err_provider_not_enabled": "{{provider}} sign-in isn't configured yet. Ask an admin to enable it in Supabase Auth.",
     "this_provider": "This provider",
     "err_last_identity": "You need at least one sign-in method. Connect another method before disconnecting this one."
-  }
+  },
+  "sale_badge": "Sale"
 }

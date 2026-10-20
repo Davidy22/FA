@@ -45,7 +45,7 @@ where u.id in (
 on conflict (provider_id, provider) do nothing;
 
 -- The signup trigger creates customer profiles for all three users. Promote
--- the test admin, assign the employee to the seeded Taipei location, and leave
+-- the test admin, assign the employee to the seeded Hong Kong location, and leave
 -- the customer unassigned so the normal /locations picker controls pickup.
 update public.profiles p set
   role = demo.role,
