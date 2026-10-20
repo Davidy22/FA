@@ -49,7 +49,7 @@ Customer (anon or registered) browses catalog, gets instant quotes (client heuri
 
 These are public demo credentials: **never use them on a hosted database**. `supabase db push` does not run `seed.sql`. For a hosted project's first admin, use the verified-email `ADMIN_BOOTSTRAP_EMAIL` flow instead; see [Getting Started §5](docs/GETTING_STARTED.md#5-first-admin-account-and-staff). Existing admins can manage accounts and invite staff from **Users** without editing tables.
 
-The admin console provides forms for locations (including map coordinates and rates), materials and filaments, stock by location, products and options, submissions, orders, tickets, users, payouts, offers/coupons, and platform pricing. The header's location name links to the existing searchable location picker at `/locations` rather than changing locations via a dropdown.
+The admin console provides forms for locations (including map coordinates, country and rates — sales tax depends on the location's country, so Hong Kong is tax-free), materials and filaments, stock by location, products and options, submissions, orders, tickets, users, payouts, offers/coupons (conditional coupons, bulk code generation, and points redemption options), and platform pricing. Add/edit panels open above the list they belong to, and each item's localized text fields share one language picker. The header's location name links to the existing searchable location picker at `/locations` rather than changing locations via a dropdown.
 
 ## Deployment
 - Frontend: GitHub Pages static export (`output: 'export'`, trailing slash, `.nojekyll`). See the [Pages deployment walkthrough](docs/GETTING_STARTED.md#7-deploy-the-frontend-to-github-pages) for required Actions configuration and how to publish.

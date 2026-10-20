@@ -4,7 +4,7 @@
 create extension if not exists pgtap;
 
 -- Plan count
-select plan(18);
+select plan(19);
 
 -- RLS is enabled on key tables
 select ok(not exists (
@@ -45,7 +45,8 @@ select isnt_empty(
 );
 
 -- get_setting returns defaults
-select is(public.get_setting('quote.min_order_fee')::text, '3.00', 'Min order fee default 3.00');
+select is(public.get_setting('quote.min_order_fee')::text, null::text,
+  'the automatic 3D-quote tuning settings are gone');
 select is(public.get_setting('platform.commission_percent')::text, '15', 'Commission default 15%');
 
 -- price_cart with a premade item
@@ -61,18 +62,60 @@ select ok(
   'price_cart returns totals for a premade item'
 );
 
--- min_order_fee floor works: $4 base price item should price fine (>= base subtotal)
-select ok(
-  ((public.price_cart(jsonb_build_object(
+-- A US$3.50 coupon on a US$4.00 item used to be raised to the US$3 minimum order
+-- fee; the total is now exactly what the cart costs (US$0.50 + 5% tax).
+create or replace function tap_no_minimum_order_floor() returns text
+language plpgsql as $$
+declare
+  priced jsonb;
+begin
+  insert into public.coupons(code, source, discount_type, discount_value)
+  values ('PGTAPFLOOR','admin','fixed',3.50)
+  on conflict (code) do update
+    set status = 'active', discount_value = 3.50, min_subtotal = null, product_id = null;
+  priced := public.price_cart(jsonb_build_object(
     'location_id','00000000-0000-0000-0000-000000000001',
+    'coupon_code','PGTAPFLOOR',
     'items', jsonb_build_array(jsonb_build_object(
       'kind','premade','product_id','33333333-3333-3333-3333-000000000004',
       'material_id','11111111-1111-1111-1111-000000000003',
-      'quantity',1,'options','{}'::jsonb
-    ))
-  )))->>'subtotal')::numeric >= 4,
-  'subtotal >= product base price'
-);
+      'quantity',1,'options','{}'::jsonb))));
+  delete from public.coupons where code = 'PGTAPFLOOR';
+  -- unqualified: pgtap is not necessarily installed in public on CI
+  return ok((priced->>'subtotal')::numeric = 4.00
+        and (priced->>'discount_amount')::numeric = 3.50
+        and (priced->>'total_amount')::numeric = 0.53,
+    'a small cart is no longer raised to a minimum order fee (got '||(priced->>'total_amount')||')');
+end;$$;
+select tap_no_minimum_order_floor();
+
+-- Sales tax is a property of the location's country: Hong Kong has none, so the
+-- stored rate is forced to zero and price_cart charges no tax there.
+create or replace function tap_sales_tax_follows_country() returns text
+language plpgsql as $$
+declare
+  hk uuid := '00000000-0000-0000-0000-000000000009';
+  stored_rate numeric;
+  priced jsonb;
+begin
+  insert into public.locations(id, name, timezone, hourly_machine_rate, tax_rate, country)
+  values (hk, 'pgTAP Hong Kong', 'Asia/Hong_Kong', 10, 0.05, 'hk')
+  on conflict (id) do update set country = 'hk', tax_rate = 0.05, is_active = true;
+  select tax_rate into stored_rate from public.locations where id = hk;
+  priced := public.price_cart(jsonb_build_object(
+    'location_id', hk,
+    'items', jsonb_build_array(jsonb_build_object(
+      'kind','premade','product_id','33333333-3333-3333-3333-000000000004',
+      'material_id','11111111-1111-1111-1111-000000000003',
+      'quantity',1,'options','{}'::jsonb))));
+  delete from public.locations where id = hk;
+  return ok(stored_rate = 0
+        and (priced->>'country') = 'HK'
+        and (priced->>'tax_amount')::numeric = 0
+        and (priced->>'total_amount')::numeric = 4.00,
+    'Hong Kong locations never charge sales tax (stored rate '||coalesce(stored_rate::text,'null')||')');
+end;$$;
+select tap_sales_tax_follows_country();
 
 select ok(true, 'price_cart smoke');
 

@@ -4,6 +4,7 @@ import {
   DEFAULT_REDEEM_OPTIONS,
   parseRedeemOptions,
   pointsEarnedFor,
+  couponConditions,
   couponDiscountLabel,
 } from '../rewards';
 
@@ -26,6 +27,19 @@ describe('parseRedeemOptions', () => {
       { points: 100, discount_type: 'fixed', discount_value: 5 },
       { points: 200, discount_type: 'percent', discount_value: 10 },
       { points: 500, discount_type: 'fixed', discount_value: 30 },
+    ]);
+  });
+
+  it('keeps a product scope so points can be redeemed for a specific item', () => {
+    const raw = [
+      { points: 300, discount_type: 'percent', discount_value: 100, product_id: 'prod-1' },
+      { points: 100, discount_type: 'fixed', discount_value: 5, product_id: null },
+      { points: 50, discount_type: 'fixed', discount_value: 2, product_id: '   ' },
+    ];
+    expect(parseRedeemOptions(raw)).toEqual([
+      { points: 50, discount_type: 'fixed', discount_value: 2 },
+      { points: 100, discount_type: 'fixed', discount_value: 5 },
+      { points: 300, discount_type: 'percent', discount_value: 100, product_id: 'prod-1' },
     ]);
   });
 
@@ -75,5 +89,24 @@ describe('couponDiscountLabel', () => {
 
   it('formats fixed coupons as money', () => {
     expect(couponDiscountLabel({ discount_type: 'fixed', discount_value: 5 }, t)).toBe('US$5.00 off');
+  });
+});
+
+describe('couponConditions', () => {
+  const t = (key: string, opts?: Record<string, unknown>) =>
+    key === 'rewards:coupon_min_spend' ? `min ${String(opts?.amount)}` : `only ${String(opts?.product)}`;
+
+  it('describes a minimum spend and a product restriction', () => {
+    expect(couponConditions({ min_subtotal: 50, product_id: 'p1' }, 'Keychain', t))
+      .toEqual(['min US$50.00', 'only Keychain']);
+  });
+
+  it('says nothing for an unrestricted coupon', () => {
+    expect(couponConditions({ min_subtotal: null, product_id: null }, null, t)).toEqual([]);
+    expect(couponConditions({}, undefined, t)).toEqual([]);
+  });
+
+  it('skips the product note until the name has loaded', () => {
+    expect(couponConditions({ product_id: 'p1' }, null, t)).toEqual([]);
   });
 });

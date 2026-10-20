@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Location } from '@/lib/types';
 import { withBasePath } from '@/lib/paths';
+import { countryName, hasSalesTax } from '@/lib/countries';
 
 export default function CheckoutPage() {
   const { t } = useTranslation(['common','checkout','errors','rewards']);
@@ -48,6 +49,11 @@ export default function CheckoutPage() {
       return data;
     },
   });
+
+  // Sales tax depends on the pickup location's country (Hong Kong charges none),
+  // so a zero tax line is explained rather than left looking like an omission.
+  const taxCountry = (pricing?.country || location?.country || '') as string;
+  const noSalesTaxCountry = taxCountry && !hasSalesTax(taxCountry) ? countryName(taxCountry, locale) : '';
 
   async function applyCoupon(e: React.FormEvent) {
     e.preventDefault();
@@ -168,6 +174,9 @@ export default function CheckoutPage() {
               <div className="flex justify-between"><dt>{t('common:tax')}</dt><dd>{formatMoney(pricing.tax_amount, locale)}</dd></div>
               <div className="flex justify-between font-semibold pt-2 border-t"><dt>{t('common:total')}</dt><dd>{formatMoney(pricing.total_amount, locale)}</dd></div>
             </dl>
+            {noSalesTaxCountry && (
+              <p className="mt-2 text-xs text-slate-500">{t('common:no_sales_tax', { country: noSalesTaxCountry })}</p>
+            )}
           </div>
         )}
         {error && <p className="text-red-700">{error}</p>}

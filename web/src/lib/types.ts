@@ -24,6 +24,10 @@ export type Coupon = {
   source: 'reward' | 'offer' | 'admin';
   discount_type: 'percent' | 'fixed';
   discount_value: number;
+  /** Cart subtotal the customer must reach before the coupon applies. */
+  min_subtotal: number | null;
+  /** When set, the coupon only discounts this product. */
+  product_id: string | null;
   status: 'active' | 'used';
   expires_at: string | null;
   used_order_id: string | null;
@@ -52,6 +56,8 @@ export type Location = {
   lng: number | null;
   timezone: string;
   hourly_machine_rate: number;
+  /** ISO 3166-1 alpha-2; drives whether sales tax applies at all. */
+  country: string | null;
   tax_rate: number;
   currency: string;
   is_active: boolean;
@@ -252,6 +258,8 @@ export type OfferCode = {
   description: string | null;
   discount_type: 'percent' | 'fixed';
   discount_value: number;
+  min_subtotal: number | null;
+  product_id: string | null;
   max_claims: number | null;
   claims_count: number;
   coupon_valid_days: number;

@@ -7,7 +7,7 @@ import { t_db } from '@/lib/format';
 import { supabase } from '@/lib/supabase';
 import { useLocale } from '@/store/locale';
 import type { Filament, Localized, Location, Material } from '@/lib/types';
-import { AdminFeedback, AdminQueryState, FormActions, LocalizedFields, useAdminAction } from './Shared';
+import { AdminFeedback, AdminQueryState, FormActions, LocalizedFields, useAdminAction, useAdminLanguage, useFormPanel } from './Shared';
 
 type MaterialDraft = {
   slug: string; name: Localized; adjective: Localized; cost: string; notes: string; active: boolean;
@@ -35,7 +35,10 @@ function MaterialForm({ material, onDone }: { material?: Material; onDone: () =>
   const { t } = useTranslation('admin');
   const queryClient = useQueryClient();
   const action = useAdminAction();
+  const panel = useFormPanel<HTMLFormElement>();
   const [form, setForm] = useState(() => materialDraft(material));
+  // One language picker edits both localized fields of a material.
+  const [language, setLanguage] = useAdminLanguage();
   const set = <K extends keyof MaterialDraft>(key: K, value: MaterialDraft[K]) =>
     setForm((previous) => ({ ...previous, [key]: value }));
 
@@ -65,11 +68,13 @@ function MaterialForm({ material, onDone }: { material?: Material; onDone: () =>
       ]);
     }, onDone);
   }
-  return <form onSubmit={(event) => void submit(event)} className="mt-4 space-y-4 rounded-lg border border-brand-200 p-4">
+  return <form ref={panel} onSubmit={(event) => void submit(event)} className="mt-4 space-y-4 rounded-lg border border-brand-200 bg-brand-50/30 p-4">
     <h4 className="font-medium">{material ? t('edit_material') : t('add_material')}</h4>
     <label className="block text-sm">{t('fields.slug')} *<input className="input mt-1" required value={form.slug} onChange={(e) => set('slug', e.target.value)} /></label>
-    <LocalizedFields label={t('fields.name')} value={form.name} onChange={(value) => set('name', value)} />
-    <LocalizedFields label={t('fields.adjective')} value={form.adjective} onChange={(value) => set('adjective', value)} required={false} />
+    <LocalizedFields language={language} onLanguageChange={setLanguage} fields={[
+      { label: t('fields.name'), value: form.name, onChange: (value) => set('name', value) },
+      { label: t('fields.adjective'), value: form.adjective, onChange: (value) => set('adjective', value), required: false },
+    ]} />
     <label className="block text-sm">{t('fields.cost_per_gram')}<input className="input mt-1 max-w-xs" required type="number" min="0" step="0.01" value={form.cost} onChange={(e) => set('cost', e.target.value)} /></label>
     <label className="block text-sm">{t('fields.notes')}<textarea className="input mt-1 min-h-20" value={form.notes} onChange={(e) => set('notes', e.target.value)} /></label>
     <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={form.active} onChange={(e) => set('active', e.target.checked)} />{t('active')}</label>
@@ -81,7 +86,9 @@ function FilamentForm({ filament, materials, onDone }: { filament?: Filament; ma
   const { t } = useTranslation('admin');
   const queryClient = useQueryClient();
   const action = useAdminAction();
+  const panel = useFormPanel<HTMLFormElement>();
   const [form, setForm] = useState(() => filamentDraft(filament, materials[0]?.id));
+  const [language, setLanguage] = useAdminLanguage();
   const set = <K extends keyof FilamentDraft>(key: K, value: FilamentDraft[K]) =>
     setForm((previous) => ({ ...previous, [key]: value }));
 
@@ -107,18 +114,17 @@ function FilamentForm({ filament, materials, onDone }: { filament?: Filament; ma
       ]);
     }, onDone);
   }
-  return <form onSubmit={(event) => void submit(event)} className="mt-4 space-y-4 rounded-lg border border-brand-200 p-4">
+  return <form ref={panel} onSubmit={(event) => void submit(event)} className="mt-4 space-y-4 rounded-lg border border-brand-200 bg-brand-50/30 p-4">
     <h4 className="font-medium">{filament ? t('edit_filament') : t('add_filament')}</h4>
     <label className="block text-sm">{t('fields.material')} *
       <select className="input mt-1" required value={form.materialId} onChange={(e) => set('materialId', e.target.value)}>
         <option value="">—</option>{materials.map((material) => <option value={material.id} key={material.id}>{material.name.en}{!material.is_active ? ` (${t('inactive')})` : ''}</option>)}
       </select>
     </label>
-    <LocalizedFields label={t('fields.color')} value={form.color} onChange={(value) => set('color', value)} />
-    <div className="grid gap-4 sm:grid-cols-2">
-      <label className="text-sm">{t('fields.color_hex')}<input className="input mt-1" type="text" placeholder="#123abc" value={form.hex} onChange={(e) => set('hex', e.target.value)} /></label>
-
-    </div>
+    <LocalizedFields language={language} onLanguageChange={setLanguage} fields={[
+      { label: t('fields.color'), value: form.color, onChange: (value) => set('color', value) },
+    ]} />
+    <label className="block text-sm">{t('fields.color_hex')}<input className="input mt-1 max-w-xs" type="text" placeholder="#123abc" value={form.hex} onChange={(e) => set('hex', e.target.value)} /></label>
     <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={form.active} onChange={(e) => set('active', e.target.checked)} />{t('active')}</label>
     <AdminFeedback error={action.error} notice={action.notice} /><FormActions busy={action.busy} onCancel={onDone} />
   </form>;
@@ -213,6 +219,7 @@ export function AdminMaterials() {
     <section>
       <div className="flex items-center justify-between gap-3"><h3 className="text-lg font-medium">{t('admin:material_list')}</h3>
         <button className="btn text-sm" type="button" onClick={() => setEditingMaterial('new')}>{t('admin:add_material')}</button></div>
+      {editingMaterial && <MaterialForm key={editingMaterial} material={materials.find((material) => material.id === editingMaterial)} onDone={() => setEditingMaterial(null)} />}
       <AdminQueryState loading={materialsQuery.isPending} error={materialsQuery.error} />
       {materials.length === 0 && !materialsQuery.isPending && <p className="mt-3 text-slate-500">{t('admin:no_materials')}</p>}
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -224,12 +231,12 @@ export function AdminMaterials() {
           {!material.is_active && <span className="badge">{t('admin:inactive')}</span>}
         </div>)}
       </div>
-      {editingMaterial && <MaterialForm key={editingMaterial} material={materials.find((material) => material.id === editingMaterial)} onDone={() => setEditingMaterial(null)} />}
     </section>
     <section>
       <div className="flex items-center justify-between gap-3"><h3 className="text-lg font-medium">{t('admin:filament_list')}</h3>
         <button className="btn text-sm" type="button" disabled={materials.length === 0} onClick={() => setEditingFilament('new')}>{t('admin:add_filament')}</button></div>
       <p className="mt-1 text-sm text-slate-600">{t('admin:filament_help')}</p>
+      {editingFilament && <FilamentForm key={editingFilament} filament={filaments.find((filament) => filament.id === editingFilament)} materials={materials} onDone={() => setEditingFilament(null)} />}
       <AdminQueryState loading={filamentsQuery.isPending} error={filamentsQuery.error} />
       {filaments.length === 0 && !filamentsQuery.isPending && <p className="mt-3 text-slate-500">{t('admin:no_filaments')}</p>}
       <div className="mt-3 space-y-3">
@@ -250,7 +257,6 @@ export function AdminMaterials() {
           </details>;
         })}
       </div>
-      {editingFilament && <FilamentForm key={editingFilament} filament={filaments.find((filament) => filament.id === editingFilament)} materials={materials} onDone={() => setEditingFilament(null)} />}
     </section>
     <section>
       <h3 className="text-lg font-medium">{t('admin:stock_title')}</h3>

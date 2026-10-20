@@ -221,6 +221,65 @@ try {
   assert.equal((await one('select discount_amount from public.orders where id=$1', [couponOrder.id])).discount_amount, '5.00');
   console.log('✓ coupon discount is consumed at fulfillment');
 
+  // Sales tax is a property of the location's country, and a small cart is no
+  // longer raised to a minimum order fee.
+  const hkLocation = 'dddddddd-0000-0000-0000-000000000002';
+  await rows(`insert into public.locations(id,name,timezone,hourly_machine_rate,tax_rate,country)
+    values($1,'DB smoke Hong Kong','Asia/Hong_Kong',10,0.05,'hk')`, [hkLocation]);
+  const hkLocationRow = await one('select country,tax_rate from public.locations where id=$1', [hkLocation]);
+  assert.equal(hkLocationRow.country, 'HK');
+  assert.equal(Number(hkLocationRow.tax_rate), 0);
+  const hkDocPricing = await pricing({ ...docCart, location_id: hkLocation });
+  assert.equal(Number(hkDocPricing.tax_amount), 0);
+  assert.equal(Number(hkDocPricing.total_amount), 1.5);
+  assert.equal(Number((await pricing(docCart)).total_amount), 1.58); // Taipei keeps its 5% rate
+  console.log('✓ sales tax follows the location country and no minimum order fee is added');
+
+  // Coupons can require a minimum spend or discount a single product only.
+  const keychain = await saveProduct(exampleProduct({ slug: 'db-smoke-keychain',
+    name: { en: 'Smoke keychain' }, base_price: 20 }), [{ material_id: pla, price_modifier: 0 }]);
+  const keychainLine = { kind: 'premade', product_id: keychain.id, material_id: pla, quantity: 1, options: {} };
+  await rows(`insert into public.coupons(code,source,discount_type,discount_value,min_subtotal,user_id)
+    values('SMOKEMINIMUM','admin','fixed',5,50,$1)`, [buyer]);
+  await assert.rejects(pricing(cart([withFile], { coupon_code: 'SMOKEMINIMUM' })), /Spend at least 50/);
+  await rows(`update public.coupons set min_subtotal=20 where code='SMOKEMINIMUM'`);
+  assert.equal((await pricing(cart([withFile], { coupon_code: 'SMOKEMINIMUM' }))).discount_amount, 5);
+  await rows(`insert into public.coupons(code,source,discount_type,discount_value,product_id,user_id)
+    values('SMOKEITEM','admin','percent',50,$1,$2)`, [keychain.id, buyer]);
+  const mixedCart = await pricing(cart([withFile, keychainLine], { coupon_code: 'SMOKEITEM' }));
+  assert.equal(mixedCart.subtotal, 48);        // (9 + 2 + 3) x 2 + 20
+  assert.equal(mixedCart.discount_amount, 10); // half of the keychain only
+  assert.equal(Number(mixedCart.total_amount), 39.9);
+  await assert.rejects(pricing(cart([withFile], { coupon_code: 'SMOKEITEM' })),
+    /only applies to Smoke keychain/);
+  console.log('✓ coupons can require a minimum spend or discount one product only');
+
+  // A batch of single-use codes comes from one admin-only call.
+  const batch = await rows('select coupon_code from public.admin_generate_coupons($1,$2,$3,$4)',
+    [40, 'SMOKE', 'fixed', 3]);
+  assert.equal(batch.length, 40);
+  assert.equal(new Set(batch.map((row) => row.coupon_code)).size, 40);
+  assert.ok(batch.every((row) => /^SMOKE[A-Z2-9]{10}$/.test(row.coupon_code)));
+  await assert.rejects(rows(`insert into public.coupons(code,source,discount_type,discount_value,min_subtotal)
+    values('SMOKEBAD','admin','fixed',5,-1)`), /min_subtotal_check/);
+  await claims(buyer);
+  await assert.rejects(rows('select coupon_code from public.admin_generate_coupons($1,$2,$3,$4)',
+    [5, 'SMOKE', 'fixed', 3]), /Admin only/);
+  console.log('✓ admins can generate a batch of single-use coupon codes');
+
+  // Points can be redeemed for a coupon scoped to one product: a free item.
+  await rows(`update public.platform_settings set value=$1::jsonb where key='rewards.redeem_options'`,
+    [JSON.stringify([{ points: 300, discount_type: 'percent', discount_value: 100, product_id: keychain.id }])]);
+  await rows('update public.profiles set points_balance=400 where id=$1', [buyer]);
+  const redeemed = await one('select code,product_id from public.redeem_rewards(0)');
+  assert.equal(redeemed.product_id, keychain.id);
+  assert.equal(Number((await one('select points_balance from public.profiles where id=$1', [buyer])).points_balance), 100);
+  const freeItem = await pricing(cart([keychainLine], { coupon_code: redeemed.code }));
+  assert.equal(freeItem.discount_amount, 20);
+  assert.equal(Number(freeItem.total_amount), 0);
+  console.log('✓ points can be redeemed for a specific product');
+  await claims(admin);
+
   const submissionId = 'cccccccc-0000-0000-0000-000000000001';
   await db.exec(`grant select,insert,update,delete on public.model_submissions to authenticated;
     grant select,insert,update,delete on public.model_submission_materials to authenticated;`);

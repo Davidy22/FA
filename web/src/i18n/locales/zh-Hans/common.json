@@ -55,6 +55,7 @@
   "total": "总计",
   "subtotal": "小计",
   "tax": "税金",
+  "no_sales_tax": "{{country}}不设销售税",
   "quantity": "数量",
   "community_design": "社区设计",
   "by_designer": "由 @{{name}} 设计",

@@ -18,6 +18,7 @@ function location(overrides: Partial<Location> = {}): Location {
     lng: 121.5654,
     timezone: 'Asia/Taipei',
     hourly_machine_rate: 8,
+    country: 'TW',
     tax_rate: 0.05,
     currency: 'USD',
     is_active: true,

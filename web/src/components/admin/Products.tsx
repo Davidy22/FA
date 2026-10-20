@@ -7,7 +7,7 @@ import { slugify, t_db } from '@/lib/format';
 import { supabase } from '@/lib/supabase';
 import { useLocale } from '@/store/locale';
 import type { Localized, Material, PremadeProduct, ProductMaterial } from '@/lib/types';
-import { AdminFeedback, AdminQueryState, FormActions, LocalizedFields, useAdminAction } from './Shared';
+import { AdminFeedback, AdminQueryState, FormActions, LocalizedFields, useAdminAction, useAdminLanguage, useFormPanel } from './Shared';
 import { ProductOptions } from './ProductOptions';
 
 type Draft = {
@@ -35,7 +35,10 @@ function ProductForm({ product, allowed, materials, onDone }: {
   const locale = useLocale((state) => state.locale);
   const queryClient = useQueryClient();
   const action = useAdminAction();
+  const panel = useFormPanel<HTMLFormElement>();
   const [form, setForm] = useState(() => draft(product, allowed));
+  // One language picker edits both the name and the description.
+  const [language, setLanguage] = useAdminLanguage();
   const [modelFile, setModelFile] = useState<File | null>(null);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
@@ -113,11 +116,13 @@ function ProductForm({ product, allowed, materials, onDone }: {
     }, onDone);
   }
 
-  return <form onSubmit={(event) => void submit(event)} className="mt-5 space-y-4 rounded-lg border border-brand-200 p-4">
+  return <form ref={panel} onSubmit={(event) => void submit(event)} className="mt-5 space-y-4 rounded-lg border border-brand-200 bg-brand-50/30 p-4">
     <h3 className="font-medium">{product ? t('admin:edit_product') : t('admin:add_product')}</h3>
     <label className="block text-sm">{t('admin:fields.slug')} *<input className="input mt-1" required value={form.slug} onChange={(event) => set('slug', event.target.value)} /></label>
-    <LocalizedFields label={t('admin:fields.name')} value={form.name} onChange={(value) => set('name', value)} />
-    <LocalizedFields label={t('admin:fields.description')} value={form.description} onChange={(value) => set('description', value)} multiline required={false} />
+    <LocalizedFields language={language} onLanguageChange={setLanguage} fields={[
+      { label: t('admin:fields.name'), value: form.name, onChange: (value) => set('name', value) },
+      { label: t('admin:fields.description'), value: form.description, onChange: (value) => set('description', value), multiline: true, required: false },
+    ]} />
     <div className="grid gap-4 sm:grid-cols-3">
       <label className="text-sm">{t('admin:fields.base_price')}<input className="input mt-1" type="number" required min="0" step="0.01" value={form.price} onChange={(event) => set('price', event.target.value)} /></label>
       <label className="text-sm">{t('admin:fields.category')}<select className="input mt-1" value={form.category} onChange={(event) => set('category', event.target.value as Draft['category'])}>
@@ -214,6 +219,9 @@ export function AdminProducts() {
       <h2 className="text-xl font-medium">{t('admin:products')}</h2>
       <p className="text-sm text-slate-600">{t('admin:products_help')}</p>
     </div><button type="button" className="btn text-sm" onClick={() => { setOptionsProductId(null); setEditing('new'); }}>{t('admin:add_product')}</button></div>
+    {editing && !materialsQuery.isPending && !allowedQuery.isPending && <ProductForm key={editing}
+      product={products.find((product) => product.id === editing)} materials={materialsQuery.data || []}
+      allowed={(allowedQuery.data || []).filter((row) => row.product_id === editing)} onDone={() => setEditing(null)} />}
     <AdminFeedback error={action.error} notice={action.notice} />
     <AdminQueryState loading={productsQuery.isPending || materialsQuery.isPending || allowedQuery.isPending}
       error={productsQuery.error || materialsQuery.error || allowedQuery.error} />
@@ -233,9 +241,6 @@ export function AdminProducts() {
         </div>
       </article>)}
     </div>
-    {editing && !materialsQuery.isPending && !allowedQuery.isPending && <ProductForm key={editing}
-      product={products.find((product) => product.id === editing)} materials={materialsQuery.data || []}
-      allowed={(allowedQuery.data || []).filter((row) => row.product_id === editing)} onDone={() => setEditing(null)} />}
     {optionsProductId && <ProductOptions key={optionsProductId} product={products.find((product) => product.id === optionsProductId)!}
       onClose={() => setOptionsProductId(null)} />}
   </>;

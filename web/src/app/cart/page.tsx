@@ -10,6 +10,7 @@ import { useLocation } from '@/store/location';
 import { useMemo, useState, useEffect } from 'react';
 import type { Filament, Material, PremadeProduct, QuoteRequest, TicketQuote } from '@/lib/types';
 import { DEFAULT_DOCUMENT_PRICES, useDocumentPrices } from '@/hooks/useDocumentPrices';
+import { countryName, hasSalesTax } from '@/lib/countries';
 
 export default function CartPage() {
   const { t } = useTranslation(['common','cart','quote','errors','rewards']);
@@ -145,6 +146,9 @@ export default function CartPage() {
   }
 
   const pricing = livePricing || { total_amount: localTotal.subtotal, subtotal: localTotal.subtotal, tax_amount: 0 };
+  // Sales tax follows the pickup location's country (Hong Kong has none), so a
+  // zero tax line gets an explanation instead of looking like a missing charge.
+  const noSalesTaxCountry = !hasSalesTax(pricing.country) ? countryName(pricing.country, locale) : '';
 
   if (items.length === 0) {
     return <div className="container-ma py-10"><p>{t('cart:empty')}</p>
@@ -228,6 +232,7 @@ export default function CartPage() {
       <aside className="rounded-lg border border-slate-200 bg-white p-4 h-fit sticky top-20">
         <h2 className="font-semibold mb-3">{t('common:total')}</h2>
         {loadingPrice ? <p className="text-sm text-slate-500">{t('common:loading')}</p> : (
+          <>
           <dl className="space-y-1 text-sm">
             <div className="flex justify-between"><dt>{t('common:subtotal')}</dt><dd>{formatMoney(pricing.subtotal, locale)}</dd></div>
             {pricing.discount_amount > 0 && (
@@ -239,6 +244,10 @@ export default function CartPage() {
             <div className="flex justify-between"><dt>{t('common:tax')}</dt><dd>{formatMoney(pricing.tax_amount || 0, locale)}</dd></div>
             <div className="flex justify-between font-semibold text-base pt-2 border-t"><dt>{t('common:total')}</dt><dd>{formatMoney(pricing.total_amount, locale)}</dd></div>
           </dl>
+          {noSalesTaxCountry && (
+            <p className="mt-2 text-xs text-slate-500">{t('common:no_sales_tax', { country: noSalesTaxCountry })}</p>
+          )}
+          </>
         )}
         <div className="mt-3 text-sm">
           {!coupon_code ? (
