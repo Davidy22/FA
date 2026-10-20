@@ -25,6 +25,7 @@ type OrderDetailRecord = {
   contact_name: string | null;
   contact_email: string;
   status: string;
+  currency: string;
   order_items: OrderLine[];
   order_notes: { id: string; body: string }[];
 };
@@ -90,7 +91,7 @@ function OrderDetail({ id }: { id: string }) {
             <p>{item.premade_product_id
               ? (t_db(item.item_snapshot?.name, locale) || t('employee:premade'))
               : item.item_snapshot?.description || t(`employee:${item.item_snapshot?.kind === 'document' ? 'document' : 'custom'}`)}
-              {' × '}{item.quantity} — {formatMoney(item.unit_price, locale)}
+              {' × '}{item.quantity} — {formatMoney(item.unit_price, locale, order.currency)}
             </p>
             {modelPath && <button className="mt-1 underline text-brand-700" onClick={() => void download(bucket, modelPath)}>
               {t('employee:download_model')}

@@ -33,7 +33,7 @@ pnpm test:e2e                   # Playwright smoke
 
 ## 5. First admin account and staff
 ### Local accounts, automatically restored by reset
-`supabase db reset` applies the catalog migrations, then `supabase/seed.sql`. The seed creates confirmed email/password accounts (including their Auth identities and profiles), with the employee assigned to the seeded Taipei location. Sign in at `/login` with:
+`supabase db reset` applies the catalog migrations, then `supabase/seed.sql`. The seed creates confirmed email/password accounts (including their Auth identities and profiles), with the employee assigned to the seeded Hong Kong location. Sign in at `/login` with:
 
 | Role | Email | Password |
 | --- | --- | --- |
@@ -49,12 +49,12 @@ The seed can be rerun locally without duplicate accounts. Use `supabase db reset
 3. Register that email at `/login` and confirm it if email confirmation is enabled. Sign in, open `/admin`, and select **Activate initial admin account**. Only a verified session for the configured address succeeds, and the operation is disabled once any active admin exists.
 4. Thereafter, use `/admin` → **Users** to promote existing accounts, assign staff to a location, disable/re-enable users, or invite new staff. Leave the invitation password blank for an email invite; if using a temporary password, communicate it securely.
 
-The admin console also manages locations (map coordinates, country and rates — sales tax follows the location's country, so a Hong Kong location is always tax-free), available materials/filaments and location stock, product listings/options, review decisions, orders, tickets, payouts, offers/coupons (including points redemption and bulk coupon codes) and platform settings. Add/edit panels open **above** the list they belong to. The header's location control is a **link** to `/locations`, the existing searchable/map picker. Changing the location for a customer does not require any admin permission.
+The admin console also manages locations (map coordinates, country and rates — new locations default to Hong Kong, HKD and `Asia/Hong_Kong`, and sales tax follows the location's country, so a Hong Kong location is always tax-free while a location abroad keeps the rate its admin sets), available materials/filaments and location stock, product listings/options, review decisions, orders, tickets, payouts, offers/coupons (including points redemption and bulk coupon codes) and platform settings. Add/edit panels open **above** the list they belong to. The header's location control is a **link** to `/locations`, the existing searchable/map picker. Changing the location for a customer does not require any admin permission.
 
 ## 6. Rewards & coupons (local)
 - Points settings live in `platform_settings`: `rewards.points_per_dollar`, `rewards.redeem_options`, `rewards.coupon_days_valid`. Earn rates and coupon validity are edited under **Admin → Platform settings**; the redemption options themselves are edited under **Admin → Offers & coupons**, next to the coupon tools they issue.
 - A redemption option may name a product, so points can be traded for a specific item (100% off that product = a free item). The option's product must be published.
-- Two offer codes are seeded so `/offers` works out of the box: `WELCOME10` (10% off) and `HIGHFIVE` ($5 off). Claiming one issues a personal single-use coupon.
+- Two offer codes are seeded so `/offers` works out of the box: `WELCOME10` (10% off) and `HIGHFIVE` (HK$5 off). Claiming one issues a personal single-use coupon.
 - Coupons and offer codes can carry conditions: a **minimum spend** and/or a **single product** the discount applies to. `price_cart` enforces both, so the cart, checkout and the Stripe webhook all agree.
 - **Admin → Offers & coupons → Bulk generate codes** creates up to 500 single-use codes in one call (`admin_generate_coupons`) and lists them ready to copy; issuing a single coupon with a blank code mints one automatically.
 - Coupons are applied in the cart or checkout; guests can use unassigned (bearer) coupons, while reward/offer coupons are bound to the account that claimed them.

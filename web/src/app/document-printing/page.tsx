@@ -99,7 +99,8 @@ export default function DocumentPrintingPage() {
       <label className="label">Copies<input className="input mt-1" type="number" min="1" max="99" required value={copies} onChange={e => setCopies(Number(e.target.value))} /></label>
       <label className="label">Ink<select className="input mt-1" value={color} onChange={e => setColor(e.target.value as 'grayscale' | 'color')}><option value="grayscale">Grayscale · {formatMoney(prices.grayscale, locale)}/side</option><option value="color">Color · {formatMoney(prices.color, locale)}/side</option></select></label>
       <label className="flex items-center gap-2"><input type="checkbox" checked={duplex} onChange={e => setDuplex(e.target.checked)} /> Double-sided</label>
-      <p className="font-semibold">Printing subtotal: {formatMoney((pages ?? 0) * copies * prices[color], locale)} (before any sales tax at your pickup location)</p>
+      <p className="font-semibold">Printing subtotal: {formatMoney((pages ?? 0) * copies * prices[color], locale)}</p>
+      <p className="text-xs text-slate-500">Checkout confirms the final total for your pickup location.</p>
       {error && <p role="alert" className="text-red-700">
         {error.message}
         {error.signIn && <> <Link className="underline" href="/login">Sign in</Link></>}

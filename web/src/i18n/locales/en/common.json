@@ -75,7 +75,7 @@
     "cancelled": "Cancelled",
     "refunded": "Refunded"
   },
-  "currency_code": "USD",
+  "currency_code": "HKD",
   "auth": {
     "continue_with": "Continue with {{provider}}",
     "redirecting": "Redirecting…",

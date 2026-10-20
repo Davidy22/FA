@@ -88,7 +88,7 @@ export default function SubmitPage() {
         <div><label className="label">Description (EN)</label>
           <textarea className="input min-h-[100px]" value={description} onChange={e=>setDescription(e.target.value)} /></div>
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">Base price (USD)</label>
+          <div><label className="label">Base price (HKD)</label>
             <input required type="number" min={0} step={0.01} className="input" value={price} onChange={e=>setPrice(parseFloat(e.target.value))} /></div>
           <div><label className="label">Category</label>
             <select className="input" value={category} onChange={e=>setCategory(e.target.value)}>

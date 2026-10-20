@@ -4,7 +4,7 @@
 create extension if not exists pgtap;
 
 -- Plan count
-select plan(19);
+select plan(20);
 
 -- RLS is enabled on key tables
 select ok(not exists (
@@ -62,8 +62,8 @@ select ok(
   'price_cart returns totals for a premade item'
 );
 
--- A US$3.50 coupon on a US$4.00 item used to be raised to the US$3 minimum order
--- fee; the total is now exactly what the cart costs (US$0.50 + 5% tax).
+-- A HK$3.50 coupon on a HK$4.00 item used to be raised to the HK$3 minimum order
+-- fee; the total is now exactly what the cart costs, and Hong Kong adds no tax.
 create or replace function tap_no_minimum_order_floor() returns text
 language plpgsql as $$
 declare
@@ -84,7 +84,8 @@ begin
   -- unqualified: pgtap is not necessarily installed in public on CI
   return ok((priced->>'subtotal')::numeric = 4.00
         and (priced->>'discount_amount')::numeric = 3.50
-        and (priced->>'total_amount')::numeric = 0.53,
+        and (priced->>'tax_amount')::numeric = 0
+        and (priced->>'total_amount')::numeric = 0.50,
     'a small cart is no longer raised to a minimum order fee (got '||(priced->>'total_amount')||')');
 end;$$;
 select tap_no_minimum_order_floor();
@@ -116,6 +117,36 @@ begin
     'Hong Kong locations never charge sales tax (stored rate '||coalesce(stored_rate::text,'null')||')');
 end;$$;
 select tap_sales_tax_follows_country();
+
+-- The tax feature is kept, not deleted: a location in a country that does charge
+-- sales tax still adds it, in its own currency.
+create or replace function tap_sales_tax_still_applies_abroad() returns text
+language plpgsql as $$
+declare
+  abroad uuid := '00000000-0000-0000-0000-00000000000a';
+  stored_rate numeric;
+  priced jsonb;
+begin
+  insert into public.locations(id, name, timezone, hourly_machine_rate, tax_rate, currency, country)
+  values (abroad, 'pgTAP Abroad', 'Asia/Taipei', 10, 0.05, 'USD', 'TW')
+  on conflict (id) do update
+    set country = 'TW', tax_rate = 0.05, currency = 'USD', is_active = true;
+  select tax_rate into stored_rate from public.locations where id = abroad;
+  priced := public.price_cart(jsonb_build_object(
+    'location_id', abroad,
+    'items', jsonb_build_array(jsonb_build_object(
+      'kind','premade','product_id','33333333-3333-3333-3333-000000000004',
+      'material_id','11111111-1111-1111-1111-000000000003',
+      'quantity',1,'options','{}'::jsonb))));
+  delete from public.locations where id = abroad;
+  return ok(stored_rate = 0.05
+        and (priced->>'country') = 'TW'
+        and (priced->>'currency') = 'USD'
+        and (priced->>'tax_amount')::numeric = 0.20
+        and (priced->>'total_amount')::numeric = 4.20,
+    'a taxable country keeps its sales tax and currency (rate '||coalesce(stored_rate::text,'null')||')');
+end;$$;
+select tap_sales_tax_still_applies_abroad();
 
 select ok(true, 'price_cart smoke');
 

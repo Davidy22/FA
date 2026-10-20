@@ -42,7 +42,7 @@
   "coordinates_pair": "请同时输入纬度和经度，或两者都留空。",
   "invalid_timezone": "请输入有效的 IANA 时区，例如 Asia/Hong_Kong。",
   "invalid_currency": "请输入三位英文字母货币代码。",
-  "currency_hint": "结帐使用门市的货币；目前顾客介面的价格标示预设为美元。如未同步调整商店介面，请维持 USD。",
+  "currency_hint": "结帐以门市货币计算，商店界面亦以该货币显示价格。香港门市使用 HKD；海外门市则沿用其货币代码。",
   "country_unknown": "未设定国家",
   "invalid_country": "请使用两位英文字母的国家代码，例如 HK。",
   "no_sales_tax_hint": "{{country}}没有销售税，此门市取货的订单一律不会计算税项。",
@@ -182,14 +182,14 @@
       "commission_percent": "平台佣金 (%)"
     },
     "payouts": {
-      "min_amount": "最低请款金额 (USD)"
+      "min_amount": "最低请款金额 (HKD)"
     },
     "document": {
-      "grayscale_per_side": "黑白每面费用 (USD)",
-      "color_per_side": "彩色每面费用 (USD)"
+      "grayscale_per_side": "黑白每面费用 (HKD)",
+      "color_per_side": "彩色每面费用 (HKD)"
     },
     "rewards": {
-      "points_per_dollar": "每美元获得点数",
+      "points_per_dollar": "每消费 HK$1 获得点数",
       "coupon_days_valid": "奖励优惠券有效期 (天)"
     }
   },
@@ -206,13 +206,15 @@
   "fields": {
     "name": "名称",
     "address": "地址",
+    "address_placeholder": "香港中环鸭巴甸街 18 号地下 1 铺",
     "phone": "电话",
+    "phone_placeholder": "+852 2345 6789",
     "photo_url": "照片网址",
     "latitude": "纬度",
     "longitude": "经度",
     "timezone": "时区",
     "country": "国家／地区",
-    "machine_rate": "每小时机器费率 (USD)",
+    "machine_rate": "每小时机器费率（门市货币）",
     "tax_percent": "税率 (%)",
     "currency": "货币代码",
     "slug": "网址代称",
@@ -228,7 +230,7 @@
     "diameter": "直径 (毫米)",
     "cost_per_gram": "材料每克成本 (HKD)",
     "description": "描述",
-    "base_price": "基本价格 (USD)",
+    "base_price": "基本价格 (HKD)",
     "category": "类别",
     "status": "状态",
     "tags": "标签（以逗号分隔）",
@@ -237,7 +239,7 @@
     "image_urls": "图片网址（每行一个）",
     "featured": "精选",
     "default_material": "预设材料",
-    "price_modifier": "价格调整 (USD)",
+    "price_modifier": "价格调整 (HKD)",
     "option_label": "选项名称",
     "option_type": "选项类型",
     "required": "必填",
@@ -272,7 +274,7 @@
   },
   "discount_type": {
     "percent": "百分比 (%)",
-    "fixed": "固定金额 (USD)"
+    "fixed": "固定金额 (HKD)"
   },
   "search_orders": "搜索订单编号或邮箱",
   "pagination_label": "结果页数",

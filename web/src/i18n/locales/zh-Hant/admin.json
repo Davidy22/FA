@@ -42,7 +42,7 @@
   "coordinates_pair": "請同時輸入緯度和經度，或兩者都留空。",
   "invalid_timezone": "請輸入有效的 IANA 時區，例如 Asia/Hong_Kong。",
   "invalid_currency": "請輸入三位英文字母貨幣代碼。",
-  "currency_hint": "結帳使用門市的貨幣；目前顧客介面的價格標示預設為美元。如未同步調整商店介面，請維持 USD。",
+  "currency_hint": "結帳以門市貨幣計算，商店介面亦以該貨幣顯示價格。香港門市使用 HKD；海外門市則沿用其貨幣代碼。",
   "country_unknown": "未設定國家",
   "invalid_country": "請使用兩位英文字母的國家代碼，例如 HK。",
   "no_sales_tax_hint": "{{country}}沒有銷售稅，此門市取貨的訂單一律不會計算稅項。",
@@ -182,14 +182,14 @@
       "commission_percent": "平台佣金 (%)"
     },
     "payouts": {
-      "min_amount": "最低請款金額 (USD)"
+      "min_amount": "最低請款金額 (HKD)"
     },
     "document": {
-      "grayscale_per_side": "黑白每面費用 (USD)",
-      "color_per_side": "彩色每面費用 (USD)"
+      "grayscale_per_side": "黑白每面費用 (HKD)",
+      "color_per_side": "彩色每面費用 (HKD)"
     },
     "rewards": {
-      "points_per_dollar": "每美元獲得點數",
+      "points_per_dollar": "每消費 HK$1 獲得點數",
       "coupon_days_valid": "獎勵優惠券有效期 (天)"
     }
   },
@@ -206,13 +206,15 @@
   "fields": {
     "name": "名稱",
     "address": "地址",
+    "address_placeholder": "香港中環鴨巴甸街 18 號地下 1 舖",
     "phone": "電話",
+    "phone_placeholder": "+852 2345 6789",
     "photo_url": "照片網址",
     "latitude": "緯度",
     "longitude": "經度",
     "timezone": "時區",
     "country": "國家／地區",
-    "machine_rate": "每小時機器費率 (USD)",
+    "machine_rate": "每小時機器費率（門市貨幣）",
     "tax_percent": "稅率 (%)",
     "currency": "貨幣代碼",
     "slug": "網址代稱",
@@ -228,7 +230,7 @@
     "diameter": "直徑 (毫米)",
     "cost_per_gram": "材料每克成本 (HKD)",
     "description": "描述",
-    "base_price": "基本價格 (USD)",
+    "base_price": "基本價格 (HKD)",
     "category": "類別",
     "status": "狀態",
     "tags": "標籤（以逗號分隔）",
@@ -237,7 +239,7 @@
     "image_urls": "圖片網址（每行一個）",
     "featured": "精選",
     "default_material": "預設材料",
-    "price_modifier": "價格調整 (USD)",
+    "price_modifier": "價格調整 (HKD)",
     "option_label": "選項名稱",
     "option_type": "選項類型",
     "required": "必填",
@@ -272,7 +274,7 @@
   },
   "discount_type": {
     "percent": "百分比 (%)",
-    "fixed": "固定金額 (USD)"
+    "fixed": "固定金額 (HKD)"
   },
   "search_orders": "搜尋訂單編號或電郵",
   "pagination_label": "結果頁數",

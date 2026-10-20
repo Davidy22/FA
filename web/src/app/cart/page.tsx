@@ -228,18 +228,18 @@ export default function CartPage() {
         <h2 className="font-semibold mb-3">{t('common:total')}</h2>
         {loadingPrice ? <p className="text-sm text-slate-500">{t('common:loading')}</p> : (
           <dl className="space-y-1 text-sm">
-            <div className="flex justify-between"><dt>{t('common:subtotal')}</dt><dd>{formatMoney(pricing.subtotal, locale)}</dd></div>
+            <div className="flex justify-between"><dt>{t('common:subtotal')}</dt><dd>{formatMoney(pricing.subtotal, locale, pricing.currency)}</dd></div>
             {pricing.discount_amount > 0 && (
               <div className="flex justify-between text-green-700">
                 <dt>{t('rewards:discount')}</dt>
-                <dd>−{formatMoney(pricing.discount_amount, locale)}</dd>
+                <dd>−{formatMoney(pricing.discount_amount, locale, pricing.currency)}</dd>
               </div>
             )}
             {/* Hong Kong charges no sales tax, so a zero tax line is omitted entirely. */}
             {Number(pricing.tax_amount) > 0 && (
-              <div className="flex justify-between"><dt>{t('common:tax')}</dt><dd>{formatMoney(pricing.tax_amount, locale)}</dd></div>
+              <div className="flex justify-between"><dt>{t('common:tax')}</dt><dd>{formatMoney(pricing.tax_amount, locale, pricing.currency)}</dd></div>
             )}
-            <div className="flex justify-between font-semibold text-base pt-2 border-t"><dt>{t('common:total')}</dt><dd>{formatMoney(pricing.total_amount, locale)}</dd></div>
+            <div className="flex justify-between font-semibold text-base pt-2 border-t"><dt>{t('common:total')}</dt><dd>{formatMoney(pricing.total_amount, locale, pricing.currency)}</dd></div>
           </dl>
         )}
         <div className="mt-3 text-sm">

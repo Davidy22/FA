@@ -203,7 +203,7 @@ export default function AccountPage() {
                 <td className="py-2 font-mono">{o.order_number}</td>
                 <td>{new Date(o.created_at).toLocaleDateString(locale)}</td>
                 <td>{t(`common:status.${o.status}`)}</td>
-                <td className="text-right">{formatMoney(o.total_amount, locale)}</td>
+                <td className="text-right">{formatMoney(o.total_amount, locale, o.currency)}</td>
               </tr>
             ))}
           </tbody>

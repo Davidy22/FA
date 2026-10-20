@@ -11,7 +11,7 @@ export interface FilamentPricing {
 }
 
 export interface LocationPricing {
-  hourly_machine_rate: number; // USD/hr
+  hourly_machine_rate: number; // per hour, in the location's currency (HKD in Hong Kong)
   tax_rate: number;            // 0.0 - 1.0
 }
 

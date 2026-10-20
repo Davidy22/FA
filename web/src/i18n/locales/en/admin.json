@@ -42,7 +42,7 @@
   "coordinates_pair": "Enter both latitude and longitude, or leave both blank.",
   "invalid_timezone": "Enter a valid IANA time zone, such as Asia/Hong_Kong.",
   "invalid_currency": "Enter a three-letter currency code.",
-  "currency_hint": "Checkout uses the location's currency. Customer-facing price labels currently assume USD; keep USD unless the storefront is adapted for another currency.",
+  "currency_hint": "Checkout charges in the location's currency and the storefront formats every price with it. Hong Kong locations use HKD; a location abroad keeps its own code.",
   "country_unknown": "Country not set",
   "invalid_country": "Use a two-letter country code such as HK.",
   "no_sales_tax_hint": "{{country}} has no sales tax, so orders collected here are never taxed.",
@@ -182,14 +182,14 @@
       "commission_percent": "Platform commission (%)"
     },
     "payouts": {
-      "min_amount": "Minimum payout (USD)"
+      "min_amount": "Minimum payout (HKD)"
     },
     "document": {
-      "grayscale_per_side": "Grayscale per side (USD)",
-      "color_per_side": "Color per side (USD)"
+      "grayscale_per_side": "Grayscale per side (HKD)",
+      "color_per_side": "Color per side (HKD)"
     },
     "rewards": {
-      "points_per_dollar": "Points per USD",
+      "points_per_dollar": "Points per HK$1 spent",
       "coupon_days_valid": "Reward coupon validity (days)"
     }
   },
@@ -206,13 +206,15 @@
   "fields": {
     "name": "Name",
     "address": "Address",
+    "address_placeholder": "Shop 1, G/F, 18 Aberdeen Street, Central, Hong Kong",
     "phone": "Phone",
+    "phone_placeholder": "+852 2345 6789",
     "photo_url": "Photo URL",
     "latitude": "Latitude",
     "longitude": "Longitude",
     "timezone": "Time zone",
     "country": "Country / region",
-    "machine_rate": "Machine rate per hour (USD)",
+    "machine_rate": "Machine rate per hour (location currency)",
     "tax_percent": "Tax rate (%)",
     "currency": "Currency code",
     "slug": "Slug",
@@ -228,7 +230,7 @@
     "diameter": "Diameter (mm)",
     "cost_per_gram": "Material cost per gram (HKD)",
     "description": "Description",
-    "base_price": "Base price (USD)",
+    "base_price": "Base price (HKD)",
     "category": "Category",
     "status": "Status",
     "tags": "Tags (comma-separated)",
@@ -237,7 +239,7 @@
     "image_urls": "Image URLs (one per line)",
     "featured": "Featured",
     "default_material": "Default material",
-    "price_modifier": "Price modifier (USD)",
+    "price_modifier": "Price modifier (HKD)",
     "option_label": "Option label",
     "option_type": "Option type",
     "required": "Required",
@@ -272,7 +274,7 @@
   },
   "discount_type": {
     "percent": "Percent (%)",
-    "fixed": "Fixed amount (USD)"
+    "fixed": "Fixed amount (HKD)"
   },
   "search_orders": "Search order number or email",
   "pagination_label": "Result pages",

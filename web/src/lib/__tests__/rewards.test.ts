@@ -88,7 +88,7 @@ describe('couponDiscountLabel', () => {
   });
 
   it('formats fixed coupons as money', () => {
-    expect(couponDiscountLabel({ discount_type: 'fixed', discount_value: 5 }, t)).toBe('US$5.00 off');
+    expect(couponDiscountLabel({ discount_type: 'fixed', discount_value: 5 }, t)).toBe('HK$5.00 off');
   });
 });
 
@@ -98,7 +98,7 @@ describe('couponConditions', () => {
 
   it('describes a minimum spend and a product restriction', () => {
     expect(couponConditions({ min_subtotal: 50, product_id: 'p1' }, 'Keychain', t))
-      .toEqual(['min US$50.00', 'only Keychain']);
+      .toEqual(['min HK$50.00', 'only Keychain']);
   });
 
   it('says nothing for an unrestricted coupon', () => {

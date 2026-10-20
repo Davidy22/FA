@@ -75,11 +75,12 @@ select throws_ok(
   'unknown offer codes are rejected'
 );
 
--- (6) guest pricing without a coupon (2 x $6 = $12 + 5% tax = $12.60)
+-- (6) guest pricing without a coupon (2 x HK$6 = HK$12; Hong Kong adds no sales tax)
 select ok(
   (select (p ->> 'subtotal')::numeric = 12.00
       and (p ->> 'discount_amount')::numeric = 0
-      and (p ->> 'total_amount')::numeric = 12.60
+      and (p ->> 'tax_amount')::numeric = 0
+      and (p ->> 'total_amount')::numeric = 12.00
      from (select public.price_cart(jsonb_build_object(
        'location_id','00000000-0000-0000-0000-000000000001',
        'items', jsonb_build_array(jsonb_build_object(
@@ -102,12 +103,12 @@ select throws_ok(
   'unknown coupon codes are rejected at pricing'
 );
 
--- (8) alice prices her own coupon: 10% of $12 = $1.20 discount, tax on $10.80 = $0.54
+-- (8) alice prices her own coupon: 10% of HK$12 = HK$1.20 discount, no sales tax
 select ok(
   (select (p ->> 'subtotal')::numeric = 12.00
       and (p ->> 'discount_amount')::numeric = 1.20
-      and (p ->> 'tax_amount')::numeric = 0.54
-      and (p ->> 'total_amount')::numeric = 11.34
+      and (p ->> 'tax_amount')::numeric = 0
+      and (p ->> 'total_amount')::numeric = 10.80
       and (p -> 'coupon' ->> 'code') is not null
      from (select public.price_cart(jsonb_build_object(
        'location_id','00000000-0000-0000-0000-000000000001',
@@ -147,10 +148,10 @@ select ok(
   (select user_id = 'bbbbbbbb-0000-0000-0000-0000000000f2'
           and source = 'offer' and discount_type = 'fixed' and discount_value = 5
      from public.claim_offer_code('HIGHFIVE')),
-  'second offer code issues a $5 coupon'
+  'second offer code issues a HK$5 coupon'
 );
 
--- Bob checks out 3 x $6 with his $5 coupon: subtotal $18, discount $5, tax $0.65, total $13.65
+-- Bob checks out 3 x HK$6 with his HK$5 coupon: subtotal HK$18, discount HK$5, no tax, total HK$13
 insert into public.checkout_sessions(session_id, cart, user_id, location_id, contact_email, contact_name, locale)
 values ('rw-cs-bob',
   jsonb_build_object(
@@ -168,7 +169,7 @@ values ('rw-cs-bob',
 -- (11) fulfilment snapshots the discount and prices the order
 select ok(
   (select o.subtotal = 18.00 and o.discount_amount = 5.00
-      and o.tax_amount = 0.65 and o.total_amount = 13.65
+      and o.tax_amount = 0 and o.total_amount = 13.00
       and o.user_id = 'bbbbbbbb-0000-0000-0000-0000000000f2'
      from public.create_order_from_cart('rw-cs-bob',
        'bbbbbbbb-0000-0000-0000-0000000000f2',
@@ -185,7 +186,7 @@ select ok(
   'fulfilment consumes the coupon'
 );
 
--- (13) points earned = floor(total paid)
+-- (13) points earned = floor(total paid): HK$13.00 -> 13 points
 select is(
   (select points_balance from public.profiles where id = 'bbbbbbbb-0000-0000-0000-0000000000f2'),
   13,
@@ -227,7 +228,7 @@ select ok(
           and discount_type = 'fixed' and discount_value = 5
           and code like 'RW%' and user_id = 'bbbbbbbb-0000-0000-0000-0000000000f2'
      from public.redeem_rewards(0)),
-  'redeeming 100 points issues a $5 reward coupon'
+  'redeeming 100 points issues a HK$5 reward coupon'
 );
 
 -- (18)
@@ -250,7 +251,7 @@ values ('rw-cs-guest',
 
 -- (20)
 select ok(
-  (select o.user_id is null and o.total_amount = 6.30
+  (select o.user_id is null and o.tax_amount = 0 and o.total_amount = 6.00
      from public.create_order_from_cart('rw-cs-guest', null,
        '00000000-0000-0000-0000-000000000001',
        'guest@example.com', 'Guest', 'en') o),

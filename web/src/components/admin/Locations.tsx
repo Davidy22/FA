@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { decimal } from '@/lib/admin';
 import { LOCATION_COUNTRIES, countryName, hasSalesTax } from '@/lib/countries';
+import { DEFAULT_CURRENCY } from '@/lib/format';
 import { supabase } from '@/lib/supabase';
 import { useLocale } from '@/store/locale';
 import type { Location } from '@/lib/types';
@@ -25,7 +26,7 @@ function draft(location?: Location): LocationDraft {
     hourly_machine_rate: location?.hourly_machine_rate?.toString() || '5',
     country: location?.country || 'HK',
     tax_percent: location ? (Number(location.tax_rate) * 100).toString() : '0',
-    currency: location?.currency || 'USD', is_active: location?.is_active ?? true,
+    currency: location?.currency || DEFAULT_CURRENCY, is_active: location?.is_active ?? true,
   };
 }
 
@@ -83,8 +84,10 @@ function LocationForm({ location, onDone }: { location?: Location; onDone: () =>
     <h3 className="font-medium">{location ? t('admin:edit_location') : t('admin:add_location')}</h3>
     <div className="grid gap-4 sm:grid-cols-2">
       <label className="text-sm">{t('admin:fields.name')} *<input className="input mt-1" required value={form.name} onChange={(e) => set('name', e.target.value)} /></label>
-      <label className="text-sm">{t('admin:fields.address')}<input className="input mt-1" value={form.address} onChange={(e) => set('address', e.target.value)} /></label>
-      <label className="text-sm">{t('admin:fields.phone')}<input className="input mt-1" value={form.phone} onChange={(e) => set('phone', e.target.value)} /></label>
+      <label className="text-sm">{t('admin:fields.address')}<input className="input mt-1" value={form.address}
+        placeholder={t('admin:fields.address_placeholder')} onChange={(e) => set('address', e.target.value)} /></label>
+      <label className="text-sm">{t('admin:fields.phone')}<input className="input mt-1" value={form.phone}
+        placeholder={t('admin:fields.phone_placeholder')} onChange={(e) => set('phone', e.target.value)} /></label>
       <label className="text-sm">{t('admin:fields.photo_url')}<input className="input mt-1" type="url" value={form.photo_url} onChange={(e) => set('photo_url', e.target.value)} /></label>
       <label className="text-sm">{t('admin:fields.country')}
         <select className="input mt-1" value={form.country} onChange={(e) => set('country', e.target.value)}>
@@ -102,7 +105,7 @@ function LocationForm({ location, onDone }: { location?: Location; onDone: () =>
         <input className="input mt-1" required type="number" min="0" max="100" step="0.01" disabled={!taxable}
           value={taxable ? form.tax_percent : '0'} onChange={(e) => set('tax_percent', e.target.value)} />
       </label>
-      <label className="text-sm">{t('admin:fields.currency')}<input className="input mt-1 uppercase" required maxLength={3} value={form.currency} onChange={(e) => set('currency', e.target.value)} /></label>
+      <label className="text-sm">{t('admin:fields.currency')}<input className="input mt-1 uppercase" required maxLength={3} value={form.currency} placeholder={DEFAULT_CURRENCY} onChange={(e) => set('currency', e.target.value)} /></label>
     </div>
     <p className="text-xs text-slate-600">
       {taxable ? t('admin:tax_hint') : t('admin:no_sales_tax_hint', { country: countryName(form.country, locale) || form.country })}

@@ -358,7 +358,7 @@ function RedeemSettings({ value, products }: { value: unknown; products: Premade
 }
 
 export function AdminOffers() {
-  const { t } = useTranslation('admin');
+  const { t } = useTranslation(['admin', 'common']);
   const locale = useLocale((state) => state.locale);
   const queryClient = useQueryClient();
   const action = useAdminAction();
@@ -429,7 +429,7 @@ export function AdminOffers() {
       <div className="mt-3 grid gap-2 sm:grid-cols-2">{offersQuery.data?.map((offer) => <div key={offer.id} className="rounded border p-3 text-sm">
         <div className="flex items-center justify-between gap-2"><strong className="font-mono">{offer.code}</strong>
           <button className="text-brand-700 underline" onClick={() => setEditing(offer.id)}>{t('admin:edit_offer')}</button></div>
-        <p className="text-slate-600">{offer.description || '—'} · {offer.discount_value}{offer.discount_type === 'percent' ? '%' : ' USD'}
+        <p className="text-slate-600">{offer.description || '—'} · {offer.discount_value}{offer.discount_type === 'percent' ? '%' : ` ${t('common:currency_code')}`}
           {conditionLabel(offer)}
           {' · '}{offer.claims_count}/{offer.max_claims ?? '∞'} · {offer.is_active ? t('admin:active') : t('admin:inactive')}</p>
       </div>)}</div>
@@ -451,7 +451,7 @@ export function AdminOffers() {
       <div className="mt-3 space-y-2">{couponsQuery.data?.map((coupon) => {
         const expired = coupon.expires_at !== null && new Date(coupon.expires_at) <= new Date();
         return <div key={coupon.id} className="flex flex-wrap items-center justify-between gap-2 rounded border p-3 text-sm">
-          <span><strong className="font-mono">{coupon.code}</strong> · {coupon.discount_value}{coupon.discount_type === 'percent' ? '%' : ' USD'}
+          <span><strong className="font-mono">{coupon.code}</strong> · {coupon.discount_value}{coupon.discount_type === 'percent' ? '%' : ` ${t('common:currency_code')}`}
             {conditionLabel(coupon)}
             {' · '}{coupon.user_id ? t('admin:assigned_coupon') : t('admin:public_coupon')} · {coupon.status === 'used' ? t('admin:used') : expired ? t('admin:expired') : t('admin:active')}
             {coupon.expires_at && ` · ${new Date(coupon.expires_at).toLocaleDateString(locale)}`}</span>

@@ -117,7 +117,9 @@ describe('admin locations', () => {
     expect(within(hkCard).queryByText(/fields\.tax_percent/)).not.toBeInTheDocument();
     expect(within(hkCard).queryByText(/no_sales_tax/)).not.toBeInTheDocument();
     expect(within(hkCard).queryByText(/0\.00%/)).not.toBeInTheDocument();
+    expect(within(hkCard).getByText(/HKD/)).toBeInTheDocument();
     expect(within(twCard).getByText(/5\.00%/)).toBeInTheDocument();
+    expect(within(twCard).getByText(/USD/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'admin:add_location' }));
     const form = (await screen.findByRole('heading', { name: 'admin:add_location' })).closest('form')!;
@@ -125,8 +127,11 @@ describe('admin locations', () => {
     expect(form.compareDocumentPosition(hkCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(container.contains(form)).toBe(true);
 
-    // A new location starts in Hong Kong: no sales tax, so the rate is locked to 0.
+    // A new location starts in Hong Kong: HKD, Hong Kong time, and no sales tax,
+    // so the rate is locked to 0.
     expect((within(form).getByLabelText(/fields\.country/) as HTMLSelectElement).value).toBe('HK');
+    expect((within(form).getByLabelText(/fields\.currency/) as HTMLInputElement).value).toBe('HKD');
+    expect((within(form).getByLabelText(/fields\.timezone/) as HTMLInputElement).value).toBe('Asia/Hong_Kong');
     const tax = within(form).getByLabelText(/fields\.tax_percent/) as HTMLInputElement;
     expect(tax.disabled).toBe(true);
     expect(tax.value).toBe('0');

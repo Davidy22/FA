@@ -75,7 +75,7 @@
     "cancelled": "已取消",
     "refunded": "已退款"
   },
-  "currency_code": "USD",
+  "currency_code": "HKD",
   "auth": {
     "continue_with": "使用 {{provider}} 繼續",
     "redirecting": "重新導向中…",

@@ -111,6 +111,9 @@ try {
   await db.exec('set role authenticated');
   await rows(`insert into public.locations(id,name,timezone,hourly_machine_rate,tax_rate)
     values($1,'DB smoke location','Asia/Hong_Kong',10,0.05)`, [newLocation]);
+  // Country defaults to HK, so the trigger drops the rate the form tried to set.
+  assert.equal(Number((await one('select tax_rate from public.locations where id=$1',
+    [newLocation])).tax_rate), 0);
   await rows(`insert into public.materials(id,slug,name,density_g_cm3,cost_per_gram)
     values($1,'db-smoke-pla',$2::jsonb,1.25,0.31)`, [newMaterial, '{"en":"Test PLA"}']);
   await rows(`insert into public.filaments(id,material_id,color)
@@ -221,8 +224,19 @@ try {
   assert.equal((await one('select discount_amount from public.orders where id=$1', [couponOrder.id])).discount_amount, '5.00');
   console.log('✓ coupon discount is consumed at fulfillment');
 
-  // Sales tax is a property of the location's country, and a small cart is no
-  // longer raised to a minimum order fee.
+  // The shop is Hong Kong based: the seeded pickup point prices in HKD on Hong
+  // Kong time and adds no sales tax, and a small cart is no longer raised to a
+  // minimum order fee.
+  const seededLocation = await one(
+    'select country,currency,timezone,tax_rate from public.locations where id=$1', [location]);
+  assert.equal(seededLocation.country, 'HK');
+  assert.equal(seededLocation.currency, 'HKD');
+  assert.equal(seededLocation.timezone, 'Asia/Hong_Kong');
+  assert.equal(Number(seededLocation.tax_rate), 0);
+  assert.equal(Number((await pricing(docCart)).total_amount), 1.5);
+
+  // Sales tax is a property of the location's country, so a new Hong Kong row is
+  // forced to zero even when the admin types a rate.
   const hkLocation = 'dddddddd-0000-0000-0000-000000000002';
   await rows(`insert into public.locations(id,name,timezone,hourly_machine_rate,tax_rate,country)
     values($1,'DB smoke Hong Kong','Asia/Hong_Kong',10,0.05,'hk')`, [hkLocation]);
@@ -232,8 +246,18 @@ try {
   const hkDocPricing = await pricing({ ...docCart, location_id: hkLocation });
   assert.equal(Number(hkDocPricing.tax_amount), 0);
   assert.equal(Number(hkDocPricing.total_amount), 1.5);
-  assert.equal(Number((await pricing(docCart)).total_amount), 1.58); // Taipei keeps its 5% rate
-  console.log('✓ sales tax follows the location country and no minimum order fee is added');
+
+  // The tax feature itself is kept for the speculative expansion abroad: a
+  // taxable country still charges its own rate, in its own currency.
+  const abroadLocation = 'dddddddd-0000-0000-0000-000000000003';
+  await rows(`insert into public.locations(id,name,timezone,hourly_machine_rate,tax_rate,currency,country)
+    values($1,'DB smoke abroad','Asia/Taipei',10,0.05,'USD','TW')`, [abroadLocation]);
+  const abroadPricing = await pricing({ ...docCart, location_id: abroadLocation });
+  assert.equal(abroadPricing.country, 'TW');
+  assert.equal(abroadPricing.currency, 'USD');
+  assert.equal(Number(abroadPricing.tax_amount), 0.08);
+  assert.equal(Number(abroadPricing.total_amount), 1.58);
+  console.log('✓ Hong Kong prices tax-free in HKD while a taxable country still charges');
 
   // Coupons can require a minimum spend or discount a single product only.
   const keychain = await saveProduct(exampleProduct({ slug: 'db-smoke-keychain',
@@ -249,7 +273,8 @@ try {
   const mixedCart = await pricing(cart([withFile, keychainLine], { coupon_code: 'SMOKEITEM' }));
   assert.equal(mixedCart.subtotal, 48);        // (9 + 2 + 3) x 2 + 20
   assert.equal(mixedCart.discount_amount, 10); // half of the keychain only
-  assert.equal(Number(mixedCart.total_amount), 39.9);
+  assert.equal(Number(mixedCart.tax_amount), 0); // Hong Kong adds no sales tax
+  assert.equal(Number(mixedCart.total_amount), 38);
   await assert.rejects(pricing(cart([withFile], { coupon_code: 'SMOKEITEM' })),
     /only applies to Smoke keychain/);
   console.log('✓ coupons can require a minimum spend or discount one product only');
