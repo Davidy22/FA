@@ -45,7 +45,6 @@
   "currency_hint": "Checkout uses the location's currency. Customer-facing price labels currently assume USD; keep USD unless the storefront is adapted for another currency.",
   "country_unknown": "Country not set",
   "invalid_country": "Use a two-letter country code such as HK.",
-  "no_sales_tax": "No sales tax",
   "no_sales_tax_hint": "{{country}} has no sales tax, so orders collected here are never taxed.",
   "tax_hint": "Sales tax is added at checkout using the country and rate of this location.",
   "material_list": "Materials",

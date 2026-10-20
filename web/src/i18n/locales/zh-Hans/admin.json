@@ -45,7 +45,6 @@
   "currency_hint": "结帐使用门市的货币；目前顾客介面的价格标示预设为美元。如未同步调整商店介面，请维持 USD。",
   "country_unknown": "未设定国家",
   "invalid_country": "请使用两位英文字母的国家代码，例如 HK。",
-  "no_sales_tax": "无销售税",
   "no_sales_tax_hint": "{{country}}没有销售税，此门市取货的订单一律不会计算税项。",
   "tax_hint": "结帐时会依门市所在国家与税率计算销售税。",
   "material_list": "材料",

@@ -164,11 +164,12 @@ export function AdminLocations() {
         <p className="mt-1 text-xs text-slate-500">
           {countryName(location.country, locale) || t('admin:country_unknown')} · {location.timezone} · {location.currency}
         </p>
-        <p className="mt-1 text-xs text-slate-500">
-          {hasSalesTax(location.country)
-            ? `${t('admin:fields.tax_percent')}: ${(Number(location.tax_rate) * 100).toFixed(2)}%`
-            : t('admin:no_sales_tax')}
-        </p>
+        {/* No tax line at all where nothing is charged (Hong Kong and friends). */}
+        {hasSalesTax(location.country) && Number(location.tax_rate) > 0 && (
+          <p className="mt-1 text-xs text-slate-500">
+            {`${t('admin:fields.tax_percent')}: ${(Number(location.tax_rate) * 100).toFixed(2)}%`}
+          </p>
+        )}
         <div className="mt-3 flex gap-2">
           <button type="button" className="btn-outline text-sm" onClick={() => setEditing(location.id)}>{t('common:edit')}</button>
           <button type="button" className="btn-outline text-sm" disabled={action.busy} onClick={() => void toggle(location)}>

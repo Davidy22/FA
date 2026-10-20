@@ -113,8 +113,10 @@ describe('admin locations', () => {
     const { container } = mount(<AdminLocations />, { locations: locationRows });
     const hkCard = (await screen.findByText('HK Shop')).closest('article')!;
     const twCard = screen.getByText('Taipei Shop').closest('article')!;
-    expect(within(hkCard).getByText('admin:no_sales_tax')).toBeInTheDocument();
+    // A zero rate gets no line at all - not even a "no sales tax" note.
     expect(within(hkCard).queryByText(/fields\.tax_percent/)).not.toBeInTheDocument();
+    expect(within(hkCard).queryByText(/no_sales_tax/)).not.toBeInTheDocument();
+    expect(within(hkCard).queryByText(/0\.00%/)).not.toBeInTheDocument();
     expect(within(twCard).getByText(/5\.00%/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'admin:add_location' }));

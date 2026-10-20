@@ -45,7 +45,6 @@
   "currency_hint": "結帳使用門市的貨幣；目前顧客介面的價格標示預設為美元。如未同步調整商店介面，請維持 USD。",
   "country_unknown": "未設定國家",
   "invalid_country": "請使用兩位英文字母的國家代碼，例如 HK。",
-  "no_sales_tax": "無銷售稅",
   "no_sales_tax_hint": "{{country}}沒有銷售稅，此門市取貨的訂單一律不會計算稅項。",
   "tax_hint": "結帳時會依門市所在國家與稅率計算銷售稅。",
   "material_list": "材料",
