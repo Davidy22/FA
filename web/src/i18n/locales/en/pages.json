@@ -1,0 +1,58 @@
+{
+  "about": {
+    "title": "About Make Anyth.ing",
+    "lede": "A small 3D printing studio in Hong Kong, making useful, beautiful objects close to where they are used.",
+    "story_title": "Made near you, not on a container ship",
+    "story": "Most things we buy travel thousands of kilometres before they reach us. A 3D print can be made in an afternoon, repaired when a part breaks, and adjusted to fit the exact shelf you have. We print on demand at our Hong Kong pickup points, using filament we can trace, and keep the models small enough that nothing sits in a warehouse waiting for a buyer.",
+    "values_title": "How we work",
+    "value_local_title": "Local by default",
+    "value_local": "Printing happens at the pickup point near you. No air freight, no plastic film wrapped around a box inside another box.",
+    "value_craft_title": "Made to be used",
+    "value_craft": "We would rather print one bracket that fits than a shelf full of things that almost do. Tell us the dimensions and we will work from them.",
+    "value_open_title": "Open to makers",
+    "value_open": "Community designs sit alongside our own, with creators earning a share of every print sold.",
+    "locations_title": "Where to collect your prints",
+    "cta_catalog": "Browse the catalog",
+    "cta_quote": "Request a quote",
+    "cta_contact": "Contact us"
+  },
+  "contact": {
+    "title": "Contact us",
+    "lede": "Questions about an order, a material, or a part that needs to fit exactly right? Send a message and a real person will reply.",
+    "form_title": "Send us a message",
+    "sign_in_hint": "Sign in to send a message. It becomes a support ticket you can follow, and we can see your past orders.",
+    "subject": "Subject",
+    "message": "Message",
+    "location": "Which location is this about? (optional)",
+    "send": "Send message",
+    "sent": "Thanks — your message is ticket “{{subject}}”. We reply in the ticket and by email.",
+    "sent_cta": "View your tickets",
+    "required": "Add a subject and a message.",
+    "ticket_hint": "Your message opens a support ticket, so nothing gets lost in an inbox.",
+    "email_title": "Prefer email?",
+    "email_hint": "Write to us directly and we will answer within one working day.",
+    "locations_title": "Pickup locations",
+    "no_phone": "Phone not listed yet",
+    "hours_title": "Opening hours",
+    "hours_hint": "Opening hours vary by pickup point — call ahead if you are collecting a large order."
+  },
+  "careers": {
+    "title": "Careers",
+    "lede": "We are a small team of makers, printers, and people who like fixing things. When a role opens, it appears here.",
+    "hidden_title": "Careers is not open yet",
+    "hidden_body": "We are not hiring through this page at the moment. If you would like to introduce yourself anyway, use the contact page and tell us what you make.",
+    "open_roles": "Open roles",
+    "no_roles": "No open roles right now",
+    "no_roles_hint": "Check back soon, or send us a message and we will keep your details on file.",
+    "remote": "Remote",
+    "closes": "Applications close {{date}}",
+    "apply": "How to apply",
+    "apply_body": "Email your CV and a short note about something you have made or fixed. We read every application ourselves.",
+    "employment_type": {
+      "full_time": "Full time",
+      "part_time": "Part time",
+      "contract": "Contract",
+      "internship": "Internship"
+    }
+  }
+}

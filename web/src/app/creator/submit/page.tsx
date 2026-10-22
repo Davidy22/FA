@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import type { Material } from '@/lib/types';
+import Link from 'next/link';
+import { useFeature } from '@/lib/features';
+import type { Material, ProductCategory } from '@/lib/types';
 
 // Simplified submission form — single locale input in MVP, backend still stores JSONB with en required.
 export default function SubmitPage() {
@@ -18,10 +20,18 @@ export default function SubmitPage() {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Community submissions are paused until there are reviewers; the database
+  // refuses inserts while the switch is off, so this is the matching UI state.
+  const submissions = useFeature('model_submissions');
 
   const { data: materials } = useQuery<Material[]>({
     queryKey: ['materials_submit'],
     queryFn: async () => (await supabase().from('materials').select('*').eq('is_active',true)).data || [],
+  });
+  const { data: categories } = useQuery<ProductCategory[]>({
+    queryKey: ['product_categories'],
+    queryFn: async () => (await supabase().from('product_categories')
+      .select('*').eq('is_active', true).order('sort_order', { ascending: true })).data || [],
   });
   const [selectedMats, setSelectedMats] = useState<Record<string, number>>({});
 
@@ -79,6 +89,18 @@ export default function SubmitPage() {
     } finally { setBusy(false); }
   }
 
+  if (!submissions.isPending && !submissions.enabled) {
+    return (
+      <div className="container-ma py-10 max-w-2xl">
+        <h1 className="text-2xl font-semibold">{t('submit')}</h1>
+        <p className="mt-4 rounded border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          {t('submissions_paused')}
+        </p>
+        <Link href="/creator" className="btn-outline mt-6 inline-block">{t('back_to_dashboard')}</Link>
+      </div>
+    );
+  }
+
   return (
     <div className="container-ma py-10 max-w-2xl">
       <h1 className="text-2xl font-semibold mb-6">{t('submit')}</h1>
@@ -92,7 +114,9 @@ export default function SubmitPage() {
             <input required type="number" min={0} step={0.01} className="input" value={price} onChange={e=>setPrice(parseFloat(e.target.value))} /></div>
           <div><label className="label">Category</label>
             <select className="input" value={category} onChange={e=>setCategory(e.target.value)}>
-              {['toy','tool','art','gadget','replacement_part','other'].map(c => <option key={c} value={c}>{c}</option>)}
+              {(categories || []).map((entry) => <option key={entry.slug} value={entry.slug}>
+                {entry.name.en || entry.slug}
+              </option>)}
             </select></div>
         </div>
         <div><label className="label">License</label>

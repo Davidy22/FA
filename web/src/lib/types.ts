@@ -12,7 +12,11 @@ export type Profile = {
   locale: 'en' | 'zh-Hant' | 'zh-Hans';
   is_creator: boolean;
   is_active: boolean;
+  /** Module permissions granted to an employee/manager; admins hold all of them. */
+  permissions: string[];
   points_balance: number;
+  /** Points earned from orders over the lifetime of the account (never spent). */
+  lifetime_points: number;
   referral_code: string;
   referred_by: string | null;
 };
@@ -80,7 +84,47 @@ export type Filament = {
   material_id: string;
   color: Localized;
   color_hex: string | null;
+  /** Second colour for gradient/two-tone spools. */
+  color_hex_2?: string | null;
+  /** Finish slug: standard, matte, silk, wood, marble, gradient, glow, ... */
+  finish: string;
+  /** Joined finish row, when the query asks for it. */
+  finish_name?: Localized | null;
   is_active: boolean;
+};
+
+/** An admin-managed product category (premade_products.category is this slug). */
+export type ProductCategory = {
+  slug: string;
+  name: Localized;
+  description: Localized | null;
+  sort_order: number;
+  is_active: boolean;
+};
+
+/** An admin-managed filament finish, e.g. wood fill or silk. */
+export type FilamentFinish = {
+  slug: string;
+  name: Localized;
+  description: Localized | null;
+  sort_order: number;
+  is_active: boolean;
+};
+
+export type JobListing = {
+  id: string;
+  slug: string;
+  title: Localized;
+  summary: Localized | null;
+  description: Localized | null;
+  department: string | null;
+  employment_type: 'full_time' | 'part_time' | 'contract' | 'internship';
+  location_id: string | null;
+  is_remote: boolean;
+  is_published: boolean;
+  sort_order: number;
+  closes_at: string | null;
+  created_at: string;
 };
 
 /** Sale pricing shared by products and option choices. */

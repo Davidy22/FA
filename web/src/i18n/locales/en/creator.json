@@ -17,5 +17,7 @@
     "approved": "Approved",
     "rejected": "Rejected",
     "disabled": "Disabled"
-  }
+  },
+  "submissions_paused": "Community submissions are paused while we build the review team. Your existing submissions and earnings are unaffected.",
+  "back_to_dashboard": "Back to creator dashboard"
 }

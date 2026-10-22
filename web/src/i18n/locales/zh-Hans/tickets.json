@@ -1,6 +1,7 @@
 {
   "title": "我的工单",
   "subtitle": "跟踪您的报价需求和与团队的对话。",
+  "staff_subtitle": "回复、报价并处理指派给您门店的请求。",
   "new_ticket": "新建需求",
   "subject": "主题",
   "subject_placeholder": "例如：定制外壳报价",

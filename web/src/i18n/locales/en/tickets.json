@@ -1,6 +1,7 @@
 {
   "title": "My tickets",
   "subtitle": "Track your quote requests and conversations with our team.",
+  "staff_subtitle": "Reply, quote and resolve the requests assigned to your location.",
   "new_ticket": "New request",
   "subject": "Subject",
   "subject_placeholder": "e.g. Quote for a custom enclosure",

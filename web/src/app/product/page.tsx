@@ -12,6 +12,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Price } from '@/components/Price';
 import { effectivePrice } from '@/lib/sale';
+import { describeFilament, filamentSwatchStyle } from '@/lib/filaments';
 import type {
   FileOptionConfig, Filament, Material, PremadeProduct, ProductMaterial, ProductMaterialSlot,
   ProductOptionChoice, ProductOptionGroup, ProductSlotMaterial, SlotSelection, TextOptionConfig,
@@ -365,8 +366,10 @@ function ProductDetail({ slug }: { slug: string }) {
                                 ...previous,
                                 [slot.id]: { ...(previous[slot.id] || {}), color_filament_id: f.id },
                               }))} />
-                            <span className="swatch" style={{ background: f.color_hex || '#ccc' }} />
-                            <span className="text-sm">{t_db(f.color, locale)}</span>
+                            <span className="swatch" style={filamentSwatchStyle(f)} />
+                            <span className="text-sm">{t_db(f.color, locale)}
+                              {describeFilament(f, locale) && <span className="block text-xs text-slate-500">{describeFilament(f, locale)}</span>}
+                            </span>
                           </label>
                         ))}
                       </div>
@@ -403,8 +406,10 @@ function ProductDetail({ slug }: { slug: string }) {
                 {colors.map((f) => (
                   <label key={f.id} className={'flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer ' + (filamentId === f.id ? 'border-brand-600 bg-brand-50' : 'border-slate-200 hover:border-slate-300')}>
                     <input type="radio" name="color" className="sr-only" checked={filamentId === f.id} onChange={() => setFilamentId(f.id)} />
-                    <span className="swatch" style={{ background: f.color_hex || '#ccc' }} />
-                    <span className="text-sm">{t_db(f.color, locale)}</span>
+                    <span className="swatch" style={filamentSwatchStyle(f)} />
+                    <span className="text-sm">{t_db(f.color, locale)}
+                      {describeFilament(f, locale) && <span className="block text-xs text-slate-500">{describeFilament(f, locale)}</span>}
+                    </span>
                   </label>
                 ))}
               </div>
