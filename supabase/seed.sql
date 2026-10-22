@@ -51,7 +51,10 @@ update public.profiles p set
   role = demo.role,
   location_id = demo.location_id,
   display_name = demo.display_name,
-  is_active = true
+  is_active = true,
+  -- The demo employee keeps their location-scoped duties and gains one module
+  -- so the permission-gated admin console is visible on a fresh local reset.
+  permissions = case when demo.role = 'employee' then '{"quotes.manage"}'::text[] else '{}'::text[] end
 from (values
   ('a11ce001-0000-4000-8000-000000000001'::uuid, 'admin', null::uuid, 'Local Admin'),
   ('e11ce002-0000-4000-8000-000000000002'::uuid, 'employee', '00000000-0000-0000-0000-000000000001'::uuid, 'Local Employee'),

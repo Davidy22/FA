@@ -55,5 +55,14 @@
   "referral_step_signup": "朋友建立帳號時輸入推薦碼。",
   "referral_step_reward": "註冊時你可獲得 10 點，對方首次下單後再獲得 50 點。",
   "referral_terms": "每位新客戶只能推薦一次；推薦碼須於註冊後 24 小時內使用。",
-  "referral_redirecting": "推薦資訊已整合到獎勵頁面。"
+  "referral_redirecting": "推薦資訊已整合到獎勵頁面。",
+  "membership_title": "會員等級",
+  "lifetime_points": "終身積分 {{count}}",
+  "tier_multiplier": "{{multiplier}} 倍積分",
+  "tier_progress_label": "前往下一等級的進度",
+  "tier_next": "再累積 {{points}} 終身積分即可到達 {{tier}}（{{multiplier}} 倍積分）。",
+  "tier_top": "你已達到最高等級——謝謝你與我們一起創作。",
+  "tier_requirement": "{{points}} 終身積分 · {{multiplier}} 倍積分",
+  "tier_default_name": "等級 {{number}}",
+  "earn_rate_tier": "你的等級每消費 HK$1 可賺取 {{count}} 積分。"
 }

@@ -4,9 +4,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { cleanLocalized, decimal, localizedInput } from '@/lib/admin';
 import { t_db } from '@/lib/format';
+import { filamentSwatchStyle, finishLabel } from '@/lib/filaments';
 import { supabase } from '@/lib/supabase';
 import { useLocale } from '@/store/locale';
-import type { Filament, Localized, Location, Material } from '@/lib/types';
+import type { Locale } from '@/lib/i18n';
+import type { Filament, FilamentFinish, Localized, Location, Material } from '@/lib/types';
 import { AdminFeedback, AdminQueryState, FormActions, LocalizedFields, useAdminAction, useAdminLanguage, useFormPanel } from './Shared';
 
 type MaterialDraft = {
@@ -21,12 +23,13 @@ function materialDraft(material?: Material & { notes?: string | null }): Materia
 }
 
 type FilamentDraft = {
-  materialId: string; color: Localized; hex: string; active: boolean;
+  materialId: string; color: Localized; hex: string; hex2: string; finish: string; active: boolean;
 };
 function filamentDraft(filament?: Filament, firstMaterialId = ''): FilamentDraft {
   return {
     materialId: filament?.material_id || firstMaterialId, color: localizedInput(filament?.color),
-    hex: filament?.color_hex || '',
+    hex: filament?.color_hex || '', hex2: filament?.color_hex_2 || '',
+    finish: filament?.finish || 'standard',
     active: filament?.is_active ?? true,
   };
 }
@@ -82,8 +85,11 @@ function MaterialForm({ material, onDone }: { material?: Material; onDone: () =>
   </form>;
 }
 
-function FilamentForm({ filament, materials, onDone }: { filament?: Filament; materials: Material[]; onDone: () => void }) {
+function FilamentForm({ filament, materials, finishes, onDone }: {
+  filament?: Filament; materials: Material[]; finishes: FilamentFinish[]; onDone: () => void;
+}) {
   const { t } = useTranslation('admin');
+  const locale = useLocale((state) => state.locale);
   const queryClient = useQueryClient();
   const action = useAdminAction();
   const panel = useFormPanel<HTMLFormElement>();
@@ -98,9 +104,12 @@ function FilamentForm({ filament, materials, onDone }: { filament?: Filament; ma
       if (!materials.some((material) => material.id === form.materialId)) throw new Error(t('select_material'));
       const hex = form.hex.trim();
       if (hex && !/^#[0-9a-fA-F]{6}$/.test(hex)) throw new Error(t('invalid_hex'));
+      const hex2 = form.hex2.trim();
+      if (hex2 && !/^#[0-9a-fA-F]{6}$/.test(hex2)) throw new Error(t('invalid_hex'));
       const payload = {
         material_id: form.materialId, color: cleanLocalized(form.color, t('fields.color'))!,
-        color_hex: hex || null, is_active: form.active,
+        color_hex: hex || null, color_hex_2: hex2 || null,
+        finish: form.finish || 'standard', is_active: form.active,
       };
       const result = filament
         ? await supabase().from('filaments').update(payload).eq('id', filament.id).select().single()
@@ -124,10 +133,27 @@ function FilamentForm({ filament, materials, onDone }: { filament?: Filament; ma
     <LocalizedFields language={language} onLanguageChange={setLanguage} fields={[
       { label: t('fields.color'), value: form.color, onChange: (value) => set('color', value) },
     ]} />
-    <label className="block text-sm">{t('fields.color_hex')}<input className="input mt-1 max-w-xs" type="text" placeholder="#123abc" value={form.hex} onChange={(e) => set('hex', e.target.value)} /></label>
+    <div className="grid gap-3 sm:grid-cols-2">
+      <label className="block text-sm">{t('fields.color_hex')}<input className="input mt-1" type="text" placeholder="#123abc" value={form.hex} onChange={(e) => set('hex', e.target.value)} /></label>
+      <label className="block text-sm">{t('fields.color_hex_2')}<input className="input mt-1" type="text" placeholder="#123abc" value={form.hex2} onChange={(e) => set('hex2', e.target.value)} /></label>
+    </div>
+    <label className="block text-sm">{t('fields.finish')}
+      <select className="input mt-1 max-w-sm" value={form.finish} onChange={(e) => set('finish', e.target.value)}>
+        {finishes.map((finish) => <option key={finish.slug} value={finish.slug}>{t_db(finish.name, locale)}</option>)}
+      </select>
+      <span className="mt-1 block text-xs text-slate-500">{t('finish_help')}</span>
+    </label>
+    <div className="flex items-center gap-3 text-sm">
+      <span className="swatch" style={filamentSwatchStyle({ color_hex: form.hex || null, color_hex_2: form.hex2 || null, finish: form.finish })} />
+      <span className="text-slate-600">{t('swatch_preview')}</span>
+    </div>
     <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={form.active} onChange={(e) => set('active', e.target.checked)} />{t('active')}</label>
     <AdminFeedback error={action.error} notice={action.notice} /><FormActions busy={action.busy} onCancel={onDone} />
   </form>;
+}
+
+function describeFinish(filament: Filament, locale: Locale): string {
+  return finishLabel(filament.finish_name, filament.finish, locale);
 }
 
 export function AdminMaterials() {
@@ -150,9 +176,19 @@ export function AdminMaterials() {
   const filamentsQuery = useQuery<Filament[]>({
     queryKey: ['admin_filaments'],
     queryFn: async () => {
-      const { data, error } = await supabase().from('filaments').select('*').order('created_at');
+      const { data, error } = await supabase().from('filaments')
+        .select('*, finish_info:filament_finishes(name)').order('created_at');
       if (error) throw error;
-      return (data || []) as Filament[];
+      return (data || []).map((row) => ({ ...row, finish_name: row.finish_info?.name ?? null })) as Filament[];
+    },
+  });
+  const finishesQuery = useQuery<FilamentFinish[]>({
+    queryKey: ['filament_finishes'],
+    queryFn: async () => {
+      const { data, error } = await supabase().from('filament_finishes')
+        .select('*').eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return (data || []) as FilamentFinish[];
     },
   });
   const locationsQuery = useQuery<Location[]>({
@@ -236,7 +272,8 @@ export function AdminMaterials() {
       <div className="flex items-center justify-between gap-3"><h3 className="text-lg font-medium">{t('admin:filament_list')}</h3>
         <button className="btn text-sm" type="button" disabled={materials.length === 0} onClick={() => setEditingFilament('new')}>{t('admin:add_filament')}</button></div>
       <p className="mt-1 text-sm text-slate-600">{t('admin:filament_help')}</p>
-      {editingFilament && <FilamentForm key={editingFilament} filament={filaments.find((filament) => filament.id === editingFilament)} materials={materials} onDone={() => setEditingFilament(null)} />}
+      {editingFilament && <FilamentForm key={editingFilament} filament={filaments.find((filament) => filament.id === editingFilament)}
+        materials={materials} finishes={finishesQuery.data || []} onDone={() => setEditingFilament(null)} />}
       <AdminQueryState loading={filamentsQuery.isPending} error={filamentsQuery.error} />
       {filaments.length === 0 && !filamentsQuery.isPending && <p className="mt-3 text-slate-500">{t('admin:no_filaments')}</p>}
       <div className="mt-3 space-y-3">
@@ -247,8 +284,10 @@ export function AdminMaterials() {
             <summary className="cursor-pointer font-medium">{t_db(material.name, locale)} · HK${Number(material.cost_per_gram).toFixed(2)}/g ({colors.length})</summary>
             <div className="mt-3 flex flex-wrap gap-2">
               {colors.map((filament) => <div key={filament.id} className="flex items-center gap-2 rounded border px-3 py-2 text-sm">
-                <span className="swatch shrink-0" style={{ backgroundColor: filament.color_hex || '#ccc' }} />
-                <span>{t_db(filament.color, locale)}{!filament.is_active ? ` (${t('admin:inactive')})` : ''}</span>
+                <span className="swatch shrink-0" style={filamentSwatchStyle(filament)} />
+                <span>{t_db(filament.color, locale)}
+                  {describeFinish(filament, locale) ? <span className="text-slate-500"> · {describeFinish(filament, locale)}</span> : null}
+                  {!filament.is_active ? ` (${t('admin:inactive')})` : ''}</span>
                 <button type="button" className="text-brand-700 underline" onClick={() => setEditingFilament(filament.id)}>{t('common:edit')}</button>
                 <button type="button" className="text-red-700 underline" disabled={action.busy} onClick={() => void deleteFilament(filament)}>{t('common:delete')}</button>
               </div>)}

@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from '@/store/locale';
 import { formatMoney } from '@/lib/format';
+import { filamentSwatchStyle, finishLabel } from '@/lib/filaments';
 import Link from 'next/link';
 import { useState } from 'react';
 import type { Filament, Location, Order, Profile } from '@/lib/types';
@@ -38,11 +39,15 @@ export default function EmployeePortal() {
     queryKey: ['emp_filaments', profile?.location_id],
     enabled: !!profile?.location_id,
     queryFn: async () => {
-      const { data: fs } = await supabase().from('filaments').select('*, material:materials(*)');
+      const { data: fs } = await supabase().from('filaments')
+        .select('*, material:materials(*), finish_info:filament_finishes(name)');
       const { data: lf } = await supabase().from('location_filaments')
         .select('filament_id,in_stock').eq('location_id', profile!.location_id);
       const inStock = new Set((lf||[]).filter(x=>x.in_stock).map(x=>x.filament_id));
-      return (fs||[]).map((f:any) => ({ ...f, location_in_stock: inStock.has(f.id) }));
+      return (fs||[]).map((f:any) => ({
+        ...f, finish_name: f.finish_info?.name ?? null,
+        location_in_stock: inStock.has(f.id),
+      }));
     },
   });
 
@@ -131,7 +136,11 @@ export default function EmployeePortal() {
             <tr key={f.id} className="border-t">
               <td className="py-2 font-mono text-xs">{f.id.slice(0,8)}</td>
               <td>{f.material?.name?.en}</td>
-              <td><span className="swatch" style={{background:f.color_hex||'#ccc'}}/> {f.color?.en}</td>
+              <td>
+                <span className="swatch" style={filamentSwatchStyle(f)} /> {f.color?.en}
+                {finishLabel(f.finish_name, f.finish, 'en') && (f.finish || 'standard') !== 'standard' &&
+                  <span className="text-slate-500"> · {finishLabel(f.finish_name, f.finish, 'en')}</span>}
+              </td>
               <td>HK${Number(f.material?.cost_per_gram || 0).toFixed(2)}</td>
               <td>
                 <label className="inline-flex items-center gap-2">

@@ -2,13 +2,13 @@
 import { useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { cleanLocalized, decimal, isoDateTime, lines, localDateTime, localizedInput, PRODUCT_CATEGORIES, PRODUCT_STATUSES } from '@/lib/admin';
+import { cleanLocalized, decimal, isoDateTime, lines, localDateTime, localizedInput, PRODUCT_STATUSES } from '@/lib/admin';
 import { formatMoney, slugify, t_db } from '@/lib/format';
 import { isOnSale } from '@/lib/sale';
 import { supabase } from '@/lib/supabase';
 import { useLocale } from '@/store/locale';
 import type {
-  Filament, Localized, Material, PremadeProduct, ProductMaterial, ProductMaterialSlot, ProductSlotMaterial,
+  Filament, Localized, Material, PremadeProduct, ProductCategory, ProductMaterial, ProductMaterialSlot, ProductSlotMaterial,
 } from '@/lib/types';
 import { AdminFeedback, AdminQueryState, FormActions, LocalizedFields, useAdminAction, useAdminLanguage, useFormPanel } from './Shared';
 import { ProductOptions } from './ProductOptions';
@@ -25,7 +25,7 @@ type SlotDraft = {
 
 type Draft = {
   slug: string; name: Localized; description: Localized; price: string;
-  category: PremadeProduct['category']; tags: string; imageUrls: string;
+  category: string; tags: string; imageUrls: string;
   sourcePath: string; featured: boolean; status: PremadeProduct['status'];
   defaultMaterialId: string; allowed: Record<string, string>;
   salePrice: string; saleStartsAt: string; saleEndsAt: string;
@@ -74,6 +74,20 @@ function ProductForm({ product, allowed, slots, materials, filaments, onDone }: 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setForm((previous) => ({ ...previous, [key]: value }));
   const allowedIds = Object.keys(form.allowed);
+
+  // Categories are admin-managed rows, not a fixed list in the bundle.
+  const { data: categories } = useQuery<ProductCategory[]>({
+    queryKey: ['product_categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase().from('product_categories')
+        .select('*').order('sort_order', { ascending: true }).order('slug');
+      if (error) throw error;
+      return (data || []) as ProductCategory[];
+    },
+  });
+  const categoryOptions = (categories || []).filter(
+    (category) => category.is_active || category.slug === form.category,
+  );
 
   function setSlot(index: number, patch: Partial<SlotDraft>) {
     setForm((previous) => ({
@@ -217,8 +231,12 @@ function ProductForm({ product, allowed, slots, materials, filaments, onDone }: 
     ]} />
     <div className="grid gap-4 sm:grid-cols-3">
       <label className="text-sm">{t('admin:fields.base_price')}<input className="input mt-1" type="number" required min="0" step="0.01" value={form.price} onChange={(event) => set('price', event.target.value)} /></label>
-      <label className="text-sm">{t('admin:fields.category')}<select className="input mt-1" value={form.category} onChange={(event) => set('category', event.target.value as Draft['category'])}>
-        {PRODUCT_CATEGORIES.map((category) => <option key={category} value={category}>{t(`common:categories.${category}`)}</option>)}
+      <label className="text-sm">{t('admin:fields.category')}<select className="input mt-1" value={form.category} onChange={(event) => set('category', event.target.value)}>
+        {categoryOptions.map((category) => <option key={category.slug} value={category.slug}>
+          {t_db(category.name, locale)}{category.is_active ? '' : ` (${t('admin:inactive')})`}
+        </option>)}
+        {!categoryOptions.some((category) => category.slug === form.category) && form.category &&
+          <option value={form.category}>{form.category}</option>}
       </select></label>
       <label className="text-sm">{t('admin:fields.status')}<select className="input mt-1" value={form.status} onChange={(event) => set('status', event.target.value as Draft['status'])}>
         {PRODUCT_STATUSES.map((status) => <option key={status} value={status}>{t(`admin:product_status.${status}`)}</option>)}

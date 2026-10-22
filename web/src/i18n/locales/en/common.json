@@ -15,7 +15,11 @@
     "employee_portal": "Employee Portal",
     "admin": "Admin",
     "document_printing": "Document printing",
-    "tickets": "Tickets"
+    "tickets": "Tickets",
+    "about": "About us",
+    "contact": "Contact us",
+    "careers": "Careers",
+    "locations": "Locations"
   },
   "location": {
     "title": "Choose a location",
@@ -113,5 +117,9 @@
     "this_provider": "This provider",
     "err_last_identity": "You need at least one sign-in method. Connect another method before disconnecting this one."
   },
-  "sale_badge": "Sale"
+  "sale_badge": "Sale",
+  "footer": {
+    "nav_label": "Footer",
+    "made_in_hong_kong": "Designed and printed in Hong Kong."
+  }
 }

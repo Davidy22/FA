@@ -1,6 +1,7 @@
 {
   "title": "我的工單",
   "subtitle": "追蹤您的報價需求與我們團隊的對話。",
+  "staff_subtitle": "回覆、報價並處理指派給您門市的請求。",
   "new_ticket": "新增需求",
   "subject": "主旨",
   "subject_placeholder": "例如：客製化外殼報價",

@@ -9,9 +9,12 @@ import { t_db } from '@/lib/format';
 import {
   DEFAULT_POINTS_PER_DOLLAR,
   DEFAULT_REDEEM_OPTIONS,
+  DEFAULT_TIERS,
   couponConditions,
   couponDiscountLabel,
   parseRedeemOptions,
+  parseTiers,
+  tierProgress,
 } from '@/lib/rewards';
 import { ReferralCard } from '@/components/ReferralCard';
 import type { Coupon, PremadeProduct, Profile, RewardTransaction } from '@/lib/types';
@@ -36,13 +39,15 @@ export default function RewardsPage() {
   const { data: settings } = useQuery({
     queryKey: ['rewards_settings'],
     queryFn: async () => {
-      const [opts, rate] = await Promise.all([
+      const [opts, rate, tiers] = await Promise.all([
         supabase().rpc('get_setting', { p_key: 'rewards.redeem_options' }),
         supabase().rpc('get_setting', { p_key: 'rewards.points_per_dollar' }),
+        supabase().rpc('get_setting', { p_key: 'rewards.tiers' }),
       ]);
       return {
         options: parseRedeemOptions(opts.data),
         pointsPerDollar: Number(rate.data) || DEFAULT_POINTS_PER_DOLLAR,
+        tiers: parseTiers(tiers.data),
       };
     },
   });
@@ -112,6 +117,10 @@ export default function RewardsPage() {
   const balance = profile.points_balance ?? 0;
   const options = settings?.options ?? DEFAULT_REDEEM_OPTIONS;
   const pointsPerDollar = settings?.pointsPerDollar ?? DEFAULT_POINTS_PER_DOLLAR;
+  const tiers = settings?.tiers ?? DEFAULT_TIERS;
+  const membership = tierProgress(profile.lifetime_points ?? 0, tiers);
+  const tierName = (tier: { name: string; multiplier: number }, index: number) =>
+    tier.name || t('rewards:tier_default_name', { number: index + 1 });
 
   return (
     <div className="container-ma py-10 max-w-3xl">
@@ -122,6 +131,58 @@ export default function RewardsPage() {
         <p className="text-sm text-slate-500">{t('rewards:balance_label')}</p>
         <p className="mt-1 text-3xl font-semibold text-brand-700">{t('rewards:points', { count: balance })}</p>
         <p className="mt-2 text-sm text-slate-600">{t('rewards:earn_rate', { count: pointsPerDollar })}</p>
+        {membership.current.multiplier > 1 && (
+          <p className="mt-1 text-sm font-medium text-brand-700">
+            {t('rewards:earn_rate_tier', {
+              multiplier: membership.current.multiplier,
+              count: Math.round(pointsPerDollar * membership.current.multiplier * 100) / 100,
+            })}
+          </p>
+        )}
+      </section>
+
+      <section className="mt-6 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="membership-heading">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="membership-heading" className="text-xl font-medium">{t('rewards:membership_title')}</h2>
+          <p className="text-sm text-slate-600">
+            {t('rewards:lifetime_points', { count: profile.lifetime_points ?? 0 })}
+          </p>
+        </div>
+        <p className="mt-2 text-lg font-semibold text-brand-700">
+          {tierName(membership.current, Math.max(0, tiers.indexOf(membership.current)))}
+          <span className="ml-2 text-sm font-normal text-slate-600">
+            {t('rewards:tier_multiplier', { multiplier: membership.current.multiplier })}
+          </span>
+        </p>
+        {membership.next ? (
+          <>
+            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100" role="progressbar"
+              aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(membership.ratio * 100)}
+              aria-label={t('rewards:tier_progress_label')}>
+              <div className="h-full rounded-full bg-brand-600" style={{ width: `${Math.round(membership.ratio * 100)}%` }} />
+            </div>
+            <p className="mt-2 text-sm text-slate-600">
+              {t('rewards:tier_next', {
+                points: membership.remaining,
+                tier: tierName(membership.next, Math.max(0, tiers.indexOf(membership.next))),
+                multiplier: membership.next.multiplier,
+              })}
+            </p>
+          </>
+        ) : (
+          <p className="mt-2 text-sm text-slate-600">{t('rewards:tier_top')}</p>
+        )}
+        <ul className="mt-4 grid gap-2 text-sm sm:grid-cols-3">
+          {tiers.map((tier, index) => (
+            <li key={`${tier.min_lifetime_points}-${tier.multiplier}-${index}`}
+              className={'rounded border p-2 ' + (tier === membership.current ? 'border-brand-600 bg-brand-50' : 'border-slate-200')}>
+              <p className="font-medium">{tierName(tier, index)}</p>
+              <p className="text-xs text-slate-600">
+                {t('rewards:tier_requirement', { points: tier.min_lifetime_points, multiplier: tier.multiplier })}
+              </p>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <ReferralCard code={profile.referral_code} />

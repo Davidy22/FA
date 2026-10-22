@@ -17,5 +17,7 @@
     "approved": "已通过",
     "rejected": "已驳回",
     "disabled": "已停用"
-  }
+  },
+  "submissions_paused": "我们正在筹组审核团队，社区投稿暂时暂停。你现有的投稿与收益不受影响。",
+  "back_to_dashboard": "返回创作者面板"
 }

@@ -15,6 +15,7 @@ import enEmployee from '@/i18n/locales/en/employee.json';
 import enAdmin from '@/i18n/locales/en/admin.json';
 import enErrors from '@/i18n/locales/en/errors.json';
 import enRewards from '@/i18n/locales/en/rewards.json';
+import enPages from '@/i18n/locales/en/pages.json';
 
 import zhHantCommon from '@/i18n/locales/zh-Hant/common.json';
 import zhHantCatalog from '@/i18n/locales/zh-Hant/catalog.json';
@@ -28,6 +29,7 @@ import zhHantEmployee from '@/i18n/locales/zh-Hant/employee.json';
 import zhHantAdmin from '@/i18n/locales/zh-Hant/admin.json';
 import zhHantErrors from '@/i18n/locales/zh-Hant/errors.json';
 import zhHantRewards from '@/i18n/locales/zh-Hant/rewards.json';
+import zhHantPages from '@/i18n/locales/zh-Hant/pages.json';
 
 import zhHansCommon from '@/i18n/locales/zh-Hans/common.json';
 import zhHansCatalog from '@/i18n/locales/zh-Hans/catalog.json';
@@ -41,6 +43,7 @@ import zhHansEmployee from '@/i18n/locales/zh-Hans/employee.json';
 import zhHansAdmin from '@/i18n/locales/zh-Hans/admin.json';
 import zhHansErrors from '@/i18n/locales/zh-Hans/errors.json';
 import zhHansRewards from '@/i18n/locales/zh-Hans/rewards.json';
+import zhHansPages from '@/i18n/locales/zh-Hans/pages.json';
 
 const resources = {
   en: {
@@ -48,18 +51,21 @@ const resources = {
     tickets: enTickets,
     checkout: enCheckout, orders: enOrders, creator: enCreator,
     employee: enEmployee, admin: enAdmin, errors: enErrors, rewards: enRewards,
+    pages: enPages,
   },
   'zh-Hant': {
     common: zhHantCommon, catalog: zhHantCatalog, quote: zhHantQuote, cart: zhHantCart,
     tickets: zhHantTickets,
     checkout: zhHantCheckout, orders: zhHantOrders, creator: zhHantCreator,
     employee: zhHantEmployee, admin: zhHantAdmin, errors: zhHantErrors, rewards: zhHantRewards,
+    pages: zhHantPages,
   },
   'zh-Hans': {
     common: zhHansCommon, catalog: zhHansCatalog, quote: zhHansQuote, cart: zhHansCart,
     tickets: zhHansTickets,
     checkout: zhHansCheckout, orders: zhHansOrders, creator: zhHansCreator,
     employee: zhHansEmployee, admin: zhHansAdmin, errors: zhHansErrors, rewards: zhHansRewards,
+    pages: zhHansPages,
   },
 };
 
@@ -136,7 +142,7 @@ if (typeof window !== 'undefined' && !i18n.isInitialized) {
       lng: 'en',
       fallbackLng: 'en',
       defaultNS: 'common',
-      ns: ['common','catalog','quote','cart','checkout','orders','creator','employee','admin','errors','rewards','tickets'],
+      ns: ['common','catalog','quote','cart','checkout','orders','creator','employee','admin','errors','rewards','tickets','pages'],
       interpolation: { escapeValue: false },
       react: { useSuspense: false },
     });

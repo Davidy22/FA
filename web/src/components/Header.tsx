@@ -6,6 +6,7 @@ import { useLocation } from '@/store/location';
 import { useLocale } from '@/store/locale';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { canUseAdminConsole } from '@/lib/permissions';
 import { LocationSelector } from './LocationSelector';
 import { LocaleSwitcher } from './LocaleSwitcher';
 import { useEffect, useState } from 'react';
@@ -57,6 +58,8 @@ export function Header() {
             <Link href="/quote" className="text-slate-700 hover:text-brand-700">{t('nav.quote')}</Link>
             <Link href="/document-printing" className="text-slate-700 hover:text-brand-700">{t('nav.document_printing')}</Link>
             <Link href="/rewards" className="text-slate-700 hover:text-brand-700">{t('nav.rewards')}</Link>
+            <Link href="/about" className="text-slate-700 hover:text-brand-700">{t('nav.about')}</Link>
+            <Link href="/contact" className="text-slate-700 hover:text-brand-700">{t('nav.contact')}</Link>
             {profile && <Link href="/tickets" className="text-slate-700 hover:text-brand-700">{t('nav.tickets')}</Link>}
           </nav>
         </div>
@@ -80,7 +83,7 @@ export function Header() {
               {profile.is_active && profile.role !== 'customer' && (
                 <Link href="/employee" className="hidden lg:block text-slate-700 hover:text-brand-700">{t('nav.employee_portal')}</Link>
               )}
-              {profile.is_active && profile.role === 'admin' && (
+              {canUseAdminConsole(profile) && (
                 <Link href="/admin" className="hidden lg:block text-slate-700 hover:text-brand-700">{t('nav.admin')}</Link>
               )}
               {profile.is_active && profile.is_creator && (
@@ -101,9 +104,10 @@ export function Header() {
           <Link href="/catalog">{t('nav.catalog')}</Link><Link href="/quote">{t('nav.quote')}</Link>
           <Link href="/document-printing">{t('nav.document_printing')}</Link>
           <Link href="/rewards">{t('nav.rewards')}</Link><Link href="/account">{t('nav.account')}</Link>
+          <Link href="/about">{t('nav.about')}</Link><Link href="/contact">{t('nav.contact')}</Link>
           {profile && <Link href="/tickets">{t('nav.tickets')}</Link>}
           {profile?.is_active && profile.role !== 'customer' && <Link href="/employee">{t('nav.employee_portal')}</Link>}
-          {profile?.is_active && profile.role === 'admin' && <Link href="/admin">{t('nav.admin')}</Link>}
+          {canUseAdminConsole(profile) && <Link href="/admin">{t('nav.admin')}</Link>}
           {profile?.is_active && profile.is_creator && <Link href="/creator">{t('nav.creator_dashboard')}</Link>}
           {profile && <button className="text-left" onClick={() => void supabase().auth.signOut()}>{t('nav.logout')}</button>}
         </nav>}

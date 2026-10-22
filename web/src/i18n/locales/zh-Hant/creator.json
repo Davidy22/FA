@@ -17,5 +17,7 @@
     "approved": "已通過",
     "rejected": "已駁回",
     "disabled": "已停用"
-  }
+  },
+  "submissions_paused": "我們正在籌組審核團隊，社群投稿暫時暫停。你現有的投稿與收益不受影響。",
+  "back_to_dashboard": "返回創作者面板"
 }

@@ -1,6 +1,5 @@
 import type { Localized } from './types';
 
-export const PRODUCT_CATEGORIES = ['toy', 'tool', 'art', 'gadget', 'replacement_part', 'other'] as const;
 export const PRODUCT_STATUSES = ['draft', 'published', 'archived'] as const;
 
 export function localizedInput(value: Localized | null | undefined): Localized {

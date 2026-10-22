@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocale } from '@/store/locale';
 import { t_db, formatMoney } from '@/lib/format';
 import { useState } from 'react';
+import { useFeature } from '@/lib/features';
 import Link from 'next/link';
 import type { ModelSubmission, Profile } from '@/lib/types';
 
@@ -12,6 +13,7 @@ export default function CreatorDashboard() {
   const { t } = useTranslation(['common','creator']);
   const locale = useLocale((s) => s.locale);
   const [agreed, setAgreed] = useState(false);
+  const submissions = useFeature('model_submissions');
   const { data: profile } = useQuery<Profile|null>({
     queryKey: ['me_creator'],
     queryFn: async () => {
@@ -21,7 +23,7 @@ export default function CreatorDashboard() {
     },
   });
 
-  const { data: submissions } = useQuery<ModelSubmission[]>({
+  const { data: mySubmissions } = useQuery<ModelSubmission[]>({
     queryKey: ['my_submissions'],
     enabled: !!profile?.is_creator,
     queryFn: async () => {
@@ -75,8 +77,13 @@ export default function CreatorDashboard() {
     <div className="container-ma py-10">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">{t('creator:title')}</h1>
-        <Link href="/creator/submit" className="btn">{t('creator:submit')}</Link>
+        {submissions.enabled && <Link href="/creator/submit" className="btn">{t('creator:submit')}</Link>}
       </div>
+      {!submissions.enabled && !submissions.isPending && (
+        <p className="mt-6 rounded border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          {t('creator:submissions_paused')}
+        </p>
+      )}
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="rounded-lg border p-4">
           <p className="text-sm text-slate-500">{t('creator:balance')}</p>
@@ -89,14 +96,14 @@ export default function CreatorDashboard() {
         </div>
         <div className="rounded-lg border p-4">
           <p className="text-sm text-slate-500">{t('creator:my_submissions')}</p>
-          <p className="text-2xl font-semibold">{submissions?.length ?? 0}</p>
+          <p className="text-2xl font-semibold">{mySubmissions?.length ?? 0}</p>
         </div>
       </div>
       <h2 className="mt-8 text-xl font-medium">{t('creator:my_submissions')}</h2>
       <table className="mt-4 w-full text-sm">
         <thead className="text-left text-slate-500"><tr><th className="py-2">Title</th><th>Status</th><th>Notes</th></tr></thead>
         <tbody>
-          {(submissions||[]).map((s) => (
+          {(mySubmissions||[]).map((s) => (
             <tr key={s.id} className="border-t">
               <td className="py-2">{t_db(s.title, locale)}</td>
               <td><span className="badge">{t(`creator:status.${s.status}`)}</span></td>

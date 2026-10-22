@@ -27,7 +27,8 @@ beforeEach(() => {
   signedIn = true;
   profile = { id: userId, email: 'admin@example.test', display_name: 'Admin',
     role: 'customer', is_active: true, location_id: null, locale: 'en', is_creator: false,
-    points_balance: 0, referral_code: 'ADMINTEST', referred_by: null };
+    permissions: [], points_balance: 0, lifetime_points: 0,
+    referral_code: 'ADMINTEST', referred_by: null };
   invoke = vi.fn(async () => {
     profile = { ...profile!, role: 'admin' };
     return { data: { ok: true }, error: null };

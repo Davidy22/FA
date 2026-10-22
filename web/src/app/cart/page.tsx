@@ -9,6 +9,7 @@ import { formatMoney, t_db, formatMaterial } from '@/lib/format';
 import { useLocation } from '@/store/location';
 import { useMemo, useState, useEffect } from 'react';
 import { effectivePrice } from '@/lib/sale';
+import { filamentSwatchStyle } from '@/lib/filaments';
 import type { Filament, Material, PremadeProduct, ProductMaterialSlot, QuoteRequest, TicketQuote } from '@/lib/types';
 import { DEFAULT_DOCUMENT_PRICES, useDocumentPrices } from '@/hooks/useDocumentPrices';
 
@@ -55,7 +56,8 @@ export default function CartPage() {
     queryKey: ['filaments_by_ids', filamentIds],
     enabled: filamentIds.length > 0,
     queryFn: async () => {
-      const { data } = await supabase().from('filaments').select('*').in('id', filamentIds);
+      const { data } = await supabase().from('filaments')
+          .select('*, finish_info:filament_finishes(name)').in('id', filamentIds);
       return data || [];
     },
   });
@@ -189,7 +191,7 @@ export default function CartPage() {
                             <li key={slotId}>
                               {slot ? t_db(slot.name, locale) : '—'}:{' '}
                               {slotMaterial ? formatMaterial(slotMaterial, locale) : '—'}
-                              {slotColor && <> · <span className="inline-block align-middle"><span className="swatch" style={{background:slotColor.color_hex||'#ccc'}}/></span> {t_db(slotColor.color, locale)}</>}
+                              {slotColor && <> · <span className="inline-block align-middle"><span className="swatch" style={filamentSwatchStyle(slotColor)}/></span> {t_db(slotColor.color, locale)}</>}
                             </li>
                           );
                         })}
@@ -197,7 +199,7 @@ export default function CartPage() {
                     ) : (
                       <p className="text-sm text-slate-600">
                         {m && formatMaterial(m, locale)}
-                        {f && <> · <span className="inline-block align-middle"><span className="swatch" style={{background:f.color_hex||'#ccc'}}/></span> {t_db(f.color, locale)}</>}
+                        {f && <> · <span className="inline-block align-middle"><span className="swatch" style={filamentSwatchStyle(f)}/></span> {t_db(f.color, locale)}</>}
                       </p>
                     )}
                   </div>

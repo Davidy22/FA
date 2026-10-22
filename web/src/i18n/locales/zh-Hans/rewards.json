@@ -55,5 +55,14 @@
   "referral_step_signup": "朋友创建账号时输入推荐码。",
   "referral_step_reward": "注册时你可获得 10 积分，对方首次下单后再获得 50 积分。",
   "referral_terms": "每位新客户只能推荐一次；推荐码须在注册后 24 小时内使用。",
-  "referral_redirecting": "推荐信息已整合到积分奖励页面。"
+  "referral_redirecting": "推荐信息已整合到积分奖励页面。",
+  "membership_title": "会员等级",
+  "lifetime_points": "终身积分 {{count}}",
+  "tier_multiplier": "{{multiplier}} 倍积分",
+  "tier_progress_label": "前往下一等级的进度",
+  "tier_next": "再累积 {{points}} 终身积分即可到达 {{tier}}（{{multiplier}} 倍积分）。",
+  "tier_top": "你已达到最高等级——谢谢你与我们一起创作。",
+  "tier_requirement": "{{points}} 终身积分 · {{multiplier}} 倍积分",
+  "tier_default_name": "等级 {{number}}",
+  "earn_rate_tier": "你的等级每消费 HK$1 可赚取 {{count}} 积分。"
 }

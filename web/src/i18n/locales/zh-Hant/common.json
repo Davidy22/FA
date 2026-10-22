@@ -15,7 +15,11 @@
     "employee_portal": "員工入口",
     "admin": "管理後台",
     "document_printing": "文件列印",
-    "tickets": "工單"
+    "tickets": "工單",
+    "about": "關於我們",
+    "contact": "聯絡我們",
+    "careers": "招聘",
+    "locations": "門市"
   },
   "location": {
     "title": "選擇門市",
@@ -113,5 +117,9 @@
     "this_provider": "此登入方式",
     "err_last_identity": "你至少需要保留一種登入方式。請先連結其他方式再解除此項。"
   },
-  "sale_badge": "特價"
+  "sale_badge": "特價",
+  "footer": {
+    "nav_label": "頁尾",
+    "made_in_hong_kong": "香港設計及打印。"
+  }
 }

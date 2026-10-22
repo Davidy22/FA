@@ -55,5 +55,14 @@
   "referral_step_signup": "They enter it when creating an account.",
   "referral_step_reward": "You earn 10 points at sign-up and 50 after their first order.",
   "referral_terms": "Referral points are awarded once per new customer. Codes can only be claimed within 24 hours of sign-up.",
-  "referral_redirecting": "Referral details are now part of your rewards."
+  "referral_redirecting": "Referral details are now part of your rewards.",
+  "membership_title": "Membership",
+  "lifetime_points": "{{count}} lifetime points",
+  "tier_multiplier": "{{multiplier}}× points",
+  "tier_progress_label": "Progress to the next tier",
+  "tier_next": "{{points}} more lifetime points to reach {{tier}} ({{multiplier}}× points).",
+  "tier_top": "You are at the top tier — thank you for making with us.",
+  "tier_requirement": "{{points}} lifetime points · {{multiplier}}× points",
+  "tier_default_name": "Tier {{number}}",
+  "earn_rate_tier": "Your tier earns {{count}} points per HK$1 spent."
 }

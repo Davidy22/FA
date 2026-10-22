@@ -17,13 +17,13 @@ update public.profiles set role='admin' where id='aaaaaaaa-aaaa-aaaa-aaaa-000000
 select set_config('request.jwt.claims',
   '{"sub":"bbbbbbbb-bbbb-bbbb-bbbb-000000000002","role":"authenticated"}', false);
 select throws_ok($$select public.admin_save_product('{}'::jsonb,'[]'::jsonb)$$,
-  'P0001','Admin only','customers cannot save products');
+  'P0001','Not permitted to manage products','customers cannot save products');
 select throws_ok($$select public.admin_update_user('aaaaaaaa-aaaa-aaaa-aaaa-000000000001','customer',null,null)$$,
-  'P0001','Admin only','customers cannot change roles');
+  'P0001','Not permitted to change users','customers cannot change roles');
 select throws_ok($$select public.set_user_active('aaaaaaaa-aaaa-aaaa-aaaa-000000000001',false)$$,
-  'P0001','Admin only','customers cannot deactivate admins');
+  'P0001','Not permitted to change users','customers cannot deactivate admins');
 select throws_ok($$select public.admin_decide_payout(gen_random_uuid(),'paid','abc')$$,
-  'P0001','Admin only','customers cannot process payouts');
+  'P0001','Not permitted to manage payouts','customers cannot process payouts');
 
 select set_config('request.jwt.claims',
   '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-000000000001","role":"authenticated"}', false);

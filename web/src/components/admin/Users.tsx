@@ -3,8 +3,46 @@ import { useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/lib/supabase';
+import { PERMISSION_MODULES, cleanPermissions, permissionKey } from '@/lib/permissions';
 import type { Location, Profile } from '@/lib/types';
 import { ADMIN_PAGE_SIZE, AdminFeedback, AdminPagination, AdminQueryState, FormActions, useAdminAction } from './Shared';
+
+/** Permission checkboxes shared by the user editor. */
+function PermissionPicker({ value, onChange }: { value: string[]; onChange: (next: string[]) => void }) {
+  const { t } = useTranslation('admin');
+  const toggle = (key: string) => onChange(
+    value.includes(key) ? value.filter((entry) => entry !== key) : [...value, key],
+  );
+  return <fieldset className="rounded border border-slate-200 p-3">
+    <legend className="px-1 text-sm font-medium">{t('fields.permissions')}</legend>
+    <p className="text-xs text-slate-600">{t('permissions_help')}</p>
+    <label className="mt-3 flex items-start gap-2 rounded bg-brand-50/60 p-2 text-sm">
+      <input type="checkbox" className="mt-0.5" checked={value.includes('admin.full')}
+        onChange={() => toggle('admin.full')} />
+      <span>
+        <strong>{t('permissions.admin_full')}</strong>
+        <span className="block text-xs text-slate-600">{t('permission_descriptions.admin_full')}</span>
+      </span>
+    </label>
+    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+      {PERMISSION_MODULES.map((key) => <label key={key} className="flex items-start gap-2 text-sm">
+        <input type="checkbox" className="mt-0.5" checked={value.includes(key)}
+          disabled={value.includes('admin.full')}
+          onChange={() => toggle(key)} />
+        <span>
+          {t(`permissions.${permissionKey(key)}`)}
+          <span className="block text-xs text-slate-500">{t(`permission_descriptions.${permissionKey(key)}`)}</span>
+        </span>
+      </label>)}
+    </div>
+    <div className="mt-3 flex gap-3 text-xs">
+      <button type="button" className="text-brand-700 underline"
+        onClick={() => onChange([...PERMISSION_MODULES])}>{t('select_all_permissions')}</button>
+      <button type="button" className="text-slate-600 underline"
+        onClick={() => onChange([])}>{t('clear_permissions')}</button>
+    </div>
+  </fieldset>;
+}
 
 function UserForm({ user, locations, onDone }: { user: Profile; locations: Location[]; onDone: () => void }) {
   const { t } = useTranslation('admin');
@@ -13,6 +51,8 @@ function UserForm({ user, locations, onDone }: { user: Profile; locations: Locat
   const [role, setRole] = useState<Profile['role']>(user.role);
   const [locationId, setLocationId] = useState(user.location_id || '');
   const [displayName, setDisplayName] = useState(user.display_name || '');
+  const [permissions, setPermissions] = useState<string[]>(user.permissions ?? []);
+  const staffRole = ['employee', 'manager'].includes(role);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -22,10 +62,18 @@ function UserForm({ user, locations, onDone }: { user: Profile; locations: Locat
       }
       const { error } = await supabase().rpc('admin_update_user', {
         p_user_id: user.id, p_role: role,
-        p_location_id: ['employee', 'manager'].includes(role) ? locationId : null,
+        p_location_id: staffRole ? locationId : null,
         p_display_name: displayName.trim() || null,
       });
       if (error) throw error;
+      // Permissions are a separate RPC so the role/location rules stay in one
+      // place; the server clears them when the account stops being staff.
+      if (staffRole) {
+        const { error: permissionError } = await supabase().rpc('admin_set_user_permissions', {
+          p_user_id: user.id, p_permissions: cleanPermissions(permissions),
+        });
+        if (permissionError) throw permissionError;
+      }
       await queryClient.invalidateQueries({ queryKey: ['admin_users'] });
     }, onDone);
   }
@@ -41,6 +89,7 @@ function UserForm({ user, locations, onDone }: { user: Profile; locations: Locat
       <option value="">—</option>{locations.filter((location) => location.is_active || location.id === user.location_id).map((location) =>
         <option key={location.id} value={location.id}>{location.name}{location.is_active ? '' : ` (${t('inactive')})`}</option>)}
     </select></label>}
+    {staffRole && <PermissionPicker value={permissions} onChange={setPermissions} />}
     <p className="text-xs text-slate-600">{t('user_roles_hint')}</p>
     <AdminFeedback error={action.error} notice={action.notice} /><FormActions busy={action.busy} onCancel={onDone} />
   </form>;
@@ -152,7 +201,14 @@ export function AdminUsers({ currentUserId }: { currentUserId: string }) {
       <div className="flex flex-wrap items-start justify-between gap-3"><div>
         <p className="font-medium">{user.display_name || user.email} {user.id === currentUserId && `(${t('you')})`}</p>
         <p className="break-all text-slate-600">{user.email} · {t(`role.${user.role}`)} · {locationsQuery.data?.find((location) => location.id === user.location_id)?.name || '—'}</p>
-        <span className="badge mt-1">{user.is_active ? t('active') : t('inactive')}</span>
+        <p className="mt-1 flex flex-wrap items-center gap-1">
+          <span className="badge">{user.is_active ? t('active') : t('inactive')}</span>
+          {user.role === 'admin'
+            ? <span className="badge">{t('permissions.admin_full')}</span>
+            : (user.permissions ?? []).map((key) => <span key={key} className="badge">
+                {key === 'admin.full' ? t('permissions.admin_full') : t(`permissions.${key}`)}
+              </span>)}
+        </p>
       </div><div className="flex gap-2">
         <button type="button" className="text-brand-700 underline" onClick={() => setEditing(user.id)}>{t('edit_user')}</button>
         {user.id !== currentUserId && <button type="button" className="text-red-700 underline" disabled={action.busy} onClick={() => void toggle(user)}>

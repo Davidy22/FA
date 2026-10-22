@@ -6,7 +6,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { useState } from 'react';
 import { t_db } from '@/lib/format';
 import { useLocale } from '@/store/locale';
-import type { Material, PremadeProduct } from '@/lib/types';
+import type { Material, PremadeProduct, ProductCategory } from '@/lib/types';
 
 export default function CatalogPage() {
   const { t } = useTranslation(['common','catalog']);
@@ -40,6 +40,17 @@ export default function CatalogPage() {
     },
   });
 
+  // Categories are managed in the admin console, so the filter follows the
+  // store's own list instead of a hard-coded enum.
+  const { data: categories } = useQuery<ProductCategory[]>({
+    queryKey: ['product_categories'],
+    queryFn: async () => {
+      const { data } = await supabase().from('product_categories')
+        .select('*').eq('is_active', true).order('sort_order', { ascending: true });
+      return (data || []) as ProductCategory[];
+    },
+  });
+
   return (
     <div className="container-ma py-8 grid grid-cols-1 md:grid-cols-[240px_1fr] gap-8">
       <aside aria-label={t('catalog:filters')} className="space-y-4">
@@ -51,8 +62,8 @@ export default function CatalogPage() {
           <label className="label">{t('catalog:filter_by_category')}</label>
           <select className="input" value={category} onChange={(e) => setCategory(e.target.value)}>
             <option value="">—</option>
-            {['toy','tool','art','gadget','replacement_part','other'].map((c) => (
-              <option key={c} value={c}>{t(`common:categories.${c}`)}</option>
+            {categories?.map((category) => (
+              <option key={category.slug} value={category.slug}>{t_db(category.name, locale)}</option>
             ))}
           </select>
         </div>
