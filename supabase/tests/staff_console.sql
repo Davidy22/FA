@@ -12,19 +12,19 @@ delete from public.reward_transactions
 delete from public.orders where order_number = 'TIER-PGTAP';
 delete from public.product_categories where slug = 'pg-tap-category';
 delete from auth.users where id in (
-  'aaaaaaaa-0000-0000-0000-0000000000c1',
-  'bbbbbbbb-bbbb-bbbb-bbbb-0000000000c2'
+  'c0000000-0000-4000-8000-0000000000a1',
+  'd0000000-0000-4000-8000-0000000000b2'
 );
 
 insert into auth.users(id, email) values
-  ('aaaaaaaa-0000-0000-0000-0000000000c1', 'perm.admin@example.com'),
-  ('bbbbbbbb-bbbb-bbbb-bbbb-0000000000c2', 'perm.staff@example.com');
+  ('c0000000-0000-4000-8000-0000000000a1', 'perm.admin@example.com'),
+  ('d0000000-0000-4000-8000-0000000000b2', 'perm.staff@example.com');
 
 update public.profiles set role = 'admin', is_active = true
- where id = 'aaaaaaaa-0000-0000-0000-0000000000c1';
+ where id = 'c0000000-0000-4000-8000-0000000000a1';
 update public.profiles set role = 'employee', is_active = true,
   location_id = '00000000-0000-0000-0000-000000000001'
- where id = 'bbbbbbbb-bbbb-bbbb-bbbb-0000000000c2';
+ where id = 'd0000000-0000-4000-8000-0000000000b2';
 
 -- (1) both new features ship switched off
 select ok(
@@ -64,7 +64,7 @@ select lives_ok(
 
 -- (6) a plain employee holds no module permissions
 select set_config('request.jwt.claims',
-  '{"sub":"bbbbbbbb-bbbb-bbbb-bbbb-0000000000c2","role":"authenticated"}', false);
+  '{"sub":"d0000000-0000-4000-8000-0000000000b2","role":"authenticated"}', false);
 select ok(
   public.is_staff() and not public.has_permission('products.manage'),
   'staff start with no module permissions'
@@ -72,10 +72,10 @@ select ok(
 
 -- (7) an admin assigns one module
 select set_config('request.jwt.claims',
-  '{"sub":"aaaaaaaa-0000-0000-0000-0000000000c1","role":"authenticated"}', false);
+  '{"sub":"c0000000-0000-4000-8000-0000000000a1","role":"authenticated"}', false);
 select is(
   (select (public.admin_set_user_permissions(
-    'bbbbbbbb-bbbb-bbbb-bbbb-0000000000c2'::uuid, array['products.manage']::text[]
+    'd0000000-0000-4000-8000-0000000000b2'::uuid, array['products.manage']::text[]
   )).permissions),
   array['products.manage']::text[],
   'an admin can assign a module to an employee'
@@ -83,7 +83,7 @@ select is(
 
 -- (8) that module applies to the employee and nothing else does
 select set_config('request.jwt.claims',
-  '{"sub":"bbbbbbbb-bbbb-bbbb-bbbb-0000000000c2","role":"authenticated"}', false);
+  '{"sub":"d0000000-0000-4000-8000-0000000000b2","role":"authenticated"}', false);
 select ok(
   public.has_permission('products.manage')
   and not public.has_permission('coupons.manage')
@@ -94,18 +94,18 @@ select ok(
 -- (9) the employee cannot hand out permissions
 select throws_ok(
   $$select public.admin_set_user_permissions(
-    'bbbbbbbb-bbbb-bbbb-bbbb-0000000000c2'::uuid, array['coupons.manage']::text[])$$,
+    'd0000000-0000-4000-8000-0000000000b2'::uuid, array['coupons.manage']::text[])$$,
   'P0001', 'Not permitted to change permissions',
   'module permissions cannot be self-assigned'
 );
 
 -- (10) full admin powers imply every module and is_admin()
 select set_config('request.jwt.claims',
-  '{"sub":"aaaaaaaa-0000-0000-0000-0000000000c1","role":"authenticated"}', false);
+  '{"sub":"c0000000-0000-4000-8000-0000000000a1","role":"authenticated"}', false);
 select public.admin_set_user_permissions(
-  'bbbbbbbb-bbbb-bbbb-bbbb-0000000000c2'::uuid, array['admin.full']::text[]);
+  'd0000000-0000-4000-8000-0000000000b2'::uuid, array['admin.full']::text[]);
 select set_config('request.jwt.claims',
-  '{"sub":"bbbbbbbb-bbbb-bbbb-bbbb-0000000000c2","role":"authenticated"}', false);
+  '{"sub":"d0000000-0000-4000-8000-0000000000b2","role":"authenticated"}', false);
 select ok(
   public.is_admin() and public.has_permission('settings.manage')
   and public.has_permission('payouts.manage'),
@@ -114,14 +114,14 @@ select ok(
 
 -- (11) a users.manage holder still cannot promote themselves to full admin
 select set_config('request.jwt.claims',
-  '{"sub":"aaaaaaaa-0000-0000-0000-0000000000c1","role":"authenticated"}', false);
+  '{"sub":"c0000000-0000-4000-8000-0000000000a1","role":"authenticated"}', false);
 select public.admin_set_user_permissions(
-  'bbbbbbbb-bbbb-bbbb-bbbb-0000000000c2'::uuid, array['users.manage']::text[]);
+  'd0000000-0000-4000-8000-0000000000b2'::uuid, array['users.manage']::text[]);
 select set_config('request.jwt.claims',
-  '{"sub":"bbbbbbbb-bbbb-bbbb-bbbb-0000000000c2","role":"authenticated"}', false);
+  '{"sub":"d0000000-0000-4000-8000-0000000000b2","role":"authenticated"}', false);
 select throws_ok(
   $$select public.admin_set_user_permissions(
-    'bbbbbbbb-bbbb-bbbb-bbbb-0000000000c2'::uuid, array['users.manage','admin.full']::text[])$$,
+    'd0000000-0000-4000-8000-0000000000b2'::uuid, array['users.manage','admin.full']::text[])$$,
   'P0001', 'Only an admin can grant or revoke full admin powers',
   'only an admin may grant full admin powers'
 );
@@ -136,13 +136,13 @@ delete from public.reward_transactions
   where order_id in (select id from public.orders where order_number = 'TIER-PGTAP');
 delete from public.orders where order_number = 'TIER-PGTAP';
 update public.profiles set points_balance = 0, lifetime_points = 1000
- where id = 'bbbbbbbb-bbbb-bbbb-bbbb-0000000000c2';
+ where id = 'd0000000-0000-4000-8000-0000000000b2';
 insert into public.orders(order_number, user_id, location_id, contact_email, subtotal, total_amount)
-values ('TIER-PGTAP', 'bbbbbbbb-bbbb-bbbb-bbbb-0000000000c2',
+values ('TIER-PGTAP', 'd0000000-0000-4000-8000-0000000000b2',
         '00000000-0000-0000-0000-000000000001', 'perm.staff@example.com', 10, 10);
 select ok(
   (select points_balance = 20 and lifetime_points = 1020 from public.profiles
-    where id = 'bbbbbbbb-bbbb-bbbb-bbbb-0000000000c2'),
+    where id = 'd0000000-0000-4000-8000-0000000000b2'),
   'a 2x order credits twice the points and counts towards the lifetime total'
 );
 
