@@ -14,6 +14,8 @@ select ok(not exists (
   'text_option_config','file_option_config','carts','cart_items',
   'uploaded_models','quote_requests','orders','order_items','order_item_option_values','order_notes',
   'model_submissions','model_submission_materials','creator_earnings','payouts',
+  'product_material_slots','product_slot_materials','product_categories',
+  'filament_finishes','job_listings',
   'platform_settings','checkout_sessions','stripe_events',
   'coupons','offer_codes','offer_claims','reward_transactions'
 ]) as expected(name)
@@ -210,10 +212,11 @@ select ok(
         'filaments','file_option_config','location_filaments','locations','materials',
         'model_submission_materials','model_submissions','offer_claims','offer_codes',
         'order_item_option_values','order_items','order_notes','orders',
-        'payouts','platform_settings','premade_products','product_materials',
-        'product_option_choices','product_option_groups','profiles',
+        'payouts','platform_settings','premade_products','product_categories',
+        'product_material_slots','product_materials','product_option_choices',
+        'product_option_groups','product_slot_materials','profiles',
         'quote_requests','reward_transactions','stripe_events','text_option_config',
-        'uploaded_models'
+        'uploaded_models','filament_finishes','job_listings'
       )
   ),
   'RLS enabled on all expected tables'

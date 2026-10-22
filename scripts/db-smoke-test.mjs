@@ -89,9 +89,9 @@ try {
   await db.exec('set role authenticated');
   await assert.rejects(rows('update public.profiles set role=$1 where id=$2', ['admin', buyer]), /permission denied/);
   await assert.rejects(one('select public.bootstrap_admin($1,$2)', [buyer, 'db-buyer@example.test']), /permission denied/);
-  await assert.rejects(saveProduct(exampleProduct(), materials), /Admin only/);
-  await assert.rejects(rows('select public.admin_update_user($1,$2,$3,$4)', [admin, 'customer', null, 'Fake']), /Admin only/);
-  await assert.rejects(rows('select public.set_user_active($1,$2)', [admin, false]), /Admin only/);
+  await assert.rejects(saveProduct(exampleProduct(), materials), /Not permitted to manage products/);
+  await assert.rejects(rows('select public.admin_update_user($1,$2,$3,$4)', [admin, 'customer', null, 'Fake']), /Not permitted to change users/);
+  await assert.rejects(rows('select public.set_user_active($1,$2)', [admin, false]), /Not permitted to change users/);
   await db.exec('reset role');
   await db.exec('set role service_role');
   await assert.rejects(one('select public.bootstrap_admin($1,$2)', [admin, 'wrong@example.test']), /Eligible account not found/);
@@ -392,7 +392,7 @@ try {
     values('SMOKEBAD','admin','fixed',5,-1)`), /min_subtotal_check/);
   await claims(buyer);
   await assert.rejects(rows('select coupon_code from public.admin_generate_coupons($1,$2,$3,$4)',
-    [5, 'SMOKE', 'fixed', 3]), /Admin only/);
+    [5, 'SMOKE', 'fixed', 3]), /Not permitted to manage coupons/);
   console.log('✓ admins can generate a batch of single-use coupon codes');
 
   // Points can be redeemed for a coupon scoped to one product: a free item.
@@ -413,6 +413,16 @@ try {
     grant select,insert,update,delete on public.model_submission_materials to authenticated;`);
   await claims(buyer);
   await db.exec('set role authenticated');
+  // Submissions ship switched off: the RLS insert policy refuses a draft while
+  // the feature is disabled, and an admin turns it on when reviewers are ready.
+  await assert.rejects(rows(`insert into public.model_submissions
+    (id,submitter_id,status,title,license,ip_warranty,model_path,base_price)
+    values ($1,$2,'draft',$3::jsonb,'CC0',true,$4,12)`,
+    [submissionId, buyer, JSON.stringify({ en: 'Blocked draft' }), `${buyer}/blocked.stl`]),
+  /row-level security/);
+  await db.exec('reset role');
+  await rows(`update public.platform_settings set value='true'::jsonb where key='features.model_submissions'`);
+  await db.exec('set role authenticated');
   await rows(`insert into public.model_submissions
     (id,submitter_id,status,title,license,ip_warranty,model_path,base_price)
     values ($1,$2,'draft',$3::jsonb,'CC0',true,$4,12)`,
@@ -425,6 +435,9 @@ try {
   await db.exec('reset role');
   await claims(admin);
   assert.equal((await one('select status from public.model_submissions where id=$1', [submissionId])).status, 'pending_review');
+  assert.equal((await one("select public.feature_enabled('model_submissions') as on")).on, true);
+  await db.exec(`update public.platform_settings set value='false'::jsonb where key='features.model_submissions'`);
+  assert.equal((await one("select public.feature_enabled('model_submissions') as on")).on, false);
   console.log('✓ creators can add materials in draft but cannot delete submitted reviews');
 
   await one('select public.admin_update_user($1,$2,$3,$4)', [buyer, 'employee', location, 'Staff']);
@@ -447,7 +460,7 @@ try {
 
   await claims(buyer);
   await assert.rejects(one('select public.admin_decide_submission($1,$2,$3)',
-    [submissionId, 'approve', '']), /Admin only/);
+    [submissionId, 'approve', '']), /Not permitted to review submissions/);
   await claims(admin);
   await assert.rejects(one('select public.admin_decide_submission($1,$2,$3)',
     [submissionId, 'reject', '']), /Review notes are required/);
@@ -463,6 +476,79 @@ try {
   await assert.rejects(one('select public.admin_decide_submission($1,$2,$3,$4::jsonb,$5)',
     [submissionId, 'approve', '', '{}', 'second-model.stl']), /already been reviewed/);
   console.log('✓ submission approval publishes product, links creator and cannot repeat');
+
+  // Staff permissions: a module grant is enough for that module's RPCs and
+  // table writes, while everything else stays closed. 'admin.full' implies all.
+  await claims(admin);
+  await db.exec(`grant select,insert,update,delete on public.product_categories to authenticated;
+    grant select,insert,update,delete on public.filament_finishes to authenticated;`);
+  await assert.rejects(one('select public.admin_set_user_permissions($1,$2)',
+    [buyer, ['products.manage', 'not.real']]), /Unknown permission/);
+  await one('select public.admin_set_user_permissions($1,$2)', [buyer, ['products.manage']]);
+  await claims(buyer);
+  await db.exec('set role authenticated');
+  assert.equal((await one("select public.has_permission('products.manage') as allowed")).allowed, true);
+  assert.equal((await one("select public.has_permission('coupons.manage') as allowed")).allowed, false);
+  assert.equal((await one('select public.is_admin() as allowed')).allowed, false);
+  const ownedCategory = await one(`insert into public.product_categories(slug,name,sort_order)
+    values('desk-gadget','{"en":"Desk gadget"}'::jsonb,55) returning slug`);
+  assert.equal(ownedCategory.slug, 'desk-gadget');
+  await assert.rejects(rows("delete from public.product_categories where slug='other'"),
+    /cannot be deleted/);
+  await assert.rejects(rows('select public.admin_generate_coupons(2,NULL,\'fixed\',5)'),
+    /Not permitted to manage coupons/);
+  await assert.rejects(rows('select public.admin_set_user_permissions($1,$2)', [buyer, ['admin.full']]),
+    /Not permitted to change permissions/);
+  const permProduct = await saveProduct(exampleProduct({ slug: 'db-smoke-perm', name: { en: 'Perm product' } }), materials);
+  assert.equal(permProduct.status, 'published');
+  await db.exec('reset role');
+  await claims(admin);
+  await one('select public.admin_set_user_permissions($1,$2)', [buyer, ['admin.full']]);
+  await claims(buyer);
+  assert.equal((await one('select public.is_admin() as allowed')).allowed, true);
+  assert.equal((await one("select public.has_permission('jobs.manage') as allowed")).allowed, true);
+  await claims(admin);
+  await one('select public.admin_set_user_permissions($1,$2::text[])', [buyer, []]);
+  console.log('✓ module permissions grant only their own area and admin.full grants all');
+
+  // Finishes describe how a filament looks, not just its colour.
+  await rows(`update public.filaments set finish='wood', color_hex_2='#8b5a2b' where id=$1`, [newFilament]);
+  const finished = await rows('select finish,finish_name,color_hex_2 from public.available_filaments($1,$2)',
+    [newLocation, newMaterial]);
+  assert.equal(finished[0].finish, 'wood');
+  assert.equal(finished[0].finish_name.en, 'Wood fill');
+  assert.equal(finished[0].color_hex_2, '#8b5a2b');
+  await assert.rejects(rows(`update public.filaments set finish='unobtanium' where id=$1`, [newFilament]),
+    /filaments_finish_fkey/);
+  console.log('✓ filaments carry a finish and optional second colour');
+
+  // Membership tiers: lifetime points multiply the base earn rate, and the
+  // lifetime total is never reduced by redemptions.
+  await rows(`update public.profiles set lifetime_points=0, points_balance=0 where id=$1`, [buyer]);
+  const tierOrder = async (label, total) => {
+    await rows(`insert into public.orders(order_number,user_id,location_id,contact_email,subtotal,total_amount)
+      values($1,$2,$3,'db-buyer@example.test',$4,$4)`, [label, buyer, location, total]);
+  };
+  await tierOrder('TIER-BASE', 10);
+  let tierProfile = await one('select points_balance,lifetime_points from public.profiles where id=$1', [buyer]);
+  assert.equal(tierProfile.points_balance, 10);       // 1x at 0 lifetime points
+  assert.equal(tierProfile.lifetime_points, 10);
+  await rows(`update public.profiles set lifetime_points=1000 where id=$1`, [buyer]);
+  await tierOrder('TIER-SILVER', 10);
+  tierProfile = await one('select points_balance,lifetime_points from public.profiles where id=$1', [buyer]);
+  assert.equal(tierProfile.points_balance, 30);       // +20 at 2x
+  assert.equal(tierProfile.lifetime_points, 1020);
+  await rows(`update public.profiles set lifetime_points=5000 where id=$1`, [buyer]);
+  await tierOrder('TIER-GOLD', 10);
+  tierProfile = await one('select points_balance,lifetime_points from public.profiles where id=$1', [buyer]);
+  assert.equal(tierProfile.points_balance, 60);       // +30 at 3x
+  assert.equal(tierProfile.lifetime_points, 5030);
+  assert.equal((await one(`select memo from public.reward_transactions
+    where order_id=(select id from public.orders where order_number='TIER-GOLD')`)).memo, 'Order TIER-GOLD (3× tier)');
+  await rows(`update public.platform_settings set value=$1::jsonb where key='rewards.tiers'`,
+    [JSON.stringify([{ name: 'Member', min_lifetime_points: 0, multiplier: 1 }])]);
+  assert.equal(Number((await one('select public.reward_multiplier(999999) as m')).m), 1);
+  console.log('✓ membership tiers multiply points earned by lifetime spend');
 
   // `supabase db reset` runs seed.sql only after migrations. It is deliberately
   // separate from the production migrations and safe to re-run locally.
