@@ -51,8 +51,19 @@ The seed can be rerun locally without duplicate accounts. Use `supabase db reset
 
 The admin console also manages locations (map coordinates, country and rates — new locations default to Hong Kong, HKD and `Asia/Hong_Kong`, and sales tax follows the location's country, so a Hong Kong location is always tax-free while a location abroad keeps the rate its admin sets), available materials/filaments and location stock, product listings/options (including multi-material slots and sale prices), review decisions, orders, tickets, payouts, offers/coupons (including points redemption and bulk coupon codes) and platform settings. Add/edit panels open **above** the list they belong to. The header's location control is a **link** to `/locations`, the existing searchable/map picker. Changing the location for a customer does not require any admin permission.
 
-## 6. Rewards & coupons (local)
+### Staff permissions
+Employee and manager accounts start with **no** admin-console tabs. An admin (or anyone with `users.manage`) opens **Users → Module permissions** and ticks the modules that account may use: product management (products, categories, materials, filaments, stock), coupon management, job-listing management, quotation requests, chain-wide order fulfilment, user administration, creator payouts, submission review, locations and platform settings. Tabs the account cannot use are hidden, and the same keys are enforced in Postgres (`public.has_permission()` plus the RLS policies and SECURITY DEFINER RPCs), so the API cannot be used to bypass the UI. **Full admin powers** (`admin.full`) implies every other permission and also satisfies the older admin-only policies; it can only be granted or revoked by a real admin, so a `users.manage` holder cannot promote themselves. Managers keep their existing ability to manage staff at their own location.
+
+## 6. Standard pages
+- `/about` tells the shop's story, shows the values and lists the active pickup locations with links into the catalog, quote form and contact page.
+- `/contact` opens a support/quote ticket when signed in (the same `tickets` + `ticket_messages` tables the quote flow uses) and lists every active location with its address and phone; the support address is `hello@makeanyth.ing` (`SUPPORT_EMAIL` in `web/src/app/contact/page.tsx`).
+- `/careers` is **hidden by default**. It reads published, unclosed rows from `job_listings` and is managed in **Admin → Jobs** (title, summary, department, employment type, location, remote flag, closing date, publish switch). An admin turns the page on with the **`features.careers_page`** switch in **Admin → Platform settings**; until then the page shows a short notice and the footer link is hidden. Applications go to `careers@makeanyth.ing`.
+- **Model submissions are switched off** for the same reason: there are not yet enough reviewers. The `features.model_submissions` switch hides the creator submission entry points *and* is enforced by the `model_submissions` RLS policies, so the API refuses new uploads while it is off. Existing submissions can still be reviewed; flip the switch when the review team is ready.
+- Product categories and filament finishes are **rows, not enums**: **Admin → Categories** adds, renames, reorders and deactivates the catalog filters (the fallback `other` category is protected), and **Admin → Materials & filaments** can set a finish (standard, matte, silk, wood fill, marble, gradient, glow, translucent, carbon, metallic) plus a second colour for two-tone/gradient spools.
+
+## 7. Rewards & coupons (local)
 - Points settings live in `platform_settings`: `rewards.points_per_dollar`, `rewards.redeem_options`, `rewards.coupon_days_valid`. Earn rates and coupon validity are edited under **Admin → Platform settings**; the redemption options themselves are edited under **Admin → Offers & coupons**, next to the coupon tools they issue.
+- **Membership tiers** raise the points earned per dollar once a customer passes a lifetime-points threshold. The default ladder is Member (0 pts, 1×), Silver (1,000 pts, 2×) and Gold (5,000 pts, 3×); edit it under **Admin → Platform settings → Membership tiers** as `[{min_lifetime_points, multiplier, name}]`. `profiles.lifetime_points` only counts points *earned* (never redemption), and `public.reward_multiplier()` is the single source of truth mirrored by `web/src/lib/rewards.ts` for the `/rewards` progress card.
 - A redemption option may name a product, so points can be traded for a specific item (100% off that product = a free item). The option's product must be published.
 - Two offer codes are seeded so `/offers` works out of the box: `WELCOME10` (10% off) and `HIGHFIVE` (HK$5 off). Claiming one issues a personal single-use coupon.
 - Coupons and offer codes can carry conditions: a **minimum spend** and/or a **single product** the discount applies to. `price_cart` enforces both, so the cart, checkout and the Stripe webhook all agree.
@@ -61,7 +72,7 @@ The admin console also manages locations (map coordinates, country and rates —
 - There is no minimum-order fee: a US$1 document print totals US$1 (plus sales tax only where the pickup location's country has one).
 - Referral codes live with the points balance on `/rewards#referrals`. A new customer gets 10 points for the referrer at sign-up and 50 more after their first order.
 
-## 7. Deploy the frontend to GitHub Pages
+## 8. Deploy the frontend to GitHub Pages
 
 The workflow is `.github/workflows/deploy-web.yml` (**Deploy Web**). It builds
 `web/out`, uploads that directory as the `github-pages` artifact, and publishes it
@@ -144,7 +155,7 @@ variable(s) in the selected build environment and start a new run. If it stops a
 **Configure Pages**, recheck **Settings → Pages → Source: GitHub Actions**. If the
 **deploy** job is rejected, check the `github-pages` branch/tag rules and approvals.
 
-## 8. Google, Facebook, and GitHub sign-in
+## 9. Google, Facebook, and GitHub sign-in
 1. Create an OAuth app with each provider and register the Supabase callback:
    - Local: `http://localhost:54321/auth/v1/callback`
    - Hosted: `https://<project-ref>.supabase.co/auth/v1/callback`
@@ -158,21 +169,21 @@ variable(s) in the selected build environment and start a new run. If it stops a
 
 Sign-in providers appear on `/login`; connected methods are managed on `/account`. If a provider is not enabled, the page shows a setup hint instead of failing silently.
 
-## 9. Location map
+## 10. Location map
 - The map pins use `locations.lat` / `locations.lng` and OpenStreetMap tiles (no API key). Set coordinates from `/admin` → **Locations**; locations without coordinates still appear in the searchable list.
 - With zero or one active location the picker, prompt, and map are hidden automatically; the only location is selected for the user.
 
-## 10. Document printing
+## 11. Document printing
 - PDF page counts are read in the browser with `pdf-lib` (loaded on demand). If you see `Module not found: Can't resolve 'pdf-lib'`, run `pnpm install` at the repository root and restart the dev server.
 
-## 11. Quote tickets
+## 12. Quote tickets
 - `/quote` is a contact form (subject, message, up to 5 attachments) that opens a support/quote ticket. Sign-in is required so the thread persists.
 - Customers reply on `/tickets`; staff reply, quote a price, and resolve tickets from the Employee Portal → Quote tickets (`/employee/tickets`).
 - A staff quote has a description, unit price, and quantity, and is valid for 7 days. The customer accepts it from `/tickets`, which adds the quoted item to the cart (`kind: 'ticket'`).
 - Ticket prices are authoritative server-side: `price_cart` reads the `ticket_quotes` row (status must be `accepted`, unexpired, and the cart user must own the ticket). Fulfilling the order marks the quote `ordered` and links `order_items.ticket_quote_id`.
 - Attachments live in the private `ticket-uploads` storage bucket under `<user-id>/<ticket-id>/<file>`; downloads go through the `sign-file` Edge Function (owner, staff at the ticket's location, or admin).
 
-## 12. Multi-material prints and sale prices
+## 13. Multi-material prints and sale prices
 - **Material slots** — `/admin` → **Products** → a product's **Material slots** section. Each slot has a localized name (what the customer sees, e.g. *Body* / *Collar*), a list of the materials that slot may be printed in with a price modifier per material, a default material, and a default colour. Reorder slots with the up/down buttons; the first slot also fills the legacy single-material columns on the order line.
 - A slot's colours come from stock: the customer picks any filament of the chosen material that is **in stock at their pickup location**, so changing location changes the colour list. Slots are optional — a product without slots still uses its product-level material list and default material.
 - `price_cart` resolves a slot to the customer's pick, else the slot's default, else its first eligible material, and adds every slot's modifier to the unit price. A pick outside the slot's list (or a colour of another material) is rejected server-side, so the cart, checkout and webhook all agree. The resolved slots are snapshotted per line and copied to `order_items.material_slots`, which the Employee Portal order screen prints per slot.
