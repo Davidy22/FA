@@ -18,11 +18,8 @@ export default function HomePage() {
   });
   return (
     <div className="container-ma py-10">
-      {/* Reserved for a future promotions carousel; no redundant brand hero. */}
+      {/* Reserved for a future promotions carousel */}
       <div id="promotions" aria-label="Promotions" className="empty:hidden" />
-      <div className="flex flex-wrap gap-3">
-        <Link href="/document-printing" className="btn-outline">Document printing · from $0.50/side</Link>
-      </div>
 
       <section className="mt-12">
         <h2 className="text-2xl font-semibold mb-4">{t('catalog:browse')}</h2>

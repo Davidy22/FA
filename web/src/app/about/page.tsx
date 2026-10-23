@@ -20,7 +20,7 @@ export default function AboutPage() {
   const values = [
     { title: t('pages:about.value_local_title'), body: t('pages:about.value_local') },
     { title: t('pages:about.value_craft_title'), body: t('pages:about.value_craft') },
-    { title: t('pages:about.value_open_title'), body: t('pages:about.value_open') },
+    { title: t('pages:about.value_custom_title'), body: t('pages:about.value_custom') },
   ];
 
   return (
@@ -43,18 +43,6 @@ export default function AboutPage() {
             </div>
           ))}
         </dl>
-      </section>
-
-      <section className="mt-8">
-        <h2 className="text-xl font-medium">{t('pages:about.locations_title')}</h2>
-        {!locations?.length
-          ? <p className="mt-2 text-slate-600">{t('common:location.no_locations')}</p>
-          : <ul className="mt-3 space-y-2 text-sm">
-              {locations.map((location) => <li key={location.id} className="rounded border border-slate-200 p-3">
-                <p className="font-medium">{location.name}</p>
-                {location.address && <p className="text-slate-600">{location.address}</p>}
-              </li>)}
-            </ul>}
       </section>
 
       <div className="mt-9 flex flex-wrap gap-3">

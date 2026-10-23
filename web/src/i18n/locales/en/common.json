@@ -94,7 +94,6 @@
     "no_account": "New here?",
     "have_account": "Already have an account?",
     "confirm_email": "Check your email to confirm your account, then sign in.",
-    "welcome_back": "Sign in to see your orders, points, and saved details.",
     "create_account": "Create an account to earn points and track your orders.",
     "callback_missing_code": "The sign-in link is missing its authorization code.",
     "callback_failed_title": "Sign-in didn't finish",

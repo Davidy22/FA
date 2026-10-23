@@ -88,8 +88,8 @@ export default function DocumentPrintingPage() {
     <h1 className="text-2xl font-semibold">A4 document printing</h1>
     <p className="mt-2 text-slate-600">{pricesQuery.isPending ? 'Loading prices…' :
       `${formatMoney(prices.grayscale, locale)} per grayscale side or ${formatMoney(prices.color, locale)} per color side.`}
-      {' '}Double-sided printing saves paper; every printed side is charged. Pickup at your selected location.</p>
-    {pricesQuery.error && <p role="alert" className="mt-2 text-sm text-amber-800">Prices could not be loaded. Checkout will recalculate the final amount.</p>}
+      </p>
+
     {!checkingAuth && !userId && <p className="mt-4 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
       Document printing needs an account so your PDF stays private. <Link className="underline" href="/login">Sign in</Link> to continue.
     </p>}
@@ -100,7 +100,6 @@ export default function DocumentPrintingPage() {
       <label className="label">Ink<select className="input mt-1" value={color} onChange={e => setColor(e.target.value as 'grayscale' | 'color')}><option value="grayscale">Grayscale · {formatMoney(prices.grayscale, locale)}/side</option><option value="color">Color · {formatMoney(prices.color, locale)}/side</option></select></label>
       <label className="flex items-center gap-2"><input type="checkbox" checked={duplex} onChange={e => setDuplex(e.target.checked)} /> Double-sided</label>
       <p className="font-semibold">Printing subtotal: {formatMoney((pages ?? 0) * copies * prices[color], locale)}</p>
-      <p className="text-xs text-slate-500">Checkout confirms the final total for your pickup location.</p>
       {error && <p role="alert" className="text-red-700">
         {error.message}
         {error.signIn && <> <Link className="underline" href="/login">Sign in</Link></>}

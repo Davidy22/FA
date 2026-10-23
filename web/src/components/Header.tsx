@@ -58,8 +58,6 @@ export function Header() {
             <Link href="/quote" className="text-slate-700 hover:text-brand-700">{t('nav.quote')}</Link>
             <Link href="/document-printing" className="text-slate-700 hover:text-brand-700">{t('nav.document_printing')}</Link>
             <Link href="/rewards" className="text-slate-700 hover:text-brand-700">{t('nav.rewards')}</Link>
-            <Link href="/about" className="text-slate-700 hover:text-brand-700">{t('nav.about')}</Link>
-            <Link href="/contact" className="text-slate-700 hover:text-brand-700">{t('nav.contact')}</Link>
             {profile && <Link href="/tickets" className="text-slate-700 hover:text-brand-700">{t('nav.tickets')}</Link>}
           </nav>
         </div>

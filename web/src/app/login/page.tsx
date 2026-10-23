@@ -54,7 +54,7 @@ export default function LoginPage() {
   }
 
   const copy = mode === 'signin'
-    ? { title: t('nav.login'), sub: t('auth.welcome_back') }
+    ? { title: t('nav.login') }
     : { title: t('nav.register'), sub: t('auth.create_account') };
 
   return (

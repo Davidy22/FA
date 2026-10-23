@@ -121,22 +121,9 @@ export default function ContactPage() {
             <a className="mt-1 inline-block text-brand-700 underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
           </div>
           <div>
-            <h2 className="text-lg font-medium">{t('pages:contact.locations_title')}</h2>
-            <ul className="mt-2 space-y-2">
-              {(locations || []).map((location) => (
-                <li key={location.id} className="rounded border border-slate-200 p-3">
-                  <p className="font-medium">{location.name}</p>
-                  {location.address && <p className="text-slate-600">{location.address}</p>}
-                  {location.phone
-                    ? <a className="text-brand-700 underline" href={`tel:${location.phone}`}>{location.phone}</a>
-                    : <p className="text-xs text-slate-500">{t('pages:contact.no_phone')}</p>}
-                </li>
-              ))}
-            </ul>
           </div>
           <div>
             <h2 className="text-lg font-medium">{t('pages:contact.hours_title')}</h2>
-            <p className="mt-1 text-slate-600">{t('pages:contact.hours_hint')}</p>
             <Link href="/locations" className="mt-1 inline-block text-brand-700 underline">{t('common:location.view_map')}</Link>
           </div>
         </aside>
