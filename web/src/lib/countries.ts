@@ -29,7 +29,7 @@ export const LOCATION_COUNTRIES = [
   'AE', 'SA', 'KW', 'QA', 'BN',
 ] as const;
 
-export type CountryCode = string;
+type CountryCode = string;
 
 // CLDR names are long or politically loaded for these (zh-Hant renders Hong Kong
 // as "中國香港特別行政區"), so the picker uses these shorter local names instead.

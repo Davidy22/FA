@@ -27,5 +27,18 @@
   "document": "Document printing",
   "custom": "Custom print",
   "internal_notes": "Internal notes",
-  "material_slots": "Material slots"
+  "material_slots": "Material slots",
+  "order_number": "Order #",
+  "date": "Date",
+  "detail": "Detail",
+  "stock_search": "Search stock",
+  "stock_search_placeholder": "Color, material, finish, or ID",
+  "stock_availability": "Availability",
+  "stock_all": "All stock states",
+  "no_stock_matches": "No filaments match these filters.",
+  "unknown_material": "Other material",
+  "stock_group_summary": "{{count}} colors · {{inStock}} in stock",
+  "id": "ID",
+  "color": "Color",
+  "cost_per_gram": "Cost/g"
 }

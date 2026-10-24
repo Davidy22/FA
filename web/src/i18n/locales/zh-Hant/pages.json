@@ -1,26 +1,26 @@
 {
   "about": {
     "title": "關於 Make Anyth.ing",
-    "lede": "香港的小型 3D 打印工作室，在使用地點附近製作實用而美觀的物件。",
-    "story_title": "在你附近製作，不必漂洋過海",
-    "story": "我們買到的東西，大多要跨越幾千公里才到手。3D 打印可以在一個下午完成，零件壞了可以重印，尺寸也可以貼合你家的層架。我們在香港的取貨點按需打印，使用可追溯的線材，並把模型保持在足夠小的規模，不讓它們在倉庫裡等待買家。",
+    "lede": "讓大眾都能享受 3D 打印的便利。",
+    "story_title": "按需製作",
+    "story": "我們買到的東西，大多要跨越幾千公里才到手。3D 打印品可以在一個下午完成，零件壞了可以維修，尺寸也可以按你的確實需要調整。我們在香港的門市按訂單打印，不讓成品放在倉庫裡等待買家。",
     "values_title": "我們的做法",
     "value_local_title": "本地優先",
     "value_local": "打印在你附近的取貨點完成。沒有空運，也沒有盒中盒的塑膠包裝。",
     "value_craft_title": "為使用而做",
-    "value_craft": "我們寧願打印一個真正合用的支架，也不想做一架子「差不多」的東西。告訴我們尺寸，我們就照著做。",
-    "value_open_title": "向創作者開放",
-    "value_open": "社群設計與我們的作品並列，創作者可從每件售出的打印品獲得分成。",
+    "value_craft": "由各種物料製成的耐用物品。",
     "locations_title": "取貨地點",
     "cta_catalog": "瀏覽產品目錄",
     "cta_quote": "索取報價",
-    "cta_contact": "聯絡我們"
+    "cta_contact": "聯絡我們",
+    "value_custom_title": "度身訂造",
+    "value_custom": "按你的需要選擇確實的顏色和尺寸。"
   },
   "contact": {
     "title": "聯絡我們",
     "lede": "有關訂單、材料，或需要精確配合的零件？留下訊息，會有真人回覆你。",
     "form_title": "傳送訊息",
-    "sign_in_hint": "登入後即可傳送訊息。訊息會成為可追蹤的支援工單，我們也能查看你的過往訂單。",
+    "sign_in_hint": "登入後即可開啟工單。",
     "subject": "主旨",
     "message": "訊息",
     "location": "與哪間門市有關？（可選）",
@@ -31,10 +31,8 @@
     "ticket_hint": "你的訊息會開啟支援工單，不會淹沒在收件匣裡。",
     "email_title": "偏好電郵？",
     "email_hint": "直接寫信給我們，我們會在工作日內回覆。",
-    "locations_title": "取貨門市",
     "no_phone": "暫未提供電話",
-    "hours_title": "營業時間",
-    "hours_hint": "各取貨點的營業時間不同——提取大件訂單前請先致電。"
+    "hours_title": "營業時間"
   },
   "careers": {
     "title": "招聘",
@@ -54,5 +52,28 @@
       "contract": "合約",
       "internship": "實習"
     }
+  },
+  "document": {
+    "title": "A4 文件列印",
+    "price_summary": "黑白：每面 {{grayscale}} · 彩色：每面 {{color}}。",
+    "privacy": "無需帳號。你的檔案會保持私密，只會用於處理你的訂單。",
+    "file_label": "文件（最多 20 MB）",
+    "formats_hint": "支援 PDF、Word（DOC／DOCX）、OpenDocument（ODT）及 Apple Pages。Office 文件會轉換為 PDF。",
+    "reading": "正在讀取 PDF…",
+    "converting": "正在轉換為 PDF…",
+    "select_hint": "選擇文件以查看頁數。",
+    "page_count": "每份列印面數：{{count}}（從 PDF 讀取）。",
+    "copies": "份數",
+    "ink": "墨水",
+    "grayscale_price": "黑白 · {{price}}／面",
+    "color_price": "彩色 · {{price}}／面",
+    "duplex": "雙面列印",
+    "subtotal": "列印小計：{{amount}}",
+    "uploading": "正在上傳…",
+    "invalid_file": "請選擇不超過 20 MB 的 PDF、DOC、DOCX、ODT 或 Pages 檔案。",
+    "invalid_pages": "可列印的 PDF 必須有 1 至 500 頁。",
+    "invalid_copies": "請輸入 1 至 99 份。",
+    "conversion_failed": "無法將此檔案轉換為 PDF，請先自行匯出為 PDF，或稍後再試。",
+    "unreadable_pdf": "無法讀取可列印的 PDF，請選擇有效而未加密的文件。"
   }
 }

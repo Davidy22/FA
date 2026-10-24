@@ -1,7 +1,7 @@
-// i18n initialization for react-i18next. Uses ICU via i18next-icu.
+// i18n initialization for react-i18next. Locale strings use i18next's
+// {{variable}} interpolation; do not replace it with an ICU-only parser.
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import ICU from 'i18next-icu';
 
 import enCommon from '@/i18n/locales/en/common.json';
 import enCatalog from '@/i18n/locales/en/catalog.json';
@@ -12,7 +12,6 @@ import enCheckout from '@/i18n/locales/en/checkout.json';
 import enOrders from '@/i18n/locales/en/orders.json';
 import enCreator from '@/i18n/locales/en/creator.json';
 import enEmployee from '@/i18n/locales/en/employee.json';
-import enAdmin from '@/i18n/locales/en/admin.json';
 import enErrors from '@/i18n/locales/en/errors.json';
 import enRewards from '@/i18n/locales/en/rewards.json';
 import enPages from '@/i18n/locales/en/pages.json';
@@ -26,7 +25,6 @@ import zhHantCheckout from '@/i18n/locales/zh-Hant/checkout.json';
 import zhHantOrders from '@/i18n/locales/zh-Hant/orders.json';
 import zhHantCreator from '@/i18n/locales/zh-Hant/creator.json';
 import zhHantEmployee from '@/i18n/locales/zh-Hant/employee.json';
-import zhHantAdmin from '@/i18n/locales/zh-Hant/admin.json';
 import zhHantErrors from '@/i18n/locales/zh-Hant/errors.json';
 import zhHantRewards from '@/i18n/locales/zh-Hant/rewards.json';
 import zhHantPages from '@/i18n/locales/zh-Hant/pages.json';
@@ -40,7 +38,6 @@ import zhHansCheckout from '@/i18n/locales/zh-Hans/checkout.json';
 import zhHansOrders from '@/i18n/locales/zh-Hans/orders.json';
 import zhHansCreator from '@/i18n/locales/zh-Hans/creator.json';
 import zhHansEmployee from '@/i18n/locales/zh-Hans/employee.json';
-import zhHansAdmin from '@/i18n/locales/zh-Hans/admin.json';
 import zhHansErrors from '@/i18n/locales/zh-Hans/errors.json';
 import zhHansRewards from '@/i18n/locales/zh-Hans/rewards.json';
 import zhHansPages from '@/i18n/locales/zh-Hans/pages.json';
@@ -50,21 +47,21 @@ const resources = {
     common: enCommon, catalog: enCatalog, quote: enQuote, cart: enCart,
     tickets: enTickets,
     checkout: enCheckout, orders: enOrders, creator: enCreator,
-    employee: enEmployee, admin: enAdmin, errors: enErrors, rewards: enRewards,
+    employee: enEmployee, errors: enErrors, rewards: enRewards,
     pages: enPages,
   },
   'zh-Hant': {
     common: zhHantCommon, catalog: zhHantCatalog, quote: zhHantQuote, cart: zhHantCart,
     tickets: zhHantTickets,
     checkout: zhHantCheckout, orders: zhHantOrders, creator: zhHantCreator,
-    employee: zhHantEmployee, admin: zhHantAdmin, errors: zhHantErrors, rewards: zhHantRewards,
+    employee: zhHantEmployee, errors: zhHantErrors, rewards: zhHantRewards,
     pages: zhHantPages,
   },
   'zh-Hans': {
     common: zhHansCommon, catalog: zhHansCatalog, quote: zhHansQuote, cart: zhHansCart,
     tickets: zhHansTickets,
     checkout: zhHansCheckout, orders: zhHansOrders, creator: zhHansCreator,
-    employee: zhHansEmployee, admin: zhHansAdmin, errors: zhHansErrors, rewards: zhHansRewards,
+    employee: zhHansEmployee, errors: zhHansErrors, rewards: zhHansRewards,
     pages: zhHansPages,
   },
 };
@@ -135,7 +132,6 @@ export function detectLocaleFrom(tags: readonly string[], timeZone?: string | nu
 
 if (typeof window !== 'undefined' && !i18n.isInitialized) {
   i18n
-    .use(ICU)
     .use(initReactI18next)
     .init({
       resources,

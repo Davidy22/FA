@@ -1,6 +1,6 @@
 'use client';
 import { useTranslation } from 'react-i18next';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { useLocation } from '@/store/location';
 import { useLocale } from '@/store/locale';
 import { t_db } from '@/lib/format';
-import type { Location, Profile, Ticket, TicketAttachment } from '@/lib/types';
+import type { Location, Profile, TicketAttachment } from '@/lib/types';
 
 const MAX_FILES = 5;
 const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25 MB each

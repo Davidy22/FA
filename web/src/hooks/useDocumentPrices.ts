@@ -13,6 +13,10 @@ function validRate(value: unknown, fallback: number): number {
 export function useDocumentPrices() {
   return useQuery({
     queryKey: ['document_prices'],
+    // The dropdown and summary both render an estimate immediately; the query
+    // still refreshes authoritative admin-configured rates in the background.
+    initialData: DEFAULT_DOCUMENT_PRICES,
+    initialDataUpdatedAt: 0,
     staleTime: 5 * 60_000,
     queryFn: async () => {
       const [grayscale, color] = await Promise.all([

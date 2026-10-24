@@ -4,7 +4,6 @@ import { supabase } from '@/lib/supabase';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from '@/store/locale';
 import { t_db, formatMoney } from '@/lib/format';
-import { useState } from 'react';
 import { useFeature } from '@/lib/features';
 import Link from 'next/link';
 import type { ModelSubmission, Profile } from '@/lib/types';
@@ -12,7 +11,6 @@ import type { ModelSubmission, Profile } from '@/lib/types';
 export default function CreatorDashboard() {
   const { t } = useTranslation(['common','creator']);
   const locale = useLocale((s) => s.locale);
-  const [agreed, setAgreed] = useState(false);
   const submissions = useFeature('model_submissions');
   const { data: profile } = useQuery<Profile|null>({
     queryKey: ['me_creator'],
@@ -36,10 +34,9 @@ export default function CreatorDashboard() {
     queryKey: ['my_earnings'],
     enabled: !!profile?.is_creator,
     queryFn: async () => {
-      const { data: rows } = await supabase().from('creator_earnings').select('amount');
-      const balance = (rows||[]).reduce((s,r) => s + Number(r.amount),0);
-      const sales = (rows||[]).filter((r:any)=>r.type==='sale').length;
-      return { balance, sales };
+      const { data, error } = await supabase().rpc('creator_dashboard_summary');
+      if (error) throw error;
+      return data as { balance: number; sales: number };
     },
   });
 
@@ -60,7 +57,7 @@ export default function CreatorDashboard() {
   }
 
   if (!profile) return <div className="container-ma py-10">Please sign in.</div>;
-  if (!profile.is_creator || !agreed) {
+  if (!profile.is_creator) {
     return (
       <div className="container-ma py-16 max-w-xl">
         <h1 className="text-2xl font-semibold mb-3">{t('creator:title')}</h1>

@@ -292,13 +292,16 @@ function optionToDraft(option: RedeemOption): RedeemDraft {
 }
 
 /** Points redemption lives with the other coupon tools: it issues coupons too. */
-function RedeemSettings({ value, products }: { value: unknown; products: PremadeProduct[] }) {
+function RedeemSettings({ value, pointsPerDollar, products }: {
+  value: unknown; pointsPerDollar: unknown; products: PremadeProduct[];
+}) {
   const { t } = useTranslation(['admin', 'common']);
   const locale = useLocale((state) => state.locale);
   const queryClient = useQueryClient();
   const action = useAdminAction();
   const [options, setOptions] = useState<RedeemDraft[]>(() =>
     (Array.isArray(value) ? value as RedeemOption[] : DEFAULT_REDEEM_OPTIONS).map(optionToDraft));
+  const [earnRate, setEarnRate] = useState(String(pointsPerDollar ?? 1));
   const published = products.filter((product) => product.status === 'published');
 
   async function submit(event: FormEvent) {
@@ -317,8 +320,11 @@ function RedeemSettings({ value, products }: { value: unknown; products: Premade
         throw new Error(t('admin:redeem_product_published'));
       }
       parsed.sort((a, b) => a.points - b.points);
-      const { error } = await supabase().from('platform_settings')
-        .upsert({ key: 'rewards.redeem_options', value: parsed }, { onConflict: 'key' });
+      const rate = decimal(earnRate, t('admin:setting_labels.rewards.points_per_dollar'), 0, 1000);
+      const { error } = await supabase().from('platform_settings').upsert([
+        { key: 'rewards.redeem_options', value: parsed },
+        { key: 'rewards.points_per_dollar', value: rate },
+      ], { onConflict: 'key' });
       if (error) throw error;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['admin_settings'] }),
@@ -329,6 +335,10 @@ function RedeemSettings({ value, products }: { value: unknown; products: Premade
 
   return <form onSubmit={(event) => void submit(event)} className="mt-4 rounded-lg border border-slate-200 p-4">
     <p className="mb-3 text-sm text-slate-600">{t('admin:redeem_help')}</p>
+    <label className="mb-4 block max-w-xs text-sm">{t('admin:setting_labels.rewards.points_per_dollar')}
+      <input className="input mt-1" type="number" required min="0" max="1000" step="0.01"
+        value={earnRate} onChange={(event) => setEarnRate(event.target.value)} />
+    </label>
     <div className="space-y-3">{options.map((option, index) => <div key={index} className="grid gap-2 rounded border p-3 sm:grid-cols-[1fr_1fr_1fr_1.5fr_auto] sm:items-end">
       <label className="text-sm">{t('admin:fields.points')}<input className="input mt-1" type="number" min="1" step="1" required value={option.points}
         onChange={(event) => setOptions((previous) => previous.map((row, i) => i === index ? { ...row, points: event.target.value } : row))} /></label>
@@ -388,14 +398,16 @@ export function AdminOffers() {
       return (data || []) as PremadeProduct[];
     },
   });
-  const settingsQuery = useQuery<{ key: string; value: unknown }>({
+  const settingsQuery = useQuery<{ key: string; value: unknown }[]>({
     queryKey: ['admin_settings_redeem'], queryFn: async () => {
-      const { data, error } = await supabase().from('platform_settings').select('*').eq('key', 'rewards.redeem_options').maybeSingle();
+      const { data, error } = await supabase().from('platform_settings').select('*')
+        .in('key', ['rewards.redeem_options', 'rewards.points_per_dollar']);
       if (error) throw error;
-      return data || { key: 'rewards.redeem_options', value: null };
+      return data || [];
     },
   });
   const products = productsQuery.data || [];
+  const rewardSettings = Object.fromEntries((settingsQuery.data || []).map((row) => [row.key, row.value]));
   const productName = (id: string | null) =>
     id ? (t_db(products.find((product) => product.id === id)?.name, locale) || id) : null;
   /** "Min spend US$50 · Only Desk Cable Holder" for the lists below. */
@@ -463,8 +475,9 @@ export function AdminOffers() {
       <div><h2 className="text-xl font-medium">{t('admin:redeem_options')}</h2>
         <p className="text-sm text-slate-600">{t('admin:redeem_section_help')}</p></div>
       <AdminQueryState loading={settingsQuery.isPending} error={settingsQuery.error} />
-      {!settingsQuery.isPending && <RedeemSettings key={JSON.stringify(settingsQuery.data?.value ?? null)}
-        value={settingsQuery.data?.value} products={products} />}
+      {!settingsQuery.isPending && <RedeemSettings key={JSON.stringify(rewardSettings)}
+        value={rewardSettings['rewards.redeem_options']}
+        pointsPerDollar={rewardSettings['rewards.points_per_dollar']} products={products} />}
     </section>
   </div>;
 }

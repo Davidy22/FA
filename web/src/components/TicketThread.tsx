@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import type { TicketAttachment, TicketMessage } from '@/lib/types';
 
 /** 5-minute signed download URL for a ticket attachment (owner or staff). */
-export async function downloadTicketAttachment(
+async function downloadTicketAttachment(
   attachment: TicketAttachment,
   ticketId: string,
 ): Promise<void> {

@@ -11,7 +11,7 @@ import type { Localized } from './types';
 import { t_db } from './format';
 import type { Locale } from './i18n';
 
-export type FilamentSwatchInput = {
+type FilamentSwatchInput = {
   color_hex?: string | null;
   color_hex_2?: string | null;
   finish?: string | null;

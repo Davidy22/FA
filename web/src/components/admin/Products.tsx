@@ -13,7 +13,7 @@ import type {
 import { AdminFeedback, AdminQueryState, FormActions, LocalizedFields, useAdminAction, useAdminLanguage, useFormPanel } from './Shared';
 import { ProductOptions } from './ProductOptions';
 
-export type SlotRow = ProductMaterialSlot & { product_slot_materials: ProductSlotMaterial[] };
+type SlotRow = ProductMaterialSlot & { product_slot_materials: ProductSlotMaterial[] };
 
 /** One editable part of a multi-material print. */
 type SlotDraft = {

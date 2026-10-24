@@ -172,7 +172,7 @@ export default function RewardsPage() {
         ) : (
           <p className="mt-2 text-sm text-slate-600">{t('rewards:tier_top')}</p>
         )}
-        <ul className="mt-4 grid gap-2 text-sm sm:grid-cols-3">
+        <ul className="mt-4 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
           {tiers.map((tier, index) => (
             <li key={`${tier.min_lifetime_points}-${tier.multiplier}-${index}`}
               className={'rounded border p-2 ' + (tier === membership.current ? 'border-brand-600 bg-brand-50' : 'border-slate-200')}>

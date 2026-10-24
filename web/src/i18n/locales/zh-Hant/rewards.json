@@ -54,7 +54,7 @@
   "referral_step_share": "把推薦碼傳給朋友。",
   "referral_step_signup": "朋友建立帳號時輸入推薦碼。",
   "referral_step_reward": "註冊時你可獲得 10 點，對方首次下單後再獲得 50 點。",
-  "referral_terms": "每位新客戶只能推薦一次；推薦碼須於註冊後 24 小時內使用。",
+  "referral_terms": "每位新顧客只會計算一次推薦積分。",
   "referral_redirecting": "推薦資訊已整合到獎勵頁面。",
   "membership_title": "會員等級",
   "lifetime_points": "終身積分 {{count}}",

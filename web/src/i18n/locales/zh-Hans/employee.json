@@ -27,5 +27,18 @@
   "document": "文件打印",
   "custom": "自定义打印",
   "internal_notes": "内部备注",
-  "material_slots": "材料部分"
+  "material_slots": "材料部分",
+  "order_number": "订单编号",
+  "date": "日期",
+  "detail": "详情",
+  "stock_search": "搜索库存",
+  "stock_search_placeholder": "颜色、材料、表面效果或 ID",
+  "stock_availability": "库存状态",
+  "stock_all": "所有库存状态",
+  "no_stock_matches": "没有符合筛选条件的线材。",
+  "unknown_material": "其他材料",
+  "stock_group_summary": "{{count}} 种颜色 · {{inStock}} 种有库存",
+  "id": "ID",
+  "color": "颜色",
+  "cost_per_gram": "每克成本"
 }

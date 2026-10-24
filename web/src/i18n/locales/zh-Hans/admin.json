@@ -170,12 +170,10 @@
   "expired": "已过期",
   "expire_coupon": "使优惠券过期",
   "expire_coupon_confirm": "要立即使此优惠券过期吗？此操作无法复原。",
-  "settings_help": "各项设定分别储存。价格与奖励变更仅影响未来订单，不会修改旧订单。",
-  "redeem_moved_hint": "点数兑换选项已移至「优惠与优惠券」分页管理。",
+  "settings_help": "请分别保存每项设置。价格变更只适用于未来订单，不会影响过往订单。",
   "setting_groups": {
     "business": "营运",
-    "document_pricing": "文件列印",
-    "rewards_pricing": "奖励"
+    "document_pricing": "文件列印"
   },
   "setting_labels": {
     "platform": {
@@ -189,13 +187,12 @@
       "color_per_side": "彩色每面费用 (HKD)"
     },
     "rewards": {
-      "points_per_dollar": "每消费 HK$1 获得点数",
-      "coupon_days_valid": "奖励优惠券有效期 (天)"
+      "points_per_dollar": "每消费 HK$1 获得点数"
     }
   },
   "save_setting": "储存设定",
   "redeem_options": "点数兑换选项",
-  "redeem_help": "每个选项以指定且不重复的点数兑换单次优惠券。",
+  "redeem_help": "设置基础积分赚取比率，以及顾客可用积分兑换的优惠券。奖励优惠券有效期为一年。",
   "redeem_section_help": "顾客可在奖励页面以点数兑换这些单次优惠券。",
   "redeem_product_hint": "选择商品后，优惠券只适用于该商品；设为 100% 即可免费兑换该商品。",
   "redeem_product_published": "兑换商品必须为已上架。",
@@ -385,14 +382,11 @@
   "feature_careers_page": "招聘页",
   "feature_careers_page_hint": "显示招聘链接与职位列表。准备好首个职位前请保持关闭。",
   "tiers_group": "会员等级",
-  "tiers_help": "终身积分（由订单赚取、不会因兑换而减少的积分）决定等级，倍数会套用于上方的基本比率。",
+  "tiers_help": "四个终身积分门槛为固定设置。你可以编辑等级名称和倍数；终身积分来自订单，不会因兑换而减少。",
   "tier_name": "等级名称",
   "tier_name_placeholder": "例如：白银",
   "tier_threshold": "终身积分",
   "tier_multiplier": "倍数",
-  "tier_needs_start": "请保留一个 0 终身积分的等级，让每位顾客都有起始比率。",
-  "add_tier": "新增等级",
-  "remove_tier": "移除",
   "reset_tiers": "重置为默认",
   "employment_type": {
     "full_time": "全职",

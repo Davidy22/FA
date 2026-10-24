@@ -18,5 +18,6 @@
   "product_unavailable": "This product is no longer available.",
   "product_load_error": "Could not load product options",
   "slots_intro": "This print is made of several parts — choose the material and colour of each one.",
-  "no_colors_in_stock": "No colours of this material are in stock at the selected location"
+  "no_colors_in_stock": "No colours of this material are in stock at the selected location",
+  "load_error": "Could not load the catalog. Please try again."
 }

@@ -12,7 +12,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Price } from '@/components/Price';
 import { effectivePrice } from '@/lib/sale';
-import { describeFilament, filamentSwatchStyle } from '@/lib/filaments';
+import { ColorSwatchGrid } from '@/components/ColorSwatchGrid';
 import type {
   FileOptionConfig, Filament, Material, PremadeProduct, ProductMaterial, ProductMaterialSlot,
   ProductOptionChoice, ProductOptionGroup, ProductSlotMaterial, SlotSelection, TextOptionConfig,
@@ -357,22 +357,15 @@ function ProductDetail({ slug }: { slug: string }) {
                   <div className="mt-3">
                     <span className="label">{t('catalog:select_color')}</span>
                     {!slotColorOptions?.length ? <p className="text-sm text-slate-500">{t('catalog:no_colors_in_stock')}</p> : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {slotColorOptions.map((f) => (
-                          <label key={f.id} className={'flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer ' +
-                            (chosenColor === f.id ? 'border-brand-600 bg-brand-50' : 'border-slate-200 hover:border-slate-300')}>
-                            <input type="radio" name={`slot-color-${slot.id}`} className="sr-only" checked={chosenColor === f.id}
-                              onChange={() => setSlotPicks((previous) => ({
-                                ...previous,
-                                [slot.id]: { ...(previous[slot.id] || {}), color_filament_id: f.id },
-                              }))} />
-                            <span className="swatch" style={filamentSwatchStyle(f)} />
-                            <span className="text-sm">{t_db(f.color, locale)}
-                              {describeFilament(f, locale) && <span className="block text-xs text-slate-500">{describeFilament(f, locale)}</span>}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
+                      <ColorSwatchGrid
+                        colors={slotColorOptions}
+                        selectedId={chosenColor}
+                        name={`slot-color-${slot.id}`}
+                        onSelect={(colorId) => setSlotPicks((previous) => ({
+                          ...previous,
+                          [slot.id]: { ...(previous[slot.id] || {}), color_filament_id: colorId },
+                        }))}
+                      />
                     )}
                   </div>
                 </div>
@@ -402,17 +395,7 @@ function ProductDetail({ slug }: { slug: string }) {
           <div className="mt-6">
             <label className="label">{t('catalog:select_color')}</label>
             {!colors?.length ? <p className="text-sm text-slate-500">—</p> : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {colors.map((f) => (
-                  <label key={f.id} className={'flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer ' + (filamentId === f.id ? 'border-brand-600 bg-brand-50' : 'border-slate-200 hover:border-slate-300')}>
-                    <input type="radio" name="color" className="sr-only" checked={filamentId === f.id} onChange={() => setFilamentId(f.id)} />
-                    <span className="swatch" style={filamentSwatchStyle(f)} />
-                    <span className="text-sm">{t_db(f.color, locale)}
-                      {describeFilament(f, locale) && <span className="block text-xs text-slate-500">{describeFilament(f, locale)}</span>}
-                    </span>
-                  </label>
-                ))}
-              </div>
+              <ColorSwatchGrid colors={colors} selectedId={filamentId} name="color" onSelect={setFilamentId} />
             )}
           </div>
         )}

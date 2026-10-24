@@ -156,6 +156,11 @@ export type ProductMaterial = {
   price_modifier: number;
 };
 
+/** Product card rows include their materials in the same PostgREST request. */
+export type ProductWithMaterials = PremadeProduct & {
+  product_materials: (ProductMaterial & { material: Material | null })[];
+};
+
 /**
  * One named part of a multi-material print ("Body", "Wheels"). Each slot lists
  * the materials it can be printed in and the material/colour it defaults to.
@@ -370,9 +375,4 @@ export type CartLineInput = {
   slots?: Record<string, SlotSelection>;
   quantity: number;
   options?: Record<string, unknown>;
-};
-
-export type Cart = {
-  location_id: string | null;
-  items: CartLineInput[];
 };

@@ -6,7 +6,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { useState } from 'react';
 import { t_db } from '@/lib/format';
 import { useLocale } from '@/store/locale';
-import type { Material, PremadeProduct, ProductCategory } from '@/lib/types';
+import type { Material, ProductCategory, ProductWithMaterials } from '@/lib/types';
 
 export default function CatalogPage() {
   const { t } = useTranslation(['common','catalog']);
@@ -15,10 +15,11 @@ export default function CatalogPage() {
   const [materialId, setMaterialId] = useState<string>('');
   const [query, setQuery] = useState('');
 
-  const { data: products, isLoading } = useQuery<PremadeProduct[]>({
+  const { data: products, isLoading, error } = useQuery<ProductWithMaterials[]>({
     queryKey: ['products', category, materialId, query],
     queryFn: async () => {
-      let q = supabase().from('premade_products').select('*').eq('status','published');
+      let q = supabase().from('premade_products')
+        .select('*, product_materials(*, material:materials(*))').eq('status','published');
       if (category) q = q.eq('category', category);
       if (query) q = q.or(`name->>en.ilike.%${query}%,name->>zh-Hant.ilike.%${query}%,name->>zh-Hans.ilike.%${query}%`);
       if (materialId) {
@@ -27,8 +28,9 @@ export default function CatalogPage() {
         q = q.in('id', ids.length ? ids : ['00000000-0000-0000-0000-000000000000']);
       }
       q = q.order('created_at', { ascending: false }).limit(48);
-      const { data } = await q;
-      return (data || []) as PremadeProduct[];
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data || []) as ProductWithMaterials[];
     },
   });
 
@@ -79,7 +81,9 @@ export default function CatalogPage() {
       </aside>
       <section>
         <h1 className="text-2xl font-semibold mb-4">{t('catalog:browse')}</h1>
-        {isLoading ? <p>{t('common:loading')}</p> : products?.length === 0 ? (
+        {isLoading ? <p>{t('common:loading')}</p> : error ? (
+          <p role="alert" className="text-red-700">{t('catalog:load_error')}</p>
+        ) : products?.length === 0 ? (
           <p className="text-slate-500">{t('catalog:no_results')}</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

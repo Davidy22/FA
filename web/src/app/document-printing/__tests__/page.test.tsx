@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { PDFDocument } from 'pdf-lib';
 import DocumentPrintingPage from '@/app/document-printing/page';
 import { supabase } from '@/lib/supabase';
 
@@ -13,39 +14,51 @@ vi.mock('@/hooks/useDocumentPrices', () => ({
 
 const userId = 'cccccccc-cccc-cccc-cccc-000000000001';
 let signedIn: boolean;
+let convertedPdf: Blob;
+let convert: ReturnType<typeof vi.fn>;
 
 function mockAuth() {
   vi.mocked(supabase).mockReturnValue({
     auth: { getUser: async () => ({ data: { user: signedIn ? { id: userId } : null }, error: null }) },
     storage: { from: () => ({ upload: async () => ({ error: null }) }) },
+    functions: { invoke: convert },
   } as unknown as ReturnType<typeof supabase>);
 }
 
 function chooseFile(file: File) {
-  const input = screen.getByLabelText(/PDF \(up to 20 MB\)/) as HTMLInputElement;
+  const input = screen.getByLabelText(/Document \(up to 20 MB\)/) as HTMLInputElement;
   fireEvent.change(input, { target: { files: [file] } });
 }
 
-beforeEach(() => { signedIn = true; mockAuth(); });
+beforeEach(async () => {
+  signedIn = true;
+  convert = vi.fn(async () => ({ data: convertedPdf, error: null }));
+  const pdf = await PDFDocument.create();
+  pdf.addPage();
+  const bytes = await pdf.save();
+  const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+  convertedPdf = new Blob([buffer], { type: 'application/pdf' });
+  mockAuth();
+});
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
-describe('document printing upload errors', () => {
-  it('does not tell a signed-in customer to sign in after a non-PDF upload', async () => {
+describe('document printing uploads', () => {
+  it('rejects unsupported files without telling the customer to sign in', async () => {
     render(<DocumentPrintingPage />);
-    chooseFile(new File(['not a pdf'], 'photo.png', { type: 'image/png' }));
+    chooseFile(new File(['not a document'], 'photo.png', { type: 'image/png' }));
 
     const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('Choose a PDF smaller than 20 MB.');
-    // The sign-in link used to follow every error message, including this one.
+    expect(alert.textContent).toContain('Choose a PDF, DOC, DOCX, ODT, or Pages file');
     expect(alert.querySelector('a')).toBeNull();
     expect(screen.queryByText('Sign in')).not.toBeInTheDocument();
   });
 
-  it('asks a signed-out visitor to sign in before uploading, and only there', async () => {
+  it('offers private document printing to guests without a sign-in wall', async () => {
     signedIn = false;
     render(<DocumentPrintingPage />);
-    const notice = await screen.findByText(/Document printing needs an account/);
-    expect(notice.querySelector('a[href="/login"]')).not.toBeNull();
+    expect(await screen.findByText(/No account is needed/)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Sign in' })).not.toBeInTheDocument();
+    // The button is waiting for a document, not for authentication.
     expect(screen.getByRole('button', { name: 'Add to cart' })).toBeDisabled();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
@@ -54,7 +67,20 @@ describe('document printing upload errors', () => {
     render(<DocumentPrintingPage />);
     chooseFile(new File(['%PDF-1.4 broken'], 'broken.pdf', { type: 'application/pdf' }));
     const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('Could not read this PDF.');
+    expect(alert.textContent).toContain('Could not read the printable PDF.');
     expect(alert.querySelector('a')).toBeNull();
+  });
+
+  it('converts a guest Word document to PDF and reads its page count', async () => {
+    signedIn = false;
+    render(<DocumentPrintingPage />);
+    chooseFile(new File(['word data'], 'report.docx', {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    }));
+
+    expect(await screen.findByText(/Printed sides per copy: 1/)).toBeInTheDocument();
+    expect(convert).toHaveBeenCalledWith('convert-document', expect.objectContaining({ body: expect.any(FormData) }));
+    expect(screen.getByRole('button', { name: 'Add to cart' })).toBeEnabled();
+    expect(screen.queryByText(/sign in/i)).not.toBeInTheDocument();
   });
 });
