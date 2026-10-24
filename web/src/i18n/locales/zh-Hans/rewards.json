@@ -54,7 +54,7 @@
   "referral_step_share": "把推荐码发给朋友。",
   "referral_step_signup": "朋友创建账号时输入推荐码。",
   "referral_step_reward": "注册时你可获得 10 积分，对方首次下单后再获得 50 积分。",
-  "referral_terms": "每位新客户只能推荐一次；推荐码须在注册后 24 小时内使用。",
+  "referral_terms": "每位新顾客只会计算一次推荐积分。",
   "referral_redirecting": "推荐信息已整合到积分奖励页面。",
   "membership_title": "会员等级",
   "lifetime_points": "终身积分 {{count}}",

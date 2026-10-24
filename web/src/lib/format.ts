@@ -3,7 +3,7 @@
 import type { Locale } from '@/lib/i18n';
 
 // DB JSONB localized values have shape { en: string, 'zh-Hant'?: string, 'zh-Hans'?: string }
-export type Localized = { en: string; [k: string]: string | undefined };
+type Localized = { en: string; [k: string]: string | undefined };
 
 export function t_db(value: Localized | string | null | undefined, locale: Locale): string {
   if (value == null) return '';
@@ -53,19 +53,6 @@ export function formatMoney(amount: number, locale: Locale, currency: string | n
     // An unknown code in a location row must not blank out a price.
     return `${code} ${value.toFixed(2)}`;
   }
-}
-
-export function formatMinutes(min: number, locale: Locale): string {
-  const formatter = new Intl.NumberFormat(locale.replace('zh-','zh-'), { maximumFractionDigits: 0 });
-  if (locale === 'en') return `${formatter.format(min)} min`;
-  if (locale === 'zh-Hant') return `${formatter.format(min)} 分鐘`;
-  return `${formatter.format(min)} 分钟`;
-}
-
-// Locale -> Intl.NumberFormat for grams.
-export function formatGrams(g: number, locale: Locale): string {
-  const nf = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
-  return `${nf.format(g)} g`;
 }
 
 // Category/Status lookup keys are resolved via i18n t() in components.

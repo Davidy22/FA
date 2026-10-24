@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { useCart } from '@/store/cart';
 import { useLocation } from '@/store/location';
-import { useLocale } from '@/store/locale';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { canUseAdminConsole } from '@/lib/permissions';

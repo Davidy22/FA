@@ -8,12 +8,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from './supabase';
 
-export const FEATURES = ['model_submissions', 'careers_page'] as const;
+const FEATURES = ['model_submissions', 'careers_page'] as const;
 export type Feature = (typeof FEATURES)[number];
-
-export function featureSettingKey(feature: Feature): string {
-  return `features.${feature}`;
-}
 
 /** Interpret a platform_settings jsonb value the way public.feature_enabled does. */
 export function parseFeature(value: unknown): boolean {

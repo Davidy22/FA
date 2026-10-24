@@ -52,5 +52,28 @@
       "contract": "Contract",
       "internship": "Internship"
     }
+  },
+  "document": {
+    "title": "A4 document printing",
+    "price_summary": "Grayscale: {{grayscale}} per side · Color: {{color}} per side.",
+    "privacy": "No account is needed. Your upload stays private and is only used to fulfil your order.",
+    "file_label": "Document (up to 20 MB)",
+    "formats_hint": "PDF, Word (DOC/DOCX), OpenDocument (ODT), and Apple Pages are supported. Office files are converted to PDF.",
+    "reading": "Reading PDF…",
+    "converting": "Converting to PDF…",
+    "select_hint": "Select a document to see its page count.",
+    "page_count": "Printed sides per copy: {{count}} (read from the PDF).",
+    "copies": "Copies",
+    "ink": "Ink",
+    "grayscale_price": "Grayscale · {{price}}/side",
+    "color_price": "Color · {{price}}/side",
+    "duplex": "Double-sided",
+    "subtotal": "Printing subtotal: {{amount}}",
+    "uploading": "Uploading…",
+    "invalid_file": "Choose a PDF, DOC, DOCX, ODT, or Pages file no larger than 20 MB.",
+    "invalid_pages": "The printable PDF must have between 1 and 500 pages.",
+    "invalid_copies": "Enter a number of copies between 1 and 99.",
+    "conversion_failed": "We couldn't convert this file to PDF. Try exporting it as a PDF, or try again later.",
+    "unreadable_pdf": "Could not read the printable PDF. Please choose a valid, unencrypted document."
   }
 }

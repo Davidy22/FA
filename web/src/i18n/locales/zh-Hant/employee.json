@@ -27,5 +27,18 @@
   "document": "文件列印",
   "custom": "自訂列印",
   "internal_notes": "內部備註",
-  "material_slots": "物料部分"
+  "material_slots": "物料部分",
+  "order_number": "訂單編號",
+  "date": "日期",
+  "detail": "詳情",
+  "stock_search": "搜尋庫存",
+  "stock_search_placeholder": "顏色、物料、表面效果或 ID",
+  "stock_availability": "庫存狀態",
+  "stock_all": "所有庫存狀態",
+  "no_stock_matches": "沒有符合篩選條件的線材。",
+  "unknown_material": "其他物料",
+  "stock_group_summary": "{{count}} 種顏色 · {{inStock}} 種有庫存",
+  "id": "ID",
+  "color": "顏色",
+  "cost_per_gram": "每克成本"
 }

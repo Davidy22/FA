@@ -217,7 +217,6 @@ export default function CartPage() {
                 <button onClick={() => removeItem(idx)} className="btn-outline">{t('cart:remove')}</button>
               </li>;
             } else if (it.kind === 'ticket') {
-              const q = ticketQuotes?.find((x) => x.id === it.ticket_quote_id);
               return (
                 <li key={idx} className="p-4 flex gap-4 items-center">
                   <div className="h-16 w-16 bg-slate-100 rounded flex-shrink-0" />

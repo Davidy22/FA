@@ -78,36 +78,30 @@ export const DEFAULT_TIERS: MembershipTier[] = [
   { name: 'Member', min_lifetime_points: 0, multiplier: 1 },
   { name: 'Silver', min_lifetime_points: 1000, multiplier: 2 },
   { name: 'Gold', min_lifetime_points: 5000, multiplier: 3 },
+  { name: 'Platinum', min_lifetime_points: 20000, multiplier: 4 },
 ];
 
 /**
- * Validates/sorts the jsonb tier ladder. Malformed entries are dropped, the
- * ladder always starts at 0 points, and when two tiers share a threshold the
- * better multiplier wins. Falls back to the default ladder when nothing usable
- * is stored (and the server does the same, see public.reward_multiplier()).
+ * Reads the configurable names and multipliers onto the fixed four-tier ladder.
+ * Thresholds are product rules, not admin-editable values; unknown thresholds
+ * are ignored and missing/malformed rows fall back to the default at that level.
  */
 export function parseTiers(raw: unknown): MembershipTier[] {
-  if (!Array.isArray(raw)) return DEFAULT_TIERS;
-  const byThreshold = new Map<number, MembershipTier>();
-  for (const item of raw) {
-    if (!item || typeof item !== 'object') continue;
-    const value = item as Record<string, unknown>;
-    const min = Math.floor(Number(value.min_lifetime_points ?? 0));
-    const multiplier = Number(value.multiplier);
-    if (!Number.isFinite(min) || min < 0) continue;
-    if (!Number.isFinite(multiplier) || multiplier < 1) continue;
-    const name = typeof value.name === 'string' ? value.name.trim() : '';
-    const tier = { name, min_lifetime_points: min, multiplier };
-    const existing = byThreshold.get(min);
-    if (!existing || existing.multiplier < multiplier) byThreshold.set(min, tier);
-  }
-  if (!byThreshold.size) return DEFAULT_TIERS;
-  if (!byThreshold.has(0)) {
-    byThreshold.set(0, { name: '', min_lifetime_points: 0, multiplier: 1 });
-  }
-  return [...byThreshold.values()].sort(
-    (a, b) => a.min_lifetime_points - b.min_lifetime_points || a.multiplier - b.multiplier,
-  );
+  const rows = Array.isArray(raw)
+    ? raw.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+    : [];
+  return DEFAULT_TIERS.map((fallback) => {
+    const value = rows.find((item) => Number(item.min_lifetime_points) === fallback.min_lifetime_points);
+    if (!value) return fallback;
+    const configuredMultiplier = Number(value.multiplier);
+    return {
+      name: typeof value.name === 'string' ? value.name.trim() : fallback.name,
+      min_lifetime_points: fallback.min_lifetime_points,
+      multiplier: Number.isFinite(configuredMultiplier) && configuredMultiplier >= 1
+        ? configuredMultiplier
+        : fallback.multiplier,
+    };
+  });
 }
 
 /** The tier that applies to a lifetime total. */
@@ -122,7 +116,7 @@ export function tierFor(lifetimePoints: number, tiers: MembershipTier[] = DEFAUL
 }
 
 /** The next tier up, or null at the top of the ladder. */
-export function nextTier(
+function nextTier(
   lifetimePoints: number,
   tiers: MembershipTier[] = DEFAULT_TIERS,
 ): MembershipTier | null {
@@ -131,7 +125,7 @@ export function nextTier(
   return ladder.find((tier) => tier.min_lifetime_points > points) ?? null;
 }
 
-export type TierProgress = {
+type TierProgress = {
   current: MembershipTier;
   next: MembershipTier | null;
   /** Points still needed to reach the next tier (0 at the top). */

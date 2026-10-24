@@ -170,12 +170,10 @@
   "expired": "Expired",
   "expire_coupon": "Expire coupon",
   "expire_coupon_confirm": "Expire this coupon immediately? This cannot be undone.",
-  "settings_help": "Save each value separately. Pricing and rewards use these values on future orders; past orders do not change.",
-  "redeem_moved_hint": "Points redemption options are managed in the Offers & coupons tab.",
+  "settings_help": "Save each value separately. Pricing changes apply to future orders; past orders do not change.",
   "setting_groups": {
     "business": "Business",
-    "document_pricing": "Document printing",
-    "rewards_pricing": "Rewards"
+    "document_pricing": "Document printing"
   },
   "setting_labels": {
     "platform": {
@@ -189,13 +187,12 @@
       "color_per_side": "Color per side (HKD)"
     },
     "rewards": {
-      "points_per_dollar": "Points per HK$1 spent",
-      "coupon_days_valid": "Reward coupon validity (days)"
+      "points_per_dollar": "Points per HK$1 spent"
     }
   },
   "save_setting": "Save setting",
   "redeem_options": "Points redemption options",
-  "redeem_help": "Each option trades a unique points amount for a single-use coupon.",
+  "redeem_help": "Set the base earn rate and the coupons customers can redeem with points. Reward coupons are valid for one year.",
   "redeem_section_help": "Customers trade points for these single-use coupons on the Rewards page.",
   "redeem_product_hint": "Choose a product to make the coupon apply to that item only; 100% gives the item away free.",
   "redeem_product_published": "Redemption products must be published.",
@@ -385,14 +382,11 @@
   "feature_careers_page": "Careers page",
   "feature_careers_page_hint": "Shows the careers link and job board. Leave it off until the first roles are ready.",
   "tiers_group": "Membership tiers",
-  "tiers_help": "Lifetime points (points earned from orders, never reduced by redemptions) decide the tier. The multiplier applies to the base rate above.",
+  "tiers_help": "The four lifetime-points thresholds are fixed. Edit tier names and multipliers; lifetime points come from orders and are never reduced by redemptions.",
   "tier_name": "Tier name",
   "tier_name_placeholder": "e.g. Silver",
   "tier_threshold": "Lifetime points",
   "tier_multiplier": "Multiplier",
-  "tier_needs_start": "Keep one tier at 0 lifetime points so every customer has a starting rate.",
-  "add_tier": "Add tier",
-  "remove_tier": "Remove",
   "reset_tiers": "Reset to defaults",
   "employment_type": {
     "full_time": "Full time",

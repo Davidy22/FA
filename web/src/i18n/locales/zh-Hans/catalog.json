@@ -18,5 +18,6 @@
   "product_unavailable": "此商品目前未有供应。",
   "product_load_error": "无法加载商品选项",
   "slots_intro": "这款打印品由多个部分组成——请为每个部分选择材料和颜色。",
-  "no_colors_in_stock": "所选门店没有此材料的现货颜色"
+  "no_colors_in_stock": "所选门店没有此材料的现货颜色",
+  "load_error": "无法加载商品目录，请稍后再试。"
 }

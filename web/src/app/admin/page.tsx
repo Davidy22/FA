@@ -18,6 +18,7 @@ import { AdminOffers } from '@/components/admin/Offers';
 import { AdminJobs } from '@/components/admin/Jobs';
 import { AdminSettings } from '@/components/admin/Settings';
 import { AdminFeedback, useAdminAction } from '@/components/admin/Shared';
+import { AdminNamespaceGate } from '@/components/admin/AdminNamespaceGate';
 
 // One tab per staff module. A tab only appears when the signed-in account holds
 // the module's permission (admins hold all of them).
@@ -36,7 +37,7 @@ const TABS: { key: string; permission: Permission }[] = [
   { key: 'settings', permission: 'settings.manage' },
 ];
 
-export default function AdminPage() {
+function AdminContent() {
   const { t } = useTranslation(['common', 'admin']);
   const queryClient = useQueryClient();
   const activation = useAdminAction();
@@ -106,4 +107,8 @@ export default function AdminPage() {
       </section>
     </div>
   );
+}
+
+export default function AdminPage() {
+  return <AdminNamespaceGate><AdminContent /></AdminNamespaceGate>;
 }

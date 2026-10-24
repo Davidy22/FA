@@ -9,10 +9,9 @@ import { supabase } from '@/lib/supabase';
 import type { PlatformSetting } from '@/lib/types';
 import { AdminFeedback, AdminQueryState, useAdminAction } from './Shared';
 
-// Only settings something actually reads. The automatic 3D-quote knobs
-// (wall thickness, setup time, handling fee, minimum order fee) and the raw
-// "other JSON" editor are gone: quoting is a staff conversation, and a free-form
-// key/value editor invited values nothing consumes.
+// Only settings something actually reads. Redemption options and the base
+// rewards earn rate live with the other coupon tools, not in a duplicate
+// rewards section here.
 type SettingDefinition = { key: string; min: number; max: number; step: string; defaultValue: number; integer?: boolean };
 const SETTING_GROUPS: Record<string, SettingDefinition[]> = {
   business: [
@@ -22,10 +21,6 @@ const SETTING_GROUPS: Record<string, SettingDefinition[]> = {
   document_pricing: [
     { key: 'document.grayscale_per_side', min: 0.01, max: 99999999, step: '0.01', defaultValue: 0.5 },
     { key: 'document.color_per_side', min: 0.01, max: 99999999, step: '0.01', defaultValue: 1 },
-  ],
-  rewards_pricing: [
-    { key: 'rewards.points_per_dollar', min: 0, max: 1000, step: '0.01', defaultValue: 1 },
-    { key: 'rewards.coupon_days_valid', min: 1, max: 3650, step: '1', integer: true, defaultValue: 90 },
   ],
 };
 
@@ -95,14 +90,10 @@ function FeatureToggle({ feature, labelKey, hintKey, enabled }: {
   </div>;
 }
 
-type TierDraft = { name: string; min: string; multiplier: string };
+type TierDraft = { name: string; multiplier: string };
 
 function toDraft(tiers: MembershipTier[]): TierDraft[] {
-  return tiers.map((tier) => ({
-    name: tier.name,
-    min: String(tier.min_lifetime_points),
-    multiplier: String(tier.multiplier),
-  }));
+  return tiers.map((tier) => ({ name: tier.name, multiplier: String(tier.multiplier) }));
 }
 
 function TierSettings({ raw }: { raw: unknown }) {
@@ -120,12 +111,10 @@ function TierSettings({ raw }: { raw: unknown }) {
     await action.run(async () => {
       const tiers = rows.map((row, index) => ({
         name: row.name.trim(),
-        min_lifetime_points: decimal(row.min, `${t('tier_threshold')} ${index + 1}`, 0, 100000000, true),
+        // The four thresholds are fixed; only labels and multipliers are editable.
+        min_lifetime_points: DEFAULT_TIERS[index].min_lifetime_points,
         multiplier: decimal(row.multiplier, `${t('tier_multiplier')} ${index + 1}`, 1, 100),
       }));
-      if (!tiers.some((tier) => tier.min_lifetime_points === 0)) {
-        throw new Error(t('tier_needs_start'));
-      }
       const { error } = await supabase().from('platform_settings')
         .upsert({ key: 'rewards.tiers', value: tiers }, { onConflict: 'key' });
       if (error) throw error;
@@ -136,31 +125,24 @@ function TierSettings({ raw }: { raw: unknown }) {
   return <form onSubmit={(event) => void submit(event)} className="mt-3 rounded border p-3 text-sm">
     <p className="max-w-2xl text-slate-600">{t('tiers_help')}</p>
     <div className="mt-3 space-y-2">
-      {rows.map((row, index) => <div key={index} className="grid gap-2 sm:grid-cols-[1.4fr_1fr_1fr_auto]">
+      {rows.map((row, index) => <div key={DEFAULT_TIERS[index].min_lifetime_points} className="grid gap-2 sm:grid-cols-[1.4fr_1fr_1fr]">
         <label className="text-xs text-slate-600">{t('tier_name')}
           <input className="input mt-1" value={row.name} placeholder={t('tier_name_placeholder')}
             onChange={(event) => setRow(index, { name: event.target.value })} />
         </label>
-        <label className="text-xs text-slate-600">{t('tier_threshold')}
-          <input className="input mt-1" type="number" min={0} step={1} value={row.min}
-            onChange={(event) => setRow(index, { min: event.target.value })} />
-        </label>
+        <div className="text-xs text-slate-600">
+          <span>{t('tier_threshold')}</span>
+          <p className="mt-1 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+            {DEFAULT_TIERS[index].min_lifetime_points.toLocaleString('en-US')}
+          </p>
+        </div>
         <label className="text-xs text-slate-600">{t('tier_multiplier')}
           <input className="input mt-1" type="number" min={1} step={0.5} value={row.multiplier}
             onChange={(event) => setRow(index, { multiplier: event.target.value })} />
         </label>
-        <button type="button" className="self-end text-xs text-red-700 underline disabled:text-slate-400"
-          disabled={rows.length <= 1}
-          onClick={() => setRows((previous) => previous.filter((_, i) => i !== index))}>
-          {t('remove_tier')}
-        </button>
       </div>)}
     </div>
     <div className="mt-3 flex flex-wrap gap-2">
-      <button type="button" className="btn-outline text-sm"
-        onClick={() => setRows((previous) => [...previous, { name: '', min: '', multiplier: '2' }])}>
-        {t('add_tier')}
-      </button>
       <button type="button" className="btn-outline text-sm" onClick={() => setRows(toDraft(DEFAULT_TIERS))}>
         {t('reset_tiers')}
       </button>
@@ -203,7 +185,6 @@ export function AdminSettings() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {definitions.map((definition) => <NumericSetting key={definition.key} definition={definition} value={values[definition.key]} />)}
         </div>
-        {group === 'rewards_pricing' && <p className="mt-3 text-sm text-slate-600">{t('redeem_moved_hint')}</p>}
       </section>)}
     </>}
   </>;

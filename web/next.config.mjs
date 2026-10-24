@@ -9,7 +9,6 @@ const nextConfig = {
   assetPrefix: isProd && basePath ? basePath : undefined,
   images: { unoptimized: true },
   reactStrictMode: true,
-  transpilePackages: ['three'],
 };
 
 export default nextConfig;

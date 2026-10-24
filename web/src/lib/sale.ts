@@ -6,7 +6,7 @@
 
 import type { SaleFields } from '@/lib/types';
 
-export type SaleRow = Partial<SaleFields> | null | undefined;
+type SaleRow = Partial<SaleFields> | null | undefined;
 
 function timestamp(value?: string | null): number | null {
   if (!value) return null;

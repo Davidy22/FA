@@ -1,27 +1,27 @@
 // Heuristic pricing engine. Implements section 6.1 of the spec.
 // Pure functions, fully unit-testable.
 
-export interface MaterialPricing {
+interface MaterialPricing {
   density_g_cm3: number;        // g/cm3
   default_flow_mm3_s: number;  // mm3/s
 }
 
-export interface FilamentPricing {
+interface FilamentPricing {
   cost_per_gram: number;       // HKD/g
 }
 
-export interface LocationPricing {
+interface LocationPricing {
   hourly_machine_rate: number; // per hour, in the location's currency (HKD in Hong Kong)
   tax_rate: number;            // 0.0 - 1.0
 }
 
-export interface QuoteConstants {
+interface QuoteConstants {
   wall_thickness_mm: number;   // default 0.84
   setup_minutes: number;       // default 3
   handling_fee: number;        // default 1.00
 }
 
-export interface QuoteInput {
+interface QuoteInput {
   volume_cm3: number;          // cm3 (signed volume absolute)
   surface_cm2: number;         // cm2
   material: MaterialPricing;
@@ -32,7 +32,7 @@ export interface QuoteInput {
   constants: QuoteConstants;
 }
 
-export interface QuoteBreakdown {
+interface QuoteBreakdown {
   grams: number;
   print_time_minutes: number;
   material_cost: number;

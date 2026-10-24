@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import type { Location } from '@/lib/types';
 import { mappableLocations } from '@/lib/locations';
 
-export type LocationsMapProps = {
+type LocationsMapProps = {
   locations: Location[];
   selectedId: string | null;
   onSelect: (id: string) => void;

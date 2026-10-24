@@ -98,6 +98,11 @@ enabled = false
 [functions.bootstrap-admin]
 verify_jwt = true
 
+[functions.convert-document]
+# Anonymous customers may convert a guest order document; the endpoint only
+# accepts supported formats up to 20 MB and never stores the uploaded source.
+verify_jwt = true
+
 [functions.create-staff]
 verify_jwt = true
 

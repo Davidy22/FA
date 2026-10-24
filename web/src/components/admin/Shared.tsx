@@ -60,15 +60,15 @@ export function AdminPagination({ page, hasNext, onPageChange }: {
   </nav>;
 }
 
-export const ADMIN_LANGUAGES = ['en', 'zh-Hans', 'zh-Hant'] as const;
-export type AdminLanguage = (typeof ADMIN_LANGUAGES)[number];
+const ADMIN_LANGUAGES = ['en', 'zh-Hans', 'zh-Hant'] as const;
+type AdminLanguage = (typeof ADMIN_LANGUAGES)[number];
 
 /** The one language every localized field of a form is being edited in. */
 export function useAdminLanguage() {
   return useState<AdminLanguage>('en');
 }
 
-export type LocalizedFieldSpec = {
+type LocalizedFieldSpec = {
   label: string;
   value: Localized;
   onChange: (value: Localized) => void;

@@ -27,7 +27,8 @@ pnpm dev
 pnpm test                       # Vitest (pricing, i18n helpers, formatters)
 pnpm test:db                    # embedded PostgreSQL migrations/admin/checkout smoke tests; no Docker
 supabase test db                # pgTAP (full Supabase/RLS matrix; requires Docker)
-node scripts/i18n-check.mjs     # locale key parity
+node scripts/i18n-check.mjs     # locale key + interpolation parity
+node scripts/i18n-sync.mjs --since main  # review English keys needing translation
 pnpm test:e2e                   # Playwright smoke
 ```
 
@@ -62,8 +63,8 @@ Employee and manager accounts start with **no** admin-console tabs. An admin (or
 - Product categories and filament finishes are **rows, not enums**: **Admin → Categories** adds, renames, reorders and deactivates the catalog filters (the fallback `other` category is protected), and **Admin → Materials & filaments** can set a finish (standard, matte, silk, wood fill, marble, gradient, glow, translucent, carbon, metallic) plus a second colour for two-tone/gradient spools.
 
 ## 7. Rewards & coupons (local)
-- Points settings live in `platform_settings`: `rewards.points_per_dollar`, `rewards.redeem_options`, `rewards.coupon_days_valid`. Earn rates and coupon validity are edited under **Admin → Platform settings**; the redemption options themselves are edited under **Admin → Offers & coupons**, next to the coupon tools they issue.
-- **Membership tiers** raise the points earned per dollar once a customer passes a lifetime-points threshold. The default ladder is Member (0 pts, 1×), Silver (1,000 pts, 2×) and Gold (5,000 pts, 3×); edit it under **Admin → Platform settings → Membership tiers** as `[{min_lifetime_points, multiplier, name}]`. `profiles.lifetime_points` only counts points *earned* (never redemption), and `public.reward_multiplier()` is the single source of truth mirrored by `web/src/lib/rewards.ts` for the `/rewards` progress card.
+- Points settings live in `platform_settings`: `rewards.points_per_dollar` and `rewards.redeem_options`. Both the base earn rate and redemption options are edited under **Admin → Offers & coupons**, next to the coupon tools they issue. Coupons issued by redeeming points expire **one year** after creation; there is no configurable reward-coupon validity period. Offer-code and manually issued coupon expiry controls are separate and unchanged.
+- **Membership tiers** raise the points earned per dollar once a customer passes a lifetime-points threshold. The fixed ladder is Member (0 pts, 1×), Silver (1,000 pts, 2×), Gold (5,000 pts, 3×) and Platinum (20,000 pts, 4×). Thresholds and the number of tiers cannot be edited; only names and multipliers are configurable under **Admin → Platform settings → Membership tiers**. `profiles.lifetime_points` only counts points *earned* (never redemption), and `public.reward_multiplier()` is the single source of truth mirrored by `web/src/lib/rewards.ts` for the `/rewards` progress card.
 - A redemption option may name a product, so points can be traded for a specific item (100% off that product = a free item). The option's product must be published.
 - Two offer codes are seeded so `/offers` works out of the box: `WELCOME10` (10% off) and `HIGHFIVE` (HK$5 off). Claiming one issues a personal single-use coupon.
 - Coupons and offer codes can carry conditions: a **minimum spend** and/or a **single product** the discount applies to. `price_cart` enforces both, so the cart, checkout and the Stripe webhook all agree.
@@ -146,7 +147,9 @@ and `SUPABASE_ACCESS_TOKEN` as an environment secret in the selected `staging` o
 `prod` environment. Complete the Supabase database/Edge Function setup for catalog,
 auth, uploads, and payments to work. In Supabase **Authentication → URL
 Configuration**, set the Site URL and allowed redirect URLs to the deployed site
-(including `/FA/`), rather than localhost.
+(including `/FA/`), rather than localhost. If listing routes individually, include
+both `/FA/auth/callback` and `/FA/reset-password` (and their trailing-slash variants).
+Password-recovery email also requires a working Auth email/SMTP configuration.
 
 A failing **CI**, **Migrate DB**, or **Nightly E2E** run is distinct from a
 **Deploy Web** run; those workflows are not deployment dependencies. If **Deploy
@@ -174,7 +177,11 @@ Sign-in providers appear on `/login`; connected methods are managed on `/account
 - With zero or one active location the picker, prompt, and map are hidden automatically; the only location is selected for the user.
 
 ## 11. Document printing
-- PDF page counts are read in the browser with `pdf-lib` (loaded on demand). If you see `Module not found: Can't resolve 'pdf-lib'`, run `pnpm install` at the repository root and restart the dev server.
+- Customers can order document prints without signing in. PDFs upload to the private `document-prints` bucket under a random guest capability path; anonymous users have insert-only access and cannot list or download those files. Owner-scoped uploads remain available to signed-in users. Checkout still downloads every PDF with the service role and recounts its pages before charging.
+- PDF, DOC, DOCX, ODT and Pages files up to 20 MB are accepted. Page counts are read in the browser with `pdf-lib` (loaded on demand). Non-PDF files are converted to PDF before upload through the `convert-document` Edge Function and Gotenberg's LibreOffice route.
+- Deploy a Gotenberg 8 instance with its default LibreOffice support and set the server-side Edge Function secret `GOTENBERG_URL` to its base URL (no trailing slash required), for example `https://gotenberg.internal.example`. Keep the service private to your backend/network. Do not use a `NEXT_PUBLIC_*` variable or expose a service-role key to the browser. Deploy `convert-document` along with the other functions after applying migrations.
+- For local conversion, run `docker run --rm -p 127.0.0.1:3100:3000 gotenberg/gotenberg:8`, then put a URL reachable **from the Supabase Edge runtime** in `supabase/functions/.env` as `GOTENBERG_URL` (commonly `http://host.docker.internal:3100`). Restart the local functions after changing it. PDF-only printing does not require Gotenberg.
+- If you see `Module not found: Can't resolve 'pdf-lib'`, run `pnpm install` at the repository root and restart the dev server.
 
 ## 12. Quote tickets
 - `/quote` is a contact form (subject, message, up to 5 attachments) that opens a support/quote ticket. Sign-in is required so the thread persists.

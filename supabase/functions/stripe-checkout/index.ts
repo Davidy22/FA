@@ -47,13 +47,17 @@ serve(async (req) => {
     const sb = supabaseServiceClient();
 
     // Never trust a page count supplied by the browser (or a modified cart).
-    // Download each private, owner-scoped PDF and replace the count before both
-    // charging Stripe and persisting the cart used by the payment webhook.
+    // Download each private owner/capability-scoped PDF and replace the count
+    // before charging Stripe and persisting the cart used by the webhook.
     for (const item of cart.items ?? []) {
       if (item.kind !== 'document') continue;
-      if (!verifiedUserId || typeof item.file_path !== 'string' ||
-          !item.file_path.startsWith(`${verifiedUserId}/`)) {
-        throw new Error('Sign in and upload your own PDF before checkout.');
+      const guestPath = typeof item.file_path === 'string' &&
+        /^guest\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.pdf$/i
+          .test(item.file_path);
+      const ownerPath = verifiedUserId && typeof item.file_path === 'string' &&
+        item.file_path.startsWith(`${verifiedUserId}/`);
+      if (!ownerPath && !guestPath) {
+        throw new Error('Upload your own PDF before checkout.');
       }
       const { data: file, error: fileError } = await sb.storage.from('document-prints').download(item.file_path);
       if (fileError || !file) throw new Error('Could not read the uploaded document.');

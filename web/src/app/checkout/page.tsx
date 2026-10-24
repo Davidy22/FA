@@ -7,7 +7,6 @@ import { formatMoney } from '@/lib/format';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import type { Location } from '@/lib/types';
 import { withBasePath } from '@/lib/paths';
 
@@ -16,7 +15,6 @@ export default function CheckoutPage() {
   const locale = useLocale((s) => s.locale);
   const { items, location_id, coupon_code, setCoupon } = useCart();
   const cartLocationId = useLocation((s) => s.selectedLocationId) || location_id;
-  const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);

@@ -1,19 +1,19 @@
 'use client';
-import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { ProductCard } from '@/components/ProductCard';
-import type { PremadeProduct } from '@/lib/types';
+import type { ProductWithMaterials } from '@/lib/types';
 
 export default function HomePage() {
   const { t } = useTranslation(['common','catalog']);
-  const { data: featured, isLoading } = useQuery<PremadeProduct[]>({
+  const { data: featured, isLoading } = useQuery<ProductWithMaterials[]>({
     queryKey: ['featured'],
     queryFn: async () => {
       const { data } = await supabase().from('premade_products')
-        .select('*').eq('status','published').eq('is_featured',true).limit(6);
-      return data || [];
+        .select('*, product_materials(*, material:materials(*))')
+        .eq('status','published').eq('is_featured',true).limit(6);
+      return (data || []) as ProductWithMaterials[];
     },
   });
   return (

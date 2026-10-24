@@ -1,21 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
-import type { Location } from '@/lib/types';
 
 export default function AboutPage() {
   const { t } = useTranslation(['pages', 'common']);
-
-  const { data: locations } = useQuery<Location[]>({
-    queryKey: ['active_locations'],
-    queryFn: async () => {
-      const { data } = await supabase().from('locations').select('*')
-        .eq('is_active', true).order('name');
-      return (data || []) as Location[];
-    },
-  });
 
   const values = [
     { title: t('pages:about.value_local_title'), body: t('pages:about.value_local') },

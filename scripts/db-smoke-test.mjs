@@ -134,6 +134,20 @@ try {
 
   const product = await saveProduct(exampleProduct(), materials);
   assert.equal(product.status, 'published');
+
+  // The catalog is public: explicit anon table grants plus the published-only
+  // RLS policy return products without exposing drafts or requiring a session.
+  await claims(null);
+  await db.exec('set role anon');
+  const anonymousCatalog = await rows('select id,slug from public.premade_products where id=$1 and status=\'published\'', [product.id]);
+  assert.equal(anonymousCatalog.length, 1);
+  assert.equal(anonymousCatalog[0].slug, product.slug);
+  const anonymousDrafts = await rows('select id from public.premade_products where status<>\'published\'');
+  assert.equal(anonymousDrafts.length, 0);
+  await db.exec('reset role');
+  await claims(admin);
+  console.log('✓ anonymous visitors can read published catalog products only');
+
   assert.equal((await pricing(cart([{ kind: 'premade', product_id: product.id,
     material_id: pla, quantity: 2, options: {} }]))).lines[0].unit_price, 11);
   await assert.rejects(saveProduct(exampleProduct({ id: product.id }),
@@ -300,7 +314,16 @@ try {
     quantity: 1, file_path: docPath };
   const docCart = cart([document]);
   assert.equal((await pricing(docCart)).lines[0].unit_price, 1.5);
-  await assert.rejects(pricing({ ...docCart, user_id: null }), /Sign in to upload documents/);
+  // Another account's owner path is not a capability, but a random guest path
+  // is orderable with user_id null and prices through the same authoritative RPC.
+  await assert.rejects(pricing({ ...docCart, user_id: null }), /Invalid document path/);
+  const guestDocPath = 'guest/123e4567-e89b-42d3-a456-426614174000/123e4567-e89b-42d3-a456-426614174001.pdf';
+  await rows('insert into storage.objects(bucket_id,name) values(\'document-prints\',$1)', [guestDocPath]);
+  const guestDocument = { ...document, file_path: guestDocPath };
+  const guestDocCart = { ...docCart, user_id: null, items: [guestDocument] };
+  assert.equal((await pricing(guestDocCart)).lines[0].unit_price, 1.5);
+  assert.equal((await one('select public._document_path_allowed($1,null) as allowed',
+    [`${buyer}/someone-else.pdf`])).allowed, false);
   await rows(`insert into public.checkout_sessions(session_id,cart,user_id,location_id,contact_email,contact_name,locale)
       values('smoke-doc',$1::jsonb,$2,$3,'db-buyer@example.test','Buyer','en')`,
     [JSON.stringify(docCart), buyer, location]);
@@ -309,7 +332,7 @@ try {
   const retry = await one('select id from public.create_order_from_cart($1,$2,$3,$4,$5,$6)', orderParams);
   assert.equal(retry.id, order.id);
   assert.equal(Number((await one('select count(*) as n from public.orders where stripe_session_id=$1', ['smoke-doc'])).n), 1);
-  console.log('✓ admin document rate, verified upload and idempotent order');
+  console.log('✓ admin document rate, owner/guest uploads and idempotent order');
 
   await db.exec(`insert into public.coupons(code,source,discount_type,discount_value,user_id)
     values('SMOKEDISCOUNT','admin','fixed',5,'${buyer}')`);
@@ -401,6 +424,8 @@ try {
   await rows('update public.profiles set points_balance=400 where id=$1', [buyer]);
   const redeemed = await one('select code,product_id from public.redeem_rewards(0)');
   assert.equal(redeemed.product_id, keychain.id);
+  assert.equal((await one('select expires_at = created_at + interval \'1 year\' as annual from public.coupons where code=$1',
+    [redeemed.code])).annual, true);
   assert.equal(Number((await one('select points_balance from public.profiles where id=$1', [buyer])).points_balance), 100);
   const freeItem = await pricing(cart([keychainLine], { coupon_code: redeemed.code }));
   assert.equal(freeItem.discount_amount, 20);
@@ -477,6 +502,26 @@ try {
     [submissionId, 'approve', '', '{}', 'second-model.stl']), /already been reviewed/);
   console.log('✓ submission approval publishes product, links creator and cannot repeat');
 
+  // The dashboard aggregate returns only the caller's ledger totals and never
+  // needs to transfer every historical earning row to the browser.
+  await rows(`insert into public.creator_earnings(creator_id,type,amount)
+    values($1,'sale',12.50),($1,'sale',7.50)`, [buyer]);
+  await rows(`insert into public.platform_settings(key,value) values('payouts.min_amount','1')
+    on conflict(key) do update set value=excluded.value`);
+  await claims(buyer);
+  await db.exec('set role authenticated');
+  const creatorSummary = (await one('select public.creator_dashboard_summary() as value')).value;
+  assert.equal(Number(creatorSummary.balance), 10); // 20 earned - 10 already paid
+  assert.equal(Number(creatorSummary.sales), 2);
+  await assert.rejects(one('select public.request_payout(20)'), /Insufficient balance/);
+  await one('select public.request_payout(10)');
+  const reservedSummary = (await one('select public.creator_dashboard_summary() as value')).value;
+  assert.equal(Number(reservedSummary.balance), 0);
+  await assert.rejects(one('select public.request_payout(10)'), /open payout already exists/);
+  await db.exec('reset role');
+  await claims(admin);
+  console.log('✓ creator dashboard and payouts use an atomic available balance');
+
   // Staff permissions: a module grant is enough for that module's RPCs and
   // table writes, while everything else stays closed. 'admin.full' implies all.
   await claims(admin);
@@ -545,10 +590,16 @@ try {
   assert.equal(tierProfile.lifetime_points, 5030);
   assert.equal((await one(`select memo from public.reward_transactions
     where order_id=(select id from public.orders where order_number='TIER-GOLD')`)).memo, 'Order TIER-GOLD (3× tier)');
+  await rows(`update public.profiles set lifetime_points=20000 where id=$1`, [buyer]);
+  await tierOrder('TIER-PLATINUM', 10);
+  tierProfile = await one('select points_balance,lifetime_points from public.profiles where id=$1', [buyer]);
+  assert.equal(tierProfile.points_balance, 100);      // +40 at Platinum 4x
+  assert.equal(tierProfile.lifetime_points, 20040);
   await rows(`update public.platform_settings set value=$1::jsonb where key='rewards.tiers'`,
     [JSON.stringify([{ name: 'Member', min_lifetime_points: 0, multiplier: 1 }])]);
-  assert.equal(Number((await one('select public.reward_multiplier(999999) as m')).m), 1);
-  console.log('✓ membership tiers multiply points earned by lifetime spend');
+  // Deleting rows cannot delete fixed tiers or move their thresholds.
+  assert.equal(Number((await one('select public.reward_multiplier(999999) as m')).m), 4);
+  console.log('✓ fixed membership tiers include Platinum at 20k / 4x');
 
   // `supabase db reset` runs seed.sql only after migrations. It is deliberately
   // separate from the production migrations and safe to re-run locally.

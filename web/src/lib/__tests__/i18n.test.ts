@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
+import i18n, {
   detectLocaleFrom,
   localeFromRegion,
   localeFromTag,
@@ -100,5 +100,16 @@ describe('detectLocaleFrom', () => {
     expect(detectLocaleFrom(['fr-FR', 'de-DE', 'zh-Hant-HK'])).toBe('zh-Hant');
     // ...but the browser's own order still wins once a published language shows up.
     expect(detectLocaleFrom(['ja-JP', 'en-AU', 'zh-Hant-HK'])).toBe('en');
+  });
+});
+
+describe('translation interpolation', () => {
+  it('populates reward, provider, and product-price variables', () => {
+    const t = i18n.getFixedT('en');
+    expect(t('rewards:points', { count: 42 })).toBe('42 points');
+    expect(t('common:auth.continue_with', { provider: 'Google' })).toBe('Continue with Google');
+    expect(t('common:from_price', { price: 'HK$12.00' })).toBe('from HK$12.00');
+    expect(t('rewards:tier_next', { points: 100, tier: 'Silver', multiplier: 2 }))
+      .toBe('100 more lifetime points to reach Silver (2× points).');
   });
 });

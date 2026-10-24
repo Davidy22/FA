@@ -7,11 +7,11 @@ export const SOCIAL_PROVIDERS: ReadonlyArray<{ id: SocialProviderId; label: stri
   { id: 'facebook', label: 'Facebook' }
 ];
 
-export const PENDING_REFERRAL_KEY = 'ma.pending_referral';
-export const PENDING_AUTH_NEXT_KEY = 'ma.auth_next';
+const PENDING_REFERRAL_KEY = 'ma.pending_referral';
+const PENDING_AUTH_NEXT_KEY = 'ma.auth_next';
 
 /** Mirrors next.config.mjs: basePath is only applied to production builds. */
-export function appBasePath(): string {
+function appBasePath(): string {
   const configured = process.env.NEXT_PUBLIC_BASE_PATH || '';
   return process.env.NODE_ENV === 'production' ? configured.replace(/\/+$/, '') : '';
 }
@@ -32,6 +32,12 @@ export function safeNextPath(value: string | null | undefined, fallback = '/'): 
 export function authCallbackUrl(): string {
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
   return `${origin}${appBasePath()}/auth/callback/`;
+}
+
+/** Recovery links return to a page that can set a new password. */
+export function passwordRecoveryUrl(): string {
+  const origin = typeof window === 'undefined' ? '' : window.location.origin;
+  return `${origin}${appBasePath()}/reset-password/`;
 }
 
 export function rememberAuthNext(next: string): void {
@@ -67,7 +73,7 @@ export function providerLabel(provider: string): string {
   return SOCIAL_PROVIDERS.find((p) => p.id === provider)?.label || provider;
 }
 
-export type AuthErrorKind = 'manual_linking_disabled' | 'provider_not_enabled' | 'unknown';
+type AuthErrorKind = 'manual_linking_disabled' | 'provider_not_enabled' | 'unknown';
 
 export function authErrorKind(message: string): AuthErrorKind {
   if (/manual.?linking.*disabled/i.test(message)) return 'manual_linking_disabled';

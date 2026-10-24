@@ -1,28 +1,18 @@
 'use client';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
 import { t_db, formatMaterial, formatMoney } from '@/lib/format';
 import { useLocale } from '@/store/locale';
 import { useSelectedLocation } from '@/hooks/useLocations';
 import { effectivePrice } from '@/lib/sale';
-import type { Material, PremadeProduct, ProductMaterial } from '@/lib/types';
+import type { ProductWithMaterials } from '@/lib/types';
 
-export function ProductCard({ product }: { product: PremadeProduct }) {
+export function ProductCard({ product }: { product: ProductWithMaterials }) {
   const { t } = useTranslation('common');
   const locale = useLocale((s) => s.locale);
   const currency = useSelectedLocation()?.currency;
-  const { data: materials } = useQuery<(ProductMaterial & { material: Material })[]>({
-    queryKey: ['product_materials', product.id],
-    queryFn: async () => {
-      const { data } = await supabase().from('product_materials')
-        .select('*, material:materials(*)').eq('product_id', product.id);
-      return data as any;
-    },
-  });
   const name = t_db(product.name, locale);
-  const materialsList = materials || [];
+  const materialsList = product.product_materials || [];
   const firstMat = materialsList[0]?.material;
   const multiMat = materialsList.length > 1;
   const label = (amount: number) => multiMat
