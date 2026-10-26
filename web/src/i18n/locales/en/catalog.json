@@ -8,7 +8,6 @@
   "multi_material_hint": "Choose a material to see available colors and price.",
   "single_material": "Made with {{material}}",
   "designer": "Designer",
-  "select_color": "Select a color",
   "select_material": "Select a material",
   "base_price": "Base price",
   "file_invalid": "Choose an allowed file within the size limit.",

@@ -2,11 +2,8 @@
   "about": {
     "title": "About Make Anyth.ing",
     "lede": "Bringing the convenience of 3D printing to the masses.",
-    "story_title": "Made to order",
-    "story": "Most things we buy travel thousands of kilometres before they reach us. A 3D print can be made in an afternoon, repaired when a part breaks, and adjusted to fit the exact need you have. We print on demand at our Hong Kong locations to order, nothing sits in a warehouse waiting for a buyer.",
-    "values_title": "How we work",
     "value_local_title": "Local by default",
-    "value_local": "Printing happens at the location near you. No air freight, no plastic film wrapped around a box inside another box.",
+    "value_local": "Printing happens at the location near you.",
     "value_craft_title": "Made to be used",
     "value_craft": "Durable goods in a variety of materials.",
     "value_custom_title": "Tailored to you",

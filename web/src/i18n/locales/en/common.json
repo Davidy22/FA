@@ -62,7 +62,6 @@
   "quantity": "Quantity",
   "community_design": "Community design",
   "by_designer": "by @{{name}}",
-  "advanced_details": "Advanced details",
   "categories": {
     "toy": "Toys",
     "tool": "Tools",

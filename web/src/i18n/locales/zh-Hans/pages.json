@@ -2,19 +2,16 @@
   "about": {
     "title": "关于 Make Anyth.ing",
     "lede": "让大众都能享受 3D 打印的便利。",
-    "story_title": "按需制作",
-    "story": "我们买到的东西，大多要跨越几千公里才到手。3D 打印品可以在一个下午完成，零件坏了可以维修，尺寸也可以按你的确切需要调整。我们在香港的门店按订单打印，不让成品放在仓库里等待买家。",
-    "values_title": "我们的做法",
     "value_local_title": "本地优先",
     "value_local": "打印在你附近的取货点完成。没有空运，也没有盒中盒的塑料包装。",
     "value_craft_title": "为使用而做",
     "value_craft": "由各种材料制成的耐用物品。",
+    "value_custom_title": "量身定制",
+    "value_custom": "按你的需要选择确切的颜色和尺寸。",
     "locations_title": "取货地点",
     "cta_catalog": "浏览产品目录",
     "cta_quote": "索取报价",
-    "cta_contact": "联系我们",
-    "value_custom_title": "量身定制",
-    "value_custom": "按你的需要选择确切的颜色和尺寸。"
+    "cta_contact": "联系我们"
   },
   "contact": {
     "title": "联系我们",

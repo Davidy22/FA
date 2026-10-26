@@ -482,19 +482,6 @@ function ProductDetail({ slug }: { slug: string }) {
         <button className="btn mt-8 w-full" disabled={!canAdd || adding} onClick={() => void addToCart()}>
           {adding ? t('common:loading') : t('common:add_to_cart')} — {formatMoney(price.now, locale, currency)}
         </button>
-
-        <details className="mt-6 rounded border border-slate-200 p-3">
-          <summary className="cursor-pointer text-sm font-medium text-slate-700">{t('common:advanced_details')}</summary>
-          <div className="mt-2 text-sm text-slate-600 space-y-1">
-            {(hasSlots ? (slots || []).flatMap((slot) => eligibleFor(slot)) : (materials || []))
-              .filter((entry, index, all) => all.findIndex((other) => other.material_id === entry.material_id) === index)
-              .map((entry) => (
-                <div key={entry.material_id}>
-                  {formatMaterial(entry.material, locale, { technicalFirst: true })}
-                </div>
-              ))}
-          </div>
-        </details>
       </div>
     </div>
   );

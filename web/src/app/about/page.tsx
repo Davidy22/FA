@@ -17,12 +17,6 @@ export default function AboutPage() {
       <p className="mt-3 text-lg text-slate-700">{t('pages:about.lede')}</p>
 
       <section className="mt-8">
-        <h2 className="text-xl font-medium">{t('pages:about.story_title')}</h2>
-        <p className="mt-2 text-slate-700">{t('pages:about.story')}</p>
-      </section>
-
-      <section className="mt-8">
-        <h2 className="text-xl font-medium">{t('pages:about.values_title')}</h2>
         <dl className="mt-3 grid gap-4 sm:grid-cols-3">
           {values.map((value) => (
             <div key={value.title} className="rounded-lg border border-slate-200 p-4">

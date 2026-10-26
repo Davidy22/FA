@@ -57,7 +57,7 @@
   "no_filaments": "No filaments yet.",
   "filament_help": "Deactivate a color to remove it everywhere; use stock below to control each location separately.",
   "stock_title": "Available filaments by location",
-  "stock_help": "Choose a location, then tick the colors that are actually in stock. New filaments start out of stock everywhere.",
+  "stock_help": "Choose a location, then tick the colors that are actually in stock.",
   "products_help": "Create drafts, upload models and images, choose allowed materials, then publish. Archive instead of deleting products with order history.",
   "add_product": "Add product",
   "edit_product": "Edit product",
@@ -77,12 +77,12 @@
     "archived": "Archived"
   },
   "edit_options": "Edit options",
-  "options_help": "Configure selection choices, text fields, or customer file uploads. Choices already used in orders cannot be deleted.",
+  "options_help": "Configure selection choices, text fields, or customer file uploads.",
   "add_group": "Add option group",
   "edit_group": "Edit option group",
   "add_choice": "Add choice",
   "edit_choice": "Edit choice",
-  "delete_option_confirm": "Delete this option? This may fail if an order already uses it.",
+  "delete_option_confirm": "Delete this option?",
   "option_type_fixed": "Option type cannot change after creation; add a new group instead.",
   "option_type": {
     "select_one": "Choose one",
@@ -90,7 +90,7 @@
     "text": "Text",
     "file": "File upload"
   },
-  "orders_help": "Browse all orders by status and location, or search by order number/email. Refunds go through Stripe, not a status-only update.",
+  "orders_help": "Browse all orders by status and location, or search by order number/email.",
   "no_orders": "No orders match these filters.",
   "order_detail": "Order details",
   "update_order": "Update order",
@@ -98,7 +98,7 @@
   "cancel_not_refund": "Cancelling an order does not refund its payment. Use Refund payment for a Stripe refund.",
   "refund_payment": "Refund payment",
   "refund_confirm": "Refund the Stripe payment for order {{order}}? This cannot be undone.",
-  "tickets_help": "Browse tickets across locations. Open one to reply, send a quote, or resolve it.",
+  "tickets_help": "Browse tickets across locations.",
   "no_tickets": "No tickets match this filter.",
   "users_help": "Browse accounts or search by email. Edit roles and location assignments or disable sign-in.",
   "no_users": "No users found.",
@@ -117,7 +117,7 @@
     "manager": "Manager",
     "admin": "Admin"
   },
-  "payouts_help": "Review creator requests and record a transfer reference before marking a payout paid. Payments are made outside this app.",
+  "payouts_help": "Review creator requests and record a transfer reference before marking a payout paid.",
   "payout_filter": {
     "open": "Open",
     "all": "All",
