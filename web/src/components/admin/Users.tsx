@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { PERMISSION_MODULES, cleanPermissions, permissionKey } from '@/lib/permissions';
 import type { Location, Profile } from '@/lib/types';
 import { ADMIN_PAGE_SIZE, AdminFeedback, AdminPagination, AdminQueryState, FormActions, useAdminAction } from './Shared';
+import { FuzzySelect } from './FuzzySelect';
 
 /** Permission checkboxes shared by the user editor. */
 function PermissionPicker({ value, onChange }: { value: string[]; onChange: (next: string[]) => void }) {
@@ -85,10 +86,12 @@ function UserForm({ user, locations, onDone }: { user: Profile; locations: Locat
         {(['customer', 'employee', 'manager', 'admin'] as const).map((value) => <option value={value} key={value}>{t(`role.${value}`)}</option>)}
       </select></label>
     </div>
-    {['employee', 'manager'].includes(role) && <label className="block">{t('fields.assigned_location')} *<select className="input mt-1" required value={locationId} onChange={(event) => setLocationId(event.target.value)}>
-      <option value="">—</option>{locations.filter((location) => location.is_active || location.id === user.location_id).map((location) =>
-        <option key={location.id} value={location.id}>{location.name}{location.is_active ? '' : ` (${t('inactive')})`}</option>)}
-    </select></label>}
+    {['employee', 'manager'].includes(role) && <label className="block">{t('fields.assigned_location')} *
+      <div className="mt-1"><FuzzySelect value={locationId} onChange={setLocationId} emptyLabel="—" searchLabel={t('fields.assigned_location')}
+        options={locations.filter((location) => location.is_active || location.id === user.location_id).map((location) => ({
+          value: location.id, label: `${location.name}${location.is_active ? '' : ` (${t('inactive')})`}`,
+        }))} /></div>
+    </label>}
     {staffRole && <PermissionPicker value={permissions} onChange={setPermissions} />}
     <p className="text-xs text-slate-600">{t('user_roles_hint')}</p>
     <AdminFeedback error={action.error} notice={action.notice} /><FormActions busy={action.busy} onCancel={onDone} />
@@ -127,9 +130,8 @@ function InviteStaff({ locations, onDone }: { locations: Location[]; onDone: () 
       <label className="text-sm">{t('fields.role')}<select className="input mt-1" value={role} onChange={(event) => setRole(event.target.value as 'employee' | 'manager')}>
         <option value="employee">{t('role.employee')}</option><option value="manager">{t('role.manager')}</option>
       </select></label>
-      <label className="text-sm">{t('fields.assigned_location')} *<select className="input mt-1" required value={locationId} onChange={(event) => setLocationId(event.target.value)}>
-        <option value="">—</option>{locations.filter((location) => location.is_active).map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
-      </select></label>
+      <label className="text-sm">{t('fields.assigned_location')} *<div className="mt-1"><FuzzySelect value={locationId} onChange={setLocationId} emptyLabel="—"
+        searchLabel={t('fields.assigned_location')} options={locations.filter((location) => location.is_active).map((location) => ({ value: location.id, label: location.name }))} /></div></label>
     </div>
     <label className="block text-sm">{t('fields.temporary_password')}<input className="input mt-1" type="password" minLength={8} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
     <p className="text-xs text-slate-600">{t('invite_hint')}</p>

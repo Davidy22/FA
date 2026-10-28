@@ -90,3 +90,30 @@ main table { display: block; max-width: 100%; overflow-x: auto; }
   .container-ma input, .container-ma select { max-width: 100%; }
   .container-ma > .grid { min-width: 0; }
 }
+
+/* Follow the visitor's operating-system appearance preference. */
+@media (prefers-color-scheme: dark) {
+  :root { color-scheme: dark; --background: 222 47% 11%; --foreground: 210 40% 96%; }
+  body { @apply bg-slate-950 text-slate-100; }
+  .bg-white { background-color: rgb(15 23 42) !important; }
+  .bg-slate-50 { background-color: rgb(15 23 42) !important; }
+  .bg-slate-100 { background-color: rgb(30 41 59) !important; }
+  .bg-slate-200 { background-color: rgb(51 65 85) !important; }
+  .text-slate-900, .text-slate-800, .text-slate-700 { color: rgb(226 232 240) !important; }
+  .text-slate-600, .text-slate-500 { color: rgb(148 163 184) !important; }
+  .border-slate-200, .border-slate-300 { border-color: rgb(71 85 105) !important; }
+  .card, .input, .btn-outline, fieldset, table, tr, td, th { border-color: rgb(71 85 105); }
+  .input, .btn-outline { background-color: rgb(15 23 42); color: rgb(226 232 240); }
+  .input::placeholder { color: rgb(148 163 184); }
+  [class~="hover:bg-slate-50"]:hover { background-color: rgb(30 41 59) !important; }
+  [class~="hover:bg-slate-100"]:hover { background-color: rgb(30 41 59) !important; }
+  [class~="hover:bg-slate-200"]:hover { background-color: rgb(51 65 85) !important; }
+  [class~="bg-brand-50/30"] { background-color: rgb(30 41 59 / 0.45) !important; }
+  .border-brand-200 { border-color: rgb(71 85 105) !important; }
+  .text-brand-700 { color: rgb(125 211 252) !important; }
+  .text-red-700 { color: rgb(252 165 165) !important; }
+  .text-emerald-800, .text-emerald-900 { color: rgb(167 243 208) !important; }
+  .bg-emerald-50 { background-color: rgb(6 78 59 / 0.45) !important; }
+  .border-emerald-200 { border-color: rgb(6 95 70) !important; }
+  select option { background-color: rgb(15 23 42); color: rgb(226 232 240); }
+}

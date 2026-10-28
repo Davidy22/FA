@@ -1,10 +1,9 @@
 'use client';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { decimal } from '@/lib/admin';
 import { parseFeature, type Feature } from '@/lib/features';
-import { DEFAULT_TIERS, parseTiers, type MembershipTier } from '@/lib/rewards';
 import { supabase } from '@/lib/supabase';
 import type { PlatformSetting } from '@/lib/types';
 import { AdminFeedback, AdminQueryState, useAdminAction } from './Shared';
@@ -90,70 +89,6 @@ function FeatureToggle({ feature, labelKey, hintKey, enabled }: {
   </div>;
 }
 
-type TierDraft = { name: string; multiplier: string };
-
-function toDraft(tiers: MembershipTier[]): TierDraft[] {
-  return tiers.map((tier) => ({ name: tier.name, multiplier: String(tier.multiplier) }));
-}
-
-function TierSettings({ raw }: { raw: unknown }) {
-  const { t } = useTranslation('admin');
-  const queryClient = useQueryClient();
-  const action = useAdminAction();
-  const [rows, setRows] = useState<TierDraft[]>(() => toDraft(parseTiers(raw)));
-  useEffect(() => { setRows(toDraft(parseTiers(raw))); }, [raw]);
-
-  const setRow = (index: number, patch: Partial<TierDraft>) =>
-    setRows((previous) => previous.map((row, i) => (i === index ? { ...row, ...patch } : row)));
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    await action.run(async () => {
-      const tiers = rows.map((row, index) => ({
-        name: row.name.trim(),
-        // The four thresholds are fixed; only labels and multipliers are editable.
-        min_lifetime_points: DEFAULT_TIERS[index].min_lifetime_points,
-        multiplier: decimal(row.multiplier, `${t('tier_multiplier')} ${index + 1}`, 1, 100),
-      }));
-      const { error } = await supabase().from('platform_settings')
-        .upsert({ key: 'rewards.tiers', value: tiers }, { onConflict: 'key' });
-      if (error) throw error;
-      await refreshSettings(queryClient);
-    });
-  }
-
-  return <form onSubmit={(event) => void submit(event)} className="mt-3 rounded border p-3 text-sm">
-    <p className="max-w-2xl text-slate-600">{t('tiers_help')}</p>
-    <div className="mt-3 space-y-2">
-      {rows.map((row, index) => <div key={DEFAULT_TIERS[index].min_lifetime_points} className="grid gap-2 sm:grid-cols-[1.4fr_1fr_1fr]">
-        <label className="text-xs text-slate-600">{t('tier_name')}
-          <input className="input mt-1" value={row.name} placeholder={t('tier_name_placeholder')}
-            onChange={(event) => setRow(index, { name: event.target.value })} />
-        </label>
-        <div className="text-xs text-slate-600">
-          <span>{t('tier_threshold')}</span>
-          <p className="mt-1 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-            {DEFAULT_TIERS[index].min_lifetime_points.toLocaleString('en-US')}
-          </p>
-        </div>
-        <label className="text-xs text-slate-600">{t('tier_multiplier')}
-          <input className="input mt-1" type="number" min={1} step={0.5} value={row.multiplier}
-            onChange={(event) => setRow(index, { multiplier: event.target.value })} />
-        </label>
-      </div>)}
-    </div>
-    <div className="mt-3 flex flex-wrap gap-2">
-      <button type="button" className="btn-outline text-sm" onClick={() => setRows(toDraft(DEFAULT_TIERS))}>
-        {t('reset_tiers')}
-      </button>
-      <button type="submit" className="btn text-sm" disabled={action.busy}>
-        {action.busy ? t('common:loading') : t('save_setting')}
-      </button>
-    </div>
-    <AdminFeedback error={action.error} notice={action.notice} />
-  </form>;
-}
-
 export function AdminSettings() {
   const { t } = useTranslation(['admin', 'common']);
   const { data, isPending, error } = useQuery<PlatformSetting[]>({
@@ -175,10 +110,6 @@ export function AdminSettings() {
           {FEATURE_TOGGLES.map((entry) => <FeatureToggle key={entry.feature} {...entry}
             enabled={parseFeature(values[`features.${entry.feature}`])} />)}
         </div>
-      </section>
-      <section className="mt-7">
-        <h3 className="mb-1 text-lg font-medium">{t('tiers_group')}</h3>
-        <TierSettings raw={values['rewards.tiers']} />
       </section>
       {Object.entries(SETTING_GROUPS).map(([group, definitions]) => <section key={group} className="mt-7">
         <h3 className="mb-3 text-lg font-medium">{t(`setting_groups.${group}`)}</h3>

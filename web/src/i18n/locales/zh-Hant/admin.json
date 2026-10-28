@@ -292,7 +292,8 @@
   },
   "discount_type": {
     "percent": "百分比 (%)",
-    "fixed": "固定金額 (HKD)"
+    "fixed": "固定金額 (HKD)",
+    "points": "僅積分"
   },
   "search_orders": "搜尋訂單編號或電郵",
   "pagination_label": "結果頁數",
@@ -401,5 +402,11 @@
     "part_time": "兼職",
     "contract": "合約",
     "internship": "實習"
-  }
+  },
+  "manage_option_labels": "管理選項組標籤",
+  "option_label_required": "請輸入有效的標籤名稱。",
+  "option_label_name": "新標籤名稱（英文）",
+  "add_option_label": "新增標籤",
+  "option_label_delete_hint": "刪除標籤不會刪除現有產品選項組；編輯這些選項組時需要重新選擇標籤。",
+  "coupon_claim_url": "開啟領取連結"
 }

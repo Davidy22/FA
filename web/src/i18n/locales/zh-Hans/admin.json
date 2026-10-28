@@ -292,7 +292,8 @@
   },
   "discount_type": {
     "percent": "百分比 (%)",
-    "fixed": "固定金额 (HKD)"
+    "fixed": "固定金额 (HKD)",
+    "points": "仅积分"
   },
   "search_orders": "搜索订单编号或邮箱",
   "pagination_label": "结果页数",
@@ -401,5 +402,11 @@
     "part_time": "兼职",
     "contract": "合同",
     "internship": "实习"
-  }
+  },
+  "manage_option_labels": "管理选项组标签",
+  "option_label_required": "请输入有效的标签名称。",
+  "option_label_name": "新标签名称（英文）",
+  "add_option_label": "添加标签",
+  "option_label_delete_hint": "删除标签不会删除现有产品选项组；编辑这些选项组时需要重新选择标签。",
+  "coupon_claim_url": "打开领取链接"
 }

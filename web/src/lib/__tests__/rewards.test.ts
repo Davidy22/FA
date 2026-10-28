@@ -125,13 +125,13 @@ describe('couponConditions', () => {
 describe('membership tiers', () => {
   it('reads names and multipliers onto the fixed four-tier ladder', () => {
     const parsed = parseTiers([
-      { name: 'Gold+', min_lifetime_points: 5000, multiplier: 3.5 },
+      { name: 'Gold+', min_lifetime_points: 10000, multiplier: 3.5 },
       { name: 'Silver', min_lifetime_points: 1000, multiplier: 2 },
       { name: 'Ignored', min_lifetime_points: 10, multiplier: 20 },
       { name: '', min_lifetime_points: 0, multiplier: 1 },
     ]);
     expect(parsed.map((tier) => tier.name)).toEqual(['', 'Silver', 'Gold+', 'Platinum']);
-    expect(parsed.map((tier) => tier.min_lifetime_points)).toEqual([0, 1000, 5000, 20000]);
+    expect(parsed.map((tier) => tier.min_lifetime_points)).toEqual([0, 1000, 10000, 100000]);
     expect(parsed[2].multiplier).toBe(3.5);
     expect(parsed[3].multiplier).toBe(4);
     expect(parseTiers(undefined)).toEqual(DEFAULT_TIERS);
@@ -144,17 +144,18 @@ describe('membership tiers', () => {
     expect(tierFor(0).name).toBe('Member');
     expect(tierFor(999).multiplier).toBe(1);
     expect(tierFor(1000).multiplier).toBe(2);
-    expect(tierFor(9999).multiplier).toBe(3);
-    expect(tierFor(19999).multiplier).toBe(3);
-    expect(tierFor(20000).multiplier).toBe(4);
-    expect(tierFor(20000).name).toBe('Platinum');
+    expect(tierFor(9999).multiplier).toBe(2);
+    expect(tierFor(10000).multiplier).toBe(3);
+    expect(tierFor(99999).multiplier).toBe(3);
+    expect(tierFor(100000).multiplier).toBe(4);
+    expect(tierFor(100000).name).toBe('Platinum');
     expect(tierFor(-5).multiplier).toBe(1);
   });
 
   it('reports progress towards the next tier', () => {
     expect(tierProgress(0, DEFAULT_TIERS)).toMatchObject({ remaining: 1000, ratio: 0 });
     expect(tierProgress(500, DEFAULT_TIERS)).toMatchObject({ remaining: 500, ratio: 0.5 });
-    const top = tierProgress(20000, DEFAULT_TIERS);
+    const top = tierProgress(100000, DEFAULT_TIERS);
     expect(top.next).toBeNull();
     expect(top.ratio).toBe(1);
   });

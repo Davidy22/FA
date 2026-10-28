@@ -66,5 +66,12 @@
   "tier_top": "You are at the top tier — thank you for making with us.",
   "tier_requirement": "{{points}} lifetime points · {{multiplier}}× points",
   "tier_default_name": "Tier {{number}}",
-  "earn_rate_tier": "Your tier earns {{count}} points per HK$1 spent."
+  "earn_rate_tier": "Your tier earns {{count}} points per HK$1 spent.",
+  "coupon_claim_title": "Claim your coupon",
+  "coupon_claim_success": "Coupon applied to your account.",
+  "coupon_points_added": "{{count}} points were added to your account.",
+  "coupon_saved_account": "This coupon is now saved to your account and can be used at checkout.",
+  "coupon_sign_in_to_claim": "Sign in to apply this coupon to your account.",
+  "coupon_claim_intro": "This link contains a coupon. Apply it to your signed-in account.",
+  "coupon_claim_action": "Apply coupon"
 }
