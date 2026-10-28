@@ -98,14 +98,17 @@ function ProductDetail({ slug }: { slug: string }) {
   const hasSlots = !!slots?.length;
 
   const eligibleFor = (slot: ProductMaterialSlot) => slotMaterials?.[slot.id] || [];
+  const sourceSlot = (slot: ProductMaterialSlot) =>
+    (slot.linked_slot_id && slots?.find((candidate) => candidate.id === slot.linked_slot_id)) || slot;
 
   /** The material a slot is printed in: the customer's pick, else the default. */
   function slotMaterialId(slot: ProductMaterialSlot): string | null {
+    const source = sourceSlot(slot);
     const eligible = eligibleFor(slot);
-    const picked = slotPicks[slot.id]?.material_id;
+    const picked = slotPicks[source.id]?.material_id;
     if (picked && eligible.some((entry) => entry.material_id === picked)) return picked;
-    if (slot.default_material_id && eligible.some((entry) => entry.material_id === slot.default_material_id)) {
-      return slot.default_material_id;
+    if (source.default_material_id && eligible.some((entry) => entry.material_id === source.default_material_id)) {
+      return source.default_material_id;
     }
     return eligible[0]?.material_id || null;
   }
@@ -113,10 +116,11 @@ function ProductDetail({ slug }: { slug: string }) {
   /** The colour for a slot, from stock at the chosen location. */
   function slotColorId(slot: ProductMaterialSlot, colors: Filament[] | undefined): string | null {
     if (!colors?.length) return null;
-    const picked = slotPicks[slot.id]?.color_filament_id;
+    const source = sourceSlot(slot);
+    const picked = slotPicks[source.id]?.color_filament_id;
     if (picked && colors.some((color) => color.id === picked)) return picked;
-    if (slot.default_filament_id && colors.some((color) => color.id === slot.default_filament_id)) {
-      return slot.default_filament_id;
+    if (source.default_filament_id && colors.some((color) => color.id === source.default_filament_id)) {
+      return source.default_filament_id;
     }
     return null;
   }
@@ -338,17 +342,20 @@ function ProductDetail({ slug }: { slug: string }) {
               const chosenMaterial = slotMaterialId(slot);
               const slotColorOptions = slotColors[index]?.data as Filament[] | undefined;
               const chosenColor = slotColorId(slot, slotColorOptions);
+              const linkedSource = slot.linked_slot_id ? slots?.find((candidate) => candidate.id === slot.linked_slot_id) : null;
+              const choiceSlotId = linkedSource?.id || slot.id;
               return (
                 <div key={slot.id} className="rounded border border-slate-200 p-3">
                   <label className="label">{t_db(slot.name, locale)}</label>
+                  {linkedSource && <p className="mb-2 text-xs text-slate-500">{t('catalog:linked_slot_choice_help', { slot: t_db(linkedSource.name, locale) })}</p>}
                   <div className="space-y-2">
                     {eligible.map((entry) => (
                       <label key={entry.material_id} className="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name={`slot-material-${slot.id}`}
+                        <input type="radio" name={`slot-material-${slot.id}`} disabled={!!linkedSource}
                           checked={chosenMaterial === entry.material_id}
                           onChange={() => setSlotPicks((previous) => ({
                             ...previous,
-                            [slot.id]: { material_id: entry.material_id, color_filament_id: null },
+                            [choiceSlotId]: { material_id: entry.material_id, color_filament_id: null },
                           }))} />
                         <span>{formatMaterial(entry.material, locale, { priceModifier: entry.price_modifier })}</span>
                       </label>
@@ -361,9 +368,10 @@ function ProductDetail({ slug }: { slug: string }) {
                         colors={slotColorOptions}
                         selectedId={chosenColor}
                         name={`slot-color-${slot.id}`}
+                        disabled={!!linkedSource}
                         onSelect={(colorId) => setSlotPicks((previous) => ({
                           ...previous,
-                          [slot.id]: { ...(previous[slot.id] || {}), color_filament_id: colorId },
+                          [choiceSlotId]: { ...(previous[choiceSlotId] || {}), color_filament_id: colorId },
                         }))}
                       />
                     )}

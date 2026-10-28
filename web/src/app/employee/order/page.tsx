@@ -29,7 +29,7 @@ type OrderDetailRecord = {
   status: string;
   currency: string;
   order_items: OrderLine[];
-  order_notes: { id: string; body: string }[];
+  order_notes: { id: string; body: string; kind: 'internal' | 'customer' }[];
 };
 
 function OrderDetail({ id }: { id: string }) {
@@ -54,7 +54,8 @@ function OrderDetail({ id }: { id: string }) {
     if (!note.trim() || busy) return;
     setBusy(true); setError('');
     try {
-      const { error } = await supabase().from('order_notes').insert({ order_id: id, body: note.trim() });
+      const { data: { user } } = await supabase().auth.getUser();
+      const { error } = await supabase().from('order_notes').insert({ order_id: id, author_id: user?.id, body: note.trim() });
       if (error) throw error;
       setNote('');
       await queryClient.invalidateQueries({ queryKey: ['order', id] });
@@ -126,10 +127,10 @@ function OrderDetail({ id }: { id: string }) {
           </li>;
         })}
       </ul>
-      <h2 className="mt-6 text-lg font-medium">{t('employee:internal_notes')}</h2>
+      <h2 className="mt-6 text-lg font-medium">{t('employee:order_notes')}</h2>
       <div className="space-y-2 mt-2">
         {(order.order_notes || []).map((note) =>
-          <div key={note.id} className="rounded border p-2 text-sm">{note.body}</div>)}
+          <div key={note.id} className="rounded border p-2 text-sm"><span className="badge mr-2">{t(note.kind === 'customer' ? 'employee:customer_order_note' : 'employee:internal_notes')}</span>{note.body}</div>)}
       </div>
       <div className="mt-3 flex gap-2">
         <input className="input flex-1" aria-label={t('employee:add_note')}

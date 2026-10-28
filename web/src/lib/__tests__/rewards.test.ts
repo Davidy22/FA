@@ -82,10 +82,10 @@ describe('pointsEarnedFor', () => {
 });
 
 describe('couponDiscountLabel', () => {
-  const t = (key: string, opts?: Record<string, unknown>) =>
-    key === 'rewards:discount_percent'
-      ? `${String(opts?.value)} off`
-      : `${String(opts?.value)} off`;
+  const t = (key: string, opts?: Record<string, unknown>) => {
+    if (key === 'rewards:coupon_points') return `${String(opts?.count)} points after checkout`;
+    return `${String(opts?.value)} off`;
+  };
 
   it('formats percent coupons', () => {
     expect(couponDiscountLabel({ discount_type: 'percent', discount_value: 10 }, t)).toBe('10% off');
@@ -93,6 +93,13 @@ describe('couponDiscountLabel', () => {
 
   it('formats fixed coupons as money', () => {
     expect(couponDiscountLabel({ discount_type: 'fixed', discount_value: 5 }, t)).toBe('HK$5.00 off');
+  });
+
+  it('shows points-only and combined coupon rewards', () => {
+    expect(couponDiscountLabel({ discount_type: 'fixed', discount_value: 0, grant_points: 50 }, t))
+      .toBe('50 points after checkout');
+    expect(couponDiscountLabel({ discount_type: 'fixed', discount_value: 5, grant_points: 50 }, t))
+      .toBe('HK$5.00 off · 50 points after checkout');
   });
 });
 

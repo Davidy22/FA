@@ -12,11 +12,13 @@ export function ColorSwatchGrid({
   selectedId,
   onSelect,
   name,
+  disabled = false,
 }: {
   colors: Filament[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   name: string;
+  disabled?: boolean;
 }) {
   const { t } = useTranslation('catalog');
   const locale = useLocale((state) => state.locale);
@@ -35,7 +37,7 @@ export function ColorSwatchGrid({
           return (
             <label
               key={color.id}
-              className={'inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 transition ' +
+              className={'inline-flex h-9 w-9 items-center justify-center rounded-full border-2 transition ' + (disabled ? 'cursor-not-allowed opacity-60 ' : 'cursor-pointer ') +
                 (selectedId === color.id
                   ? 'border-brand-600 ring-2 ring-brand-100'
                   : 'border-transparent hover:border-slate-300')}
@@ -46,6 +48,7 @@ export function ColorSwatchGrid({
                 className="sr-only"
                 name={name}
                 checked={selectedId === color.id}
+                disabled={disabled}
                 onChange={() => onSelect(color.id)}
                 aria-label={description}
               />

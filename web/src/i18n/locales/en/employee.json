@@ -26,6 +26,8 @@
   "premade": "Product",
   "document": "Document printing",
   "custom": "Custom print",
+  "order_notes": "Order notes",
+  "customer_order_note": "Customer note",
   "internal_notes": "Internal notes",
   "material_slots": "Material slots",
   "order_number": "Order #",

@@ -36,6 +36,8 @@ export type Coupon = {
   expires_at: string | null;
   used_order_id: string | null;
   used_at: string | null;
+  /** When set, using this coupon credits the buyer with this many points instead of a discount. */
+  grant_points: number | null;
   created_at: string;
 };
 
@@ -43,7 +45,7 @@ export type RewardTransaction = {
   id: string;
   user_id: string;
   points: number;
-  type: 'order_earn' | 'redeem' | 'adjustment' | 'referral_signup' | 'referral_purchase';
+  type: 'order_earn' | 'redeem' | 'adjustment' | 'grant' | 'referral_signup' | 'referral_purchase';
   order_id: string | null;
   coupon_id: string | null;
   memo: string | null;
@@ -100,6 +102,7 @@ export type ProductCategory = {
   description: Localized | null;
   sort_order: number;
   is_active: boolean;
+  parent_id: string | null;
 };
 
 /** An admin-managed filament finish, e.g. wood fill or silk. */
@@ -172,6 +175,8 @@ export type ProductMaterialSlot = {
   sort_order: number;
   default_material_id: string | null;
   default_filament_id: string | null;
+  /** Another slot of the same product whose material/colour this slot copies. */
+  linked_slot_id: string | null;
 };
 
 export type ProductSlotMaterial = {
@@ -200,7 +205,17 @@ export type ProductOptionGroup = {
   product_id: string;
   label: Localized;
   option_type: 'select_one' | 'select_many' | 'text' | 'file';
+  option_type_id: string | null;
   required: boolean;
+  sort_order: number;
+};
+
+/** Shared localized labels for common option group names such as Size or Color. */
+export type ProductOptionType = {
+  id: string;
+  slug: string;
+  name: Localized;
+  is_active: boolean;
   sort_order: number;
 };
 

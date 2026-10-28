@@ -12,7 +12,7 @@ import {
 } from './Shared';
 
 type Draft = {
-  slug: string; name: Localized; description: Localized; sortOrder: string; active: boolean;
+  slug: string; name: Localized; description: Localized; sortOrder: string; active: boolean; parentId: string;
 };
 
 function draft(category?: ProductCategory, nextOrder = 10): Draft {
@@ -22,13 +22,15 @@ function draft(category?: ProductCategory, nextOrder = 10): Draft {
     description: localizedInput(category?.description),
     sortOrder: String(category?.sort_order ?? nextOrder),
     active: category?.is_active ?? true,
+    parentId: category?.parent_id || '',
   };
 }
 
-function CategoryForm({ category, nextOrder, onDone }: {
-  category?: ProductCategory; nextOrder: number; onDone: () => void;
+function CategoryForm({ category, nextOrder, categories, onDone }: {
+  category?: ProductCategory; nextOrder: number; categories: ProductCategory[]; onDone: () => void;
 }) {
   const { t } = useTranslation(['admin', 'common']);
+  const locale = useLocale((state) => state.locale);
   const queryClient = useQueryClient();
   const action = useAdminAction();
   const panel = useFormPanel<HTMLFormElement>();
@@ -48,7 +50,7 @@ function CategoryForm({ category, nextOrder, onDone }: {
         name: cleanLocalized(form.name, t('admin:fields.name'))!,
         description: cleanLocalized(form.description, t('admin:fields.description'), true),
         sort_order: decimal(form.sortOrder, t('admin:fields.sort_order'), -999, 999, true),
-        is_active: form.active,
+        is_active: form.active, parent_id: form.parentId || null,
       };
       const result = category
         ? await supabase().from('product_categories').update(payload).eq('slug', category.slug).select().single()
@@ -69,6 +71,13 @@ function CategoryForm({ category, nextOrder, onDone }: {
       <input className="input mt-1" required value={form.slug} disabled={isFallback}
         onChange={(event) => set('slug', event.target.value)} />
       <span className="mt-1 block text-xs text-slate-500">{t('admin:category_slug_hint')}</span>
+    </label>
+    <label className="block text-sm">{t('admin:fields.parent_category')}
+      <select className="input mt-1" value={form.parentId} onChange={(event) => set('parentId', event.target.value)}>
+        <option value="">{t('admin:top_level_category')}</option>
+        {categories.filter((row) => row.slug !== category?.slug && row.parent_id == null).map((row) =>
+          <option key={row.slug} value={row.slug}>{t_db(row.name, locale)}</option>)}
+      </select>
     </label>
     <LocalizedFields language={language} onLanguageChange={setLanguage} fields={[
       { label: t('admin:fields.name'), value: form.name, onChange: (value) => set('name', value) },
@@ -130,7 +139,7 @@ export function AdminCategories() {
     </div>
     <AdminFeedback error={action.error} notice={action.notice} />
     {editing && <CategoryForm key={editing}
-      category={categories.find((category) => category.slug === editing)}
+      category={categories.find((category) => category.slug === editing)} categories={categories}
       nextOrder={(categories.at(-1)?.sort_order ?? 0) + 10}
       onDone={() => setEditing(null)} />}
     <AdminQueryState loading={categoriesQuery.isPending} error={categoriesQuery.error} />

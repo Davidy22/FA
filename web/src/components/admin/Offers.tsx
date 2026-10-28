@@ -133,6 +133,7 @@ function CouponForm({ products, onDone }: { products: PremadeProduct[]; onDone: 
   const [email, setEmail] = useState('');
   const [type, setType] = useState<'percent' | 'fixed'>('fixed');
   const [value, setValue] = useState('5');
+  const [grantPoints, setGrantPoints] = useState('');
   const [conditions, setConditions] = useConditions();
   const [expiresAt, setExpiresAt] = useState('');
   const [issuedCode, setIssuedCode] = useState<string | null>(null);
@@ -150,11 +151,13 @@ function CouponForm({ products, onDone }: { products: PremadeProduct[]; onDone: 
         userId = data.id;
       }
       if (expiresAt && new Date(expiresAt) <= new Date()) throw new Error(t('expiry_in_future'));
+      const points = grantPoints.trim()
+        ? decimal(grantPoints, t('fields.points'), 1, 2147483647, true) : null;
+      const discount = decimal(value, t('fields.discount_value'), 0, type === 'percent' ? 100 : 99999999);
+      if (discount <= 0 && points === null) throw new Error(t('coupon_needs_discount_or_points'));
       const shared = {
-        discount_type: type,
-        discount_value: decimal(value, t('fields.discount_value'), 0.01, type === 'percent' ? 100 : 99999999),
-        ...conditionPayload(conditions, t, products),
-        expires_at: isoDate(expiresAt),
+        discount_type: type, discount_value: discount, grant_points: points,
+        ...conditionPayload(conditions, t, products), expires_at: isoDate(expiresAt),
       };
       if (normalizedCode) {
         const { error } = await supabase().from('coupons').insert({
@@ -165,7 +168,7 @@ function CouponForm({ products, onDone }: { products: PremadeProduct[]; onDone: 
       } else {
         // No typed code: let the database mint an unused single-use one.
         const { data, error } = await supabase().rpc('admin_generate_coupons', {
-          p_count: 1, p_prefix: null, p_user_id: userId, ...rpcConditions(shared),
+          p_count: 1, p_prefix: null, p_user_id: userId, p_grant_points: shared.grant_points, ...rpcConditions(shared),
         });
         if (error) throw error;
         const rows = (data || []) as { coupon_code: string }[];
@@ -184,11 +187,11 @@ function CouponForm({ products, onDone }: { products: PremadeProduct[]; onDone: 
       <label className="text-sm">{t('fields.discount_type')}<select className="input mt-1" value={type} onChange={(event) => setType(event.target.value as 'percent' | 'fixed')}>
         <option value="fixed">{t('discount_type.fixed')}</option><option value="percent">{t('discount_type.percent')}</option>
       </select></label>
-      <label className="text-sm">{t('fields.discount_value')}<input className="input mt-1" required type="number" min="0.01" max={type === 'percent' ? 100 : undefined} step="0.01" value={value} onChange={(event) => setValue(event.target.value)} /></label>
+      <label className="text-sm">{t('fields.discount_value')}<input className="input mt-1" type="number" min="0" max={type === 'percent' ? 100 : undefined} step="0.01" value={value} onChange={(event) => setValue(event.target.value)} /></label>
+      <label className="text-sm">{t('fields.grant_points')}<input className="input mt-1" type="number" min="1" step="1" value={grantPoints} onChange={(event) => setGrantPoints(event.target.value)} /></label>
       <ConditionFields conditions={conditions} onChange={setConditions} products={products} />
       <label className="text-sm">{t('fields.expires_at')}<input className="input mt-1" type="datetime-local" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} /></label>
     </div>
-    <p className="text-xs text-slate-600">{t('coupon_hint')}</p>
     {issuedCode && <p className="rounded border border-emerald-200 bg-emerald-50 p-2 text-sm text-emerald-800">
       {t('coupon_issued', { code: issuedCode })}
     </p>}
@@ -216,6 +219,7 @@ function BulkCouponForm({ products, onDone }: { products: PremadeProduct[]; onDo
   const [prefix, setPrefix] = useState('');
   const [type, setType] = useState<'percent' | 'fixed'>('fixed');
   const [value, setValue] = useState('5');
+  const [grantPoints, setGrantPoints] = useState('');
   const [conditions, setConditions] = useConditions();
   const [expiresAt, setExpiresAt] = useState('');
   const [generated, setGenerated] = useState<string[]>([]);
@@ -228,14 +232,16 @@ function BulkCouponForm({ products, onDone }: { products: PremadeProduct[]; onDo
       const normalizedPrefix = prefix.trim().toUpperCase();
       if (normalizedPrefix && !/^[A-Z0-9_-]{1,12}$/.test(normalizedPrefix)) throw new Error(t('invalid_prefix'));
       if (expiresAt && new Date(expiresAt) <= new Date()) throw new Error(t('expiry_in_future'));
+      const points = grantPoints.trim()
+        ? decimal(grantPoints, t('fields.points'), 1, 2147483647, true) : null;
+      const discount = decimal(value, t('fields.discount_value'), 0, type === 'percent' ? 100 : 99999999);
+      if (discount <= 0 && points === null) throw new Error(t('coupon_needs_discount_or_points'));
       const shared = {
-        discount_type: type,
-        discount_value: decimal(value, t('fields.discount_value'), 0.01, type === 'percent' ? 100 : 99999999),
-        ...conditionPayload(conditions, t, products),
-        expires_at: isoDate(expiresAt),
+        discount_type: type, discount_value: discount,
+        ...conditionPayload(conditions, t, products), expires_at: isoDate(expiresAt),
       };
       const { data, error } = await supabase().rpc('admin_generate_coupons', {
-        p_count: batch, p_prefix: normalizedPrefix || null, p_user_id: null, ...rpcConditions(shared),
+        p_count: batch, p_prefix: normalizedPrefix || null, p_user_id: null, p_grant_points: points, ...rpcConditions(shared),
       });
       if (error) throw error;
       const rows = (data || []) as { coupon_code: string }[];
@@ -264,7 +270,8 @@ function BulkCouponForm({ products, onDone }: { products: PremadeProduct[]; onDo
       <label className="text-sm">{t('fields.discount_type')}<select className="input mt-1" value={type} onChange={(event) => setType(event.target.value as 'percent' | 'fixed')}>
         <option value="fixed">{t('discount_type.fixed')}</option><option value="percent">{t('discount_type.percent')}</option>
       </select></label>
-      <label className="text-sm">{t('fields.discount_value')}<input className="input mt-1" required type="number" min="0.01" max={type === 'percent' ? 100 : undefined} step="0.01" value={value} onChange={(event) => setValue(event.target.value)} /></label>
+      <label className="text-sm">{t('fields.discount_value')}<input className="input mt-1" type="number" min="0" max={type === 'percent' ? 100 : undefined} step="0.01" value={value} onChange={(event) => setValue(event.target.value)} /></label>
+      <label className="text-sm">{t('fields.grant_points')}<input className="input mt-1" type="number" min="1" step="1" value={grantPoints} onChange={(event) => setGrantPoints(event.target.value)} /></label>
       <ConditionFields conditions={conditions} onChange={setConditions} products={products} />
       <label className="text-sm">{t('fields.expires_at')}<input className="input mt-1" type="datetime-local" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} /></label>
     </div>
@@ -461,6 +468,7 @@ export function AdminOffers() {
         const expired = coupon.expires_at !== null && new Date(coupon.expires_at) <= new Date();
         return <div key={coupon.id} className="flex flex-wrap items-center justify-between gap-2 rounded border p-3 text-sm">
           <span><strong className="font-mono">{coupon.code}</strong> · {coupon.discount_value}{coupon.discount_type === 'percent' ? '%' : ` ${t('common:currency_code')}`}
+            {coupon.grant_points ? ` · ${t('fields.grant_points')}: ${coupon.grant_points}` : ''}
             {conditionLabel(coupon)}
             {' · '}{coupon.user_id ? t('admin:assigned_coupon') : t('admin:public_coupon')} · {coupon.status === 'used' ? t('admin:used') : expired ? t('admin:expired') : t('admin:active')}
             {coupon.expires_at && ` · ${new Date(coupon.expires_at).toLocaleDateString(locale)}`}</span>
