@@ -66,5 +66,12 @@
   "tier_top": "你已达到最高等级——谢谢你与我们一起创作。",
   "tier_requirement": "{{points}} 终身积分 · {{multiplier}} 倍积分",
   "tier_default_name": "等级 {{number}}",
-  "earn_rate_tier": "你的等级每消费 HK$1 可赚取 {{count}} 积分。"
+  "earn_rate_tier": "你的等级每消费 HK$1 可赚取 {{count}} 积分。",
+  "coupon_claim_title": "领取优惠券",
+  "coupon_claim_success": "优惠券已应用到账户。",
+  "coupon_points_added": "已向账户添加 {{count}} 积分。",
+  "coupon_saved_account": "优惠券已保存到账户，可在结账时使用。",
+  "coupon_sign_in_to_claim": "登录后将此优惠券应用到账户。",
+  "coupon_claim_intro": "此链接包含一张优惠券。将其应用到账户。",
+  "coupon_claim_action": "应用优惠券"
 }

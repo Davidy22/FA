@@ -292,7 +292,8 @@
   },
   "discount_type": {
     "percent": "Percent (%)",
-    "fixed": "Fixed amount (HKD)"
+    "fixed": "Fixed amount (HKD)",
+    "points": "Points only"
   },
   "search_orders": "Search order number or email",
   "pagination_label": "Result pages",
@@ -401,5 +402,11 @@
     "part_time": "Part time",
     "contract": "Contract",
     "internship": "Internship"
-  }
+  },
+  "manage_option_labels": "Manage option group labels",
+  "option_label_required": "Enter a valid label name.",
+  "option_label_name": "New label name (English)",
+  "add_option_label": "Add label",
+  "option_label_delete_hint": "Deleting a label leaves existing product groups intact, but they will need a new label if edited.",
+  "coupon_claim_url": "Open QR claim link"
 }

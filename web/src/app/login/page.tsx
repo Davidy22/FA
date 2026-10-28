@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/lib/supabase';
@@ -9,6 +9,7 @@ import {
   passwordRecoveryUrl,
   providerLabel,
   rememberReferral,
+  safeNextPath,
   type SocialProviderId,
 } from '@/lib/auth';
 import { SocialAuthButtons } from '@/components/SocialAuthButtons';
@@ -23,6 +24,10 @@ export default function LoginPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [referral, setReferral] = useState('');
   const [busy, setBusy] = useState(false);
+  const [nextPath, setNextPath] = useState('/');
+  useEffect(() => {
+    setNextPath(safeNextPath(new URLSearchParams(window.location.search).get('next')));
+  }, []);
 
   function describeAuthError(message: string, provider?: SocialProviderId) {
     const kind = authErrorKind(message);
@@ -64,7 +69,7 @@ export default function LoginPage() {
         setNotice(t('auth.confirm_email'));
         return;
       }
-      router.push('/');
+      router.push(nextPath);
     } catch (e) {
       setError((e as Error).message);
     } finally { setBusy(false); }
@@ -86,6 +91,7 @@ export default function LoginPage() {
       {mode !== 'forgot' && <>
         <div className="mt-6">
           <SocialAuthButtons
+            next={nextPath}
             disabled={busy}
             onStart={() => {
               if (mode === 'signup' && referral.trim()) rememberReferral(referral);
