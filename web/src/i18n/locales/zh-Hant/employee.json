@@ -26,6 +26,8 @@
   "premade": "商品",
   "document": "文件列印",
   "custom": "自訂列印",
+  "order_notes": "訂單備註",
+  "customer_order_note": "顧客備註",
   "internal_notes": "內部備註",
   "material_slots": "物料部分",
   "order_number": "訂單編號",

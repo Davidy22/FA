@@ -6,6 +6,8 @@
   "review_order": "Review your order",
   "pay_with_stripe": "Pay with Stripe",
   "guest_ok": "Checking out as a guest? Just enter your name and email — no account needed.",
+  "order_note": "Order note (optional)",
+  "order_note_placeholder": "Anything we should know about this order?",
   "success": "Thanks for your order!",
   "success_note": "We've sent a confirmation to {{email}}.",
   "pickup_only": "Pickup only",

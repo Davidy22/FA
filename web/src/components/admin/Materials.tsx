@@ -134,8 +134,18 @@ function FilamentForm({ filament, materials, finishes, onDone }: {
       { label: t('fields.color'), value: form.color, onChange: (value) => set('color', value) },
     ]} />
     <div className="grid gap-3 sm:grid-cols-2">
-      <label className="block text-sm">{t('fields.color_hex')}<input className="input mt-1" type="text" placeholder="#123abc" value={form.hex} onChange={(e) => set('hex', e.target.value)} /></label>
-      <label className="block text-sm">{t('fields.color_hex_2')}<input className="input mt-1" type="text" placeholder="#123abc" value={form.hex2} onChange={(e) => set('hex2', e.target.value)} /></label>
+      <label className="block text-sm">{t('fields.color_hex')}
+        <input className="input mt-1" type="text" placeholder="#123abc" value={form.hex} onChange={(e) => set('hex', e.target.value)} />
+        <input className="mt-2 h-10 w-16 cursor-pointer rounded border border-slate-300 p-1" type="color"
+          aria-label={t('fields.color_hex')} value={/^#[0-9a-fA-F]{6}$/.test(form.hex) ? form.hex : '#808080'}
+          onChange={(e) => set('hex', e.target.value)} />
+      </label>
+      <label className="block text-sm">{t('fields.color_hex_2')}
+        <input className="input mt-1" type="text" placeholder="#123abc" value={form.hex2} onChange={(e) => set('hex2', e.target.value)} />
+        <input className="mt-2 h-10 w-16 cursor-pointer rounded border border-slate-300 p-1" type="color"
+          aria-label={t('fields.color_hex_2')} value={/^#[0-9a-fA-F]{6}$/.test(form.hex2) ? form.hex2 : '#808080'}
+          onChange={(e) => set('hex2', e.target.value)} />
+      </label>
     </div>
     <label className="block text-sm">{t('fields.finish')}
       <select className="input mt-1 max-w-sm" value={form.finish} onChange={(e) => set('finish', e.target.value)}>

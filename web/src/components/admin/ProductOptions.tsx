@@ -10,7 +10,7 @@ import { useLocale } from '@/store/locale';
 import type { Locale } from '@/lib/i18n';
 import type {
   FileOptionConfig, Localized, PremadeProduct, ProductOptionChoice,
-  ProductOptionGroup, TextOptionConfig,
+  ProductOptionGroup, ProductOptionType, TextOptionConfig,
 } from '@/lib/types';
 import { AdminFeedback, AdminQueryState, FormActions, LocalizedFields, useAdminAction, useAdminLanguage, useFormPanel } from './Shared';
 
@@ -55,11 +55,11 @@ async function invalidateOptions(queryClient: ReturnType<typeof useQueryClient>,
 
 function GroupForm({ productId, group, onDone }: { productId: string; group?: OptionDetail; onDone: () => void }) {
   const { t } = useTranslation('admin');
+  const locale = useLocale((state) => state.locale);
   const queryClient = useQueryClient();
   const action = useAdminAction();
   const panel = useFormPanel<HTMLFormElement>();
-  const [language, setLanguage] = useAdminLanguage();
-  const [label, setLabel] = useState(() => localizedInput(group?.label));
+  const [labelTypeId, setLabelTypeId] = useState(group?.option_type_id || '');
   const [type, setType] = useState<ProductOptionGroup['option_type']>(group?.option_type || 'select_one');
   const [required, setRequired] = useState(group?.required ?? false);
   const [sort, setSort] = useState(group?.sort_order?.toString() || '0');
@@ -67,12 +67,23 @@ function GroupForm({ productId, group, onDone }: { productId: string; group?: Op
   const [modifier, setModifier] = useState(group?.textConfig?.price_modifier?.toString() || '0');
   const [mimes, setMimes] = useState(group?.fileConfig?.allowed_mime_types?.join(', ') || 'application/pdf, image/png, image/jpeg');
   const [maxSize, setMaxSize] = useState(group?.fileConfig ? (group.fileConfig.max_size_bytes / 1024 / 1024).toString() : '5');
+  const optionTypesQuery = useQuery<ProductOptionType[]>({
+    queryKey: ['product_option_types'],
+    queryFn: async () => {
+      const { data, error } = await supabase().from('product_option_types')
+        .select('*').eq('is_active', true).order('sort_order').order('slug');
+      if (error) throw error;
+      return (data || []) as ProductOptionType[];
+    },
+  });
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     await action.run(async () => {
+      const optionType = optionTypesQuery.data?.find((row) => row.id === labelTypeId);
+      if (!optionType) throw new Error(t('fields.option_label'));
       const payload = {
-        product_id: productId, label: cleanLocalized(label, t('fields.option_label'))!,
+        product_id: productId, label: optionType.name, option_type_id: optionType.id,
         option_type: type, required, sort_order: decimal(sort, t('fields.sort_order'), -32768, 32767, true),
       };
       const result = group
@@ -110,9 +121,12 @@ function GroupForm({ productId, group, onDone }: { productId: string; group?: Op
 
   return <form ref={panel} onSubmit={(event) => void submit(event)} className="mt-3 space-y-3 rounded border border-brand-200 bg-brand-50/30 p-3">
     <h5 className="font-medium">{group ? t('edit_group') : t('add_group')}</h5>
-    <LocalizedFields language={language} onLanguageChange={setLanguage} fields={[
-      { label: t('fields.option_label'), value: label, onChange: setLabel },
-    ]} />
+    <label className="block text-sm">{t('fields.option_label')}
+      <select className="input mt-1" required value={labelTypeId} onChange={(event) => setLabelTypeId(event.target.value)}>
+        <option value="">—</option>
+        {(optionTypesQuery.data || []).map((optionType) => <option key={optionType.id} value={optionType.id}>{t_db(optionType.name, locale)}</option>)}
+      </select>
+    </label>
     <div className="grid gap-3 sm:grid-cols-2">
       <label className="text-sm">{t('fields.option_type')}
         <select className="input mt-1" value={type} disabled={!!group} onChange={(event) => setType(event.target.value as ProductOptionGroup['option_type'])}>

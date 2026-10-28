@@ -65,7 +65,7 @@ export default function CatalogPage() {
           <select className="input" value={category} onChange={(e) => setCategory(e.target.value)}>
             <option value="">—</option>
             {categories?.map((category) => (
-              <option key={category.slug} value={category.slug}>{t_db(category.name, locale)}</option>
+              <option key={category.slug} value={category.slug}>{category.parent_id ? '— ' : ''}{t_db(category.name, locale)}</option>
             ))}
           </select>
         </div>

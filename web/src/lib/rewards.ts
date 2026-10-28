@@ -171,11 +171,17 @@ export function couponConditions(
 
 /** "US$5.00 off" / "10% off" via i18n keys rewards.discount_fixed / discount_percent. */
 export function couponDiscountLabel(
-  coupon: { discount_type: 'percent' | 'fixed'; discount_value: number },
+  coupon: { discount_type: 'percent' | 'fixed'; discount_value: number; grant_points?: number | null },
   t: (key: string, options?: Record<string, unknown>) => string,
 ): string {
-  if (coupon.discount_type === 'percent') {
-    return t('rewards:discount_percent', { value: `${coupon.discount_value}%` });
+  const labels: string[] = [];
+  if (coupon.discount_value > 0 && coupon.discount_type === 'percent') {
+    labels.push(t('rewards:discount_percent', { value: `${coupon.discount_value}%` }));
+  } else if (coupon.discount_value > 0) {
+    labels.push(t('rewards:discount_fixed', { value: formatMoney(coupon.discount_value, 'en' as Locale) }));
   }
-  return t('rewards:discount_fixed', { value: formatMoney(coupon.discount_value, 'en' as Locale) });
+  if (coupon.grant_points && coupon.grant_points > 0) {
+    labels.push(t('rewards:coupon_points', { count: coupon.grant_points }));
+  }
+  return labels.join(' · ') || '—';
 }

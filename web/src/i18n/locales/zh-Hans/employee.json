@@ -26,6 +26,8 @@
   "premade": "商品",
   "document": "文件打印",
   "custom": "自定义打印",
+  "order_notes": "订单备注",
+  "customer_order_note": "顾客备注",
   "internal_notes": "内部备注",
   "material_slots": "材料部分",
   "order_number": "订单编号",

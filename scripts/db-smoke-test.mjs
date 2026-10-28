@@ -133,6 +133,7 @@ try {
   console.log('✓ admin forms can add locations, materials, filaments and per-location stock');
 
   const product = await saveProduct(exampleProduct(), materials);
+  assert.equal(product.slug, product.id, 'new product slugs are generated from their IDs');
   assert.equal(product.status, 'published');
 
   // The catalog is public: explicit anon table grants plus the published-only
@@ -180,7 +181,7 @@ try {
   await rows('select public.create_order_from_cart($1,$2,$3,$4,$5,$6)',
     ['smoke-options', buyer, location, 'db-buyer@example.test', 'Buyer', 'en']);
   assert.equal(Number((await one('select count(*) as n from public.order_item_option_values where option_group_id=$1', [group])).n), 2);
-  console.log('✓ required options are priced and multi-select choices survive fulfillment');
+  console.log('✓ required options persist and used choices can be deleted without deleting order history');
 
   // A print can combine materials: named slots, each with its own eligible
   // materials, price modifiers and default material/colour.
@@ -194,29 +195,33 @@ try {
       materials: [{ material_id: tpu, price_modifier: 0 }, { material_id: pla, price_modifier: -2 }] },
     { name: { en: 'Accent' }, sort_order: 1, default_material_id: pla, default_filament_id: plaRed,
       materials: [{ material_id: pla, price_modifier: 0 }, { material_id: petg, price_modifier: 1.5 }] },
+    { name: { en: 'Arms' }, sort_order: 2, linked_ordinal: 1, default_material_id: tpu,
+      default_filament_id: tpuBlack, materials: [{ material_id: tpu, price_modifier: 0 },
+        { material_id: pla, price_modifier: -2 }] },
   ];
   const slotProduct = await one('select id,slug from public.admin_save_product($1::jsonb,$2::jsonb,$3::jsonb)',
     [JSON.stringify(exampleProduct({ slug: 'db-smoke-slots', name: { en: 'Smoke slots' }, base_price: 20 })),
      JSON.stringify([]), JSON.stringify(slotsPayload)]);
   const slotIds = await rows('select id from public.product_material_slots where product_id=$1 order by sort_order',
     [slotProduct.id]);
-  assert.equal(slotIds.length, 2);
+  assert.equal(slotIds.length, 3);
 
   // No slots in the cart line: the slot defaults are used and priced.
   const slotLine = { kind: 'premade', product_id: slotProduct.id, quantity: 1, options: {} };
   const defaultSlots = await pricing(cart([slotLine]));
   assert.equal(Number(defaultSlots.lines[0].unit_price), 20); // 20 + TPU 0 + PLA 0
-  assert.equal(defaultSlots.lines[0].item_snapshot.slots.length, 2);
+  assert.equal(defaultSlots.lines[0].item_snapshot.slots.length, 3);
   assert.equal(defaultSlots.lines[0].item_snapshot.slots[0].name.en, 'Body');
   assert.equal(defaultSlots.lines[0].item_snapshot.slots[0].color.id, tpuBlack);
   assert.equal(defaultSlots.lines[0].item_snapshot.slots[1].color.id, plaRed);
+  assert.equal(defaultSlots.lines[0].item_snapshot.slots[2].material.id, tpu);
 
   // Picking another eligible material per slot moves the price by its modifier.
   const customSlots = await pricing(cart([{ ...slotLine, quantity: 2, slots: {
     [slotIds[0].id]: { material_id: pla, color_filament_id: plaRed },
     [slotIds[1].id]: { material_id: petg, color_filament_id: petgClear },
   } }]));
-  assert.equal(Number(customSlots.lines[0].unit_price), 19.5); // 20 - 2 + 1.5
+  assert.equal(Number(customSlots.lines[0].unit_price), 17.5); // 20 - 2 + 1.5 - 2 for linked Arms
   assert.equal(customSlots.lines[0].item_snapshot.slots[1].color.color_hex, '#e0f7ff');
 
   // A material outside the slot's list, or a colour of another material, is refused.
@@ -225,6 +230,12 @@ try {
   await assert.rejects(pricing(cart([{ ...slotLine, slots: {
     [slotIds[0].id]: { material_id: tpu, color_filament_id: plaRed } } }])),
     /Color\/material mismatch for Body/);
+  const linkedSelection = await pricing(cart([{ ...slotLine, slots: {
+    [slotIds[0].id]: { material_id: pla, color_filament_id: plaRed },
+  } }]));
+  assert.equal(linkedSelection.lines[0].item_snapshot.slots[0].material.id, pla);
+  assert.equal(linkedSelection.lines[0].item_snapshot.slots[2].material.id, pla);
+  assert.equal(linkedSelection.lines[0].item_snapshot.slots[2].color.id, plaRed);
 
   // Fulfilment keeps every slot selection so the print can be made as ordered.
   const slotCart = cart([{ ...slotLine, slots: { [slotIds[1].id]: { material_id: petg } } }]);
@@ -234,7 +245,7 @@ try {
   const slotOrder = await one('select id from public.create_order_from_cart($1,$2,$3,$4,$5,$6)',
     ['smoke-slots', buyer, location, 'db-buyer@example.test', 'Buyer', 'en']);
   const slotItem = await one('select material_id,material_slots from public.order_items where order_id=$1', [slotOrder.id]);
-  assert.equal(slotItem.material_slots.length, 2);
+  assert.equal(slotItem.material_slots.length, 3);
   assert.equal(slotItem.material_slots[1].material.name.en, 'PETG');
   assert.equal(slotItem.material_id, tpu); // the first slot keeps the legacy column
   await assert.rejects(one('select id from public.admin_save_product($1::jsonb,$2::jsonb,$3::jsonb)',
@@ -242,7 +253,7 @@ try {
      JSON.stringify([]),
      JSON.stringify([{ name: { en: 'Body' }, default_material_id: petg, materials: [{ material_id: tpu, price_modifier: 0 }] }])]),
   /Default material must be eligible for the slot/);
-  console.log('✓ material slots price per part and survive fulfillment');
+  console.log('✓ material slots share choices when linked, price per part and survive fulfillment');
 
   // Sale prices: a product and an option choice can both be discounted, with an
   // optional window, and price_cart reports the saving.
@@ -337,7 +348,7 @@ try {
   await db.exec(`insert into public.coupons(code,source,discount_type,discount_value,user_id)
     values('SMOKEDISCOUNT','admin','fixed',5,'${buyer}')`);
   const couponCart = cart([{ ...premade, options: { ...premade.options,
-    [fileGroup]: { file_path: filePath } } }], { coupon_code: 'SMOKEDISCOUNT' });
+    [fileGroup]: { file_path: filePath } } }], { coupon_code: 'SMOKEDISCOUNT', note: 'Please include the assembly instructions.' });
   await db.exec(`update storage.objects set metadata='{"size":500,"mimetype":"image/png"}'::jsonb
     where bucket_id='option-uploads' and name='${filePath}'`);
   assert.equal((await pricing(couponCart)).discount_amount, 5);
@@ -347,6 +358,8 @@ try {
   const couponOrder = await one('select id from public.create_order_from_cart($1,$2,$3,$4,$5,$6)',
     ['smoke-coupon', buyer, location, 'db-buyer@example.test', 'Buyer', 'en']);
   assert.equal((await one('select status from public.coupons where code=$1', ['SMOKEDISCOUNT'])).status, 'used');
+  const customerNote = await one('select body,kind,author_id from public.order_notes where order_id=$1', [couponOrder.id]);
+  assert.deepEqual(customerNote, { body: 'Please include the assembly instructions.', kind: 'customer', author_id: buyer });
   assert.equal((await one('select discount_amount from public.orders where id=$1', [couponOrder.id])).discount_amount, '5.00');
   console.log('✓ coupon discount is consumed at fulfillment');
 
@@ -404,6 +417,12 @@ try {
   await assert.rejects(pricing(cart([withFile], { coupon_code: 'SMOKEITEM' })),
     /only applies to Smoke keychain/);
   console.log('✓ coupons can require a minimum spend or discount one product only');
+
+  const historicalChoice = await one('select id from public.order_item_option_values where selected_choice_id=$1 limit 1', [a]);
+  await rows('delete from public.product_option_choices where id=$1', [a]);
+  assert.equal((await one('select selected_choice_id from public.order_item_option_values where id=$1', [historicalChoice.id])).selected_choice_id, null);
+  console.log('✓ choices referenced by placed orders can be deleted while snapshots remain');
+
 
   // A batch of single-use codes comes from one admin-only call.
   const batch = await rows('select coupon_code from public.admin_generate_coupons($1,$2,$3,$4)',
@@ -600,6 +619,31 @@ try {
   // Deleting rows cannot delete fixed tiers or move their thresholds.
   assert.equal(Number((await one('select public.reward_multiplier(999999) as m')).m), 4);
   console.log('✓ fixed membership tiers include Platinum at 20k / 4x');
+
+  await rows(`insert into public.coupons(code,source,discount_type,discount_value,grant_points)
+    values('SMOKEPOINTS','admin','fixed',0,75)`);
+  const pointsCoupon = cart([{ kind: 'premade', product_id: saleProduct.id, material_id: pla, quantity: 1, options: {} }], { coupon_code: 'SMOKEPOINTS' });
+  assert.equal((await pricing(pointsCoupon)).coupon.grant_points, 75);
+  await assert.rejects(pricing({ ...pointsCoupon, user_id: null }), /Sign in to use this points coupon/);
+  await rows(`insert into public.checkout_sessions(session_id,cart,user_id,location_id,contact_email,contact_name,locale)
+      values('smoke-points',$1::jsonb,$2,$3,'db-buyer@example.test','Buyer','en')`,
+    [JSON.stringify(pointsCoupon), buyer, location]);
+  const pointsOrder = await one('select id from public.create_order_from_cart($1,$2,$3,$4,$5,$6)',
+    ['smoke-points', buyer, location, 'db-buyer@example.test', 'Buyer', 'en']);
+  assert.equal((await one('select points_balance from public.profiles where id=$1', [buyer])).points_balance, 279);
+  assert.equal((await one('select lifetime_points from public.profiles where id=$1', [buyer])).lifetime_points, 20219);
+  assert.equal((await one("select points from public.reward_transactions where order_id=$1 and type='grant'", [pointsOrder.id])).points, 75);
+  assert.equal((await one("select status from public.coupons where code='SMOKEPOINTS'")).status, 'used');
+  console.log('✓ points-only coupons require an account and award points once at checkout');
+
+  await rows(`insert into public.product_categories(slug,name) values
+    ('smoke-category','{"en":"Smoke category"}'::jsonb),
+    ('smoke-subcategory','{"en":"Smoke subcategory"}'::jsonb)`);
+  await rows("update public.product_categories set parent_id='smoke-category' where slug='smoke-subcategory'");
+  assert.equal((await one("select parent_id from public.product_categories where slug='smoke-subcategory'")).parent_id, 'smoke-category');
+  await assert.rejects(rows("update public.product_categories set parent_id='smoke-subcategory' where slug='smoke-category'"), /Category hierarchy would form a cycle/);
+  assert.ok((await one("select count(*) as n from public.product_option_types where slug in ('size','color')")).n >= 2);
+  console.log('✓ subcategories reject hierarchy cycles and common option types are seeded');
 
   // `supabase db reset` runs seed.sql only after migrations. It is deliberately
   // separate from the production migrations and safe to re-run locally.
