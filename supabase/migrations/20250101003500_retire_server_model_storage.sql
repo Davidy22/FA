@@ -219,3 +219,6 @@ drop policy if exists "owner read own submissions" on storage.objects;
 insert into public.platform_settings(key, value)
 values ('features.model_submissions', 'false'::jsonb)
 on conflict (key) do update set value = excluded.value;
+
+-- The careers page and published job listings are no longer feature-gated.
+delete from public.platform_settings where key = 'features.careers_page';
