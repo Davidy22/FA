@@ -1,5 +1,5 @@
 -- pgTAP tests for the staff console: module permissions, admin-managed
--- product categories, membership tiers and the feature switches.
+-- product categories, membership tiers and model-submission feature flags.
 -- Run via: supabase test db
 
 create extension if not exists pgtap;
@@ -28,9 +28,8 @@ update public.profiles set role = 'employee', is_active = true,
 
 -- (1) both new features ship switched off
 select ok(
-  public.feature_enabled('model_submissions') = false
-  and public.feature_enabled('careers_page') = false,
-  'community submissions and the careers page ship switched off'
+  public.feature_enabled('model_submissions') = false,
+  'community submissions ship switched off'
 );
 
 -- (2) the six original categories are seeded as rows

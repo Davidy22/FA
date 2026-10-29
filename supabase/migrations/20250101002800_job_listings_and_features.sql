@@ -1,17 +1,6 @@
--- Careers page + feature switches.
---
--- Two new public pages ship dark or ready-to-fill:
---   * Careers is hidden until an admin flips `features.careers_page` (the
---     listing table exists so jobs can be prepared ahead of launch).
---   * Model submissions are switched off until there are enough people to
---     review them. `features.model_submissions` is enforced in RLS as well as
---     the UI, so a determined client cannot slip a submission past the switch.
---
--- Both switches are ordinary platform_settings values: an admin with
--- settings.manage (or full admin) turns them on in the admin console.
-
+-- Careers listings are publicly available whenever a job is published.
+-- Model submissions remain disabled unless explicitly enabled for review.
 insert into public.platform_settings(key, value) values
-  ('features.careers_page', 'false'::jsonb),
   ('features.model_submissions', 'false'::jsonb)
 on conflict (key) do nothing;
 

@@ -16,6 +16,7 @@ import {
   type SocialProviderId,
 } from '@/lib/auth';
 import { ProviderIcon } from '@/components/ProviderIcon';
+import { AppearanceSelect } from '@/components/AppearanceSelect';
 import type { Order, Profile } from '@/lib/types';
 
 export default function AccountPage() {
@@ -121,6 +122,10 @@ export default function AccountPage() {
       <h1 className="text-2xl font-semibold">{t('nav.account')}</h1>
       <p className="mt-2 text-slate-600">{authUser.email}</p>
       {profile?.display_name && <p className="text-sm text-slate-500">{profile.display_name}</p>}
+      <section className="mt-5" aria-labelledby="appearance-heading">
+        <h2 id="appearance-heading" className="mb-2 text-sm font-medium">{t('appearance.label')}</h2>
+        <AppearanceSelect />
+      </section>
       <p className="mt-3 text-sm text-slate-700">
         {t('rewards:balance_label')}: <strong>{t('rewards:points', { count: profile?.points_balance ?? 0 })}</strong>
       </p>

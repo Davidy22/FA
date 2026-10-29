@@ -110,7 +110,6 @@ export default function RewardsPage() {
         <h1 className="text-2xl font-semibold">{t('rewards:title')}</h1>
         <p className="mt-3 text-slate-600">{t('rewards:sign_in_required')}</p>
         <Link href="/login" className="btn mt-4 inline-block">{t('common:nav.login')}</Link>
-        <ReferralCard />
       </div>
     );
   }
