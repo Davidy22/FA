@@ -20,5 +20,9 @@
   "slots_intro": "This print is made of several parts — choose the material and colour of each one.",
   "linked_slot_choice_help": "This part shares its material and color with {{slot}}.",
   "no_colors_in_stock": "No colours of this material are in stock at the selected location",
-  "load_error": "Could not load the catalog. Please try again."
+  "load_error": "Could not load the catalog. Please try again.",
+  "pagination_label": "Catalog pages",
+  "previous_page": "Previous",
+  "next_page": "Next",
+  "page_number": "Page {{number}}"
 }

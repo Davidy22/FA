@@ -403,5 +403,7 @@
   "option_label_name": "新標籤名稱（英文）",
   "add_option_label": "新增標籤",
   "option_label_delete_hint": "刪除標籤不會刪除現有產品選項組；編輯這些選項組時需要重新選擇標籤。",
-  "coupon_claim_url": "開啟領取連結"
+  "coupon_claim_url": "開啟領取連結",
+  "product_search_hint": "輸入至少兩個字元以搜尋產品。",
+  "no_product_matches": "找不到相符產品。"
 }

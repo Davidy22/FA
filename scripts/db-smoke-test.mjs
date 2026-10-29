@@ -135,6 +135,13 @@ try {
   const product = await saveProduct(exampleProduct(), materials);
   assert.equal(product.slug, product.id, 'new product slugs are generated from their IDs');
   assert.equal(product.status, 'published');
+  const productChoices = await rows('select id,slug from public.search_product_choices($1,$2)', ['Smoke test', true]);
+  assert.equal(productChoices.some((row) => row.id === product.id), true,
+    'staff product search returns matching published choices');
+  await claims(buyer);
+  assert.equal((await rows('select id from public.search_product_choices($1,$2)', ['Smoke test', false])).length, 0,
+    'product search does not disclose choices to customers');
+  await claims(admin);
 
   // The catalog is public: explicit anon table grants plus the published-only
   // RLS policy return products without exposing drafts or requiring a session.

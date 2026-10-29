@@ -18,6 +18,7 @@ export default function EmployeePortal() {
   const { t } = useTranslation(['common','employee']);
   const locale = useLocale((s) => s.locale);
   const [statusFilter, setStatusFilter] = useState<string>('pending');
+  const [orderPageNumber, setOrderPageNumber] = useState(0);
   const [stockQuery, setStockQuery] = useState('');
   const [stockFilter, setStockFilter] = useState<'all' | 'in' | 'out'>('all');
   const [error, setError] = useState<string | null>(null);
@@ -30,17 +31,20 @@ export default function EmployeePortal() {
       return (await supabase().from('profiles').select('*').eq('id', user.id).single()).data as Profile;
     },
   });
-  const { data: orders } = useQuery<Order[]>({
-    queryKey: ['emp_orders', statusFilter, profile?.location_id],
+  const { data: orderPage } = useQuery<{ orders: Order[]; hasNext: boolean }>({
+    queryKey: ['emp_orders', statusFilter, profile?.location_id, orderPageNumber],
     enabled: !!profile?.location_id,
     queryFn: async () => {
       let q = supabase().from('orders').select('*').eq('location_id', profile!.location_id);
       if (statusFilter) q = q.eq('status', statusFilter);
-      q = q.order('created_at',{ascending:false}).limit(100);
-      const { data } = await q;
-      return data || [];
+      const { data, error } = await q.order('created_at', { ascending: false }).order('id', { ascending: true })
+        .range(orderPageNumber * 50, orderPageNumber * 50 + 50);
+      if (error) throw error;
+      const rows = data || [];
+      return { orders: rows.slice(0, 50) as Order[], hasNext: rows.length > 50 };
     },
   });
+  const orders = orderPage?.orders || [];
 
   const { data: filaments } = useQuery<StockFilament[]>({
     queryKey: ['emp_filaments', profile?.location_id],
@@ -128,7 +132,7 @@ export default function EmployeePortal() {
       {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}
       <div className="mt-4 flex gap-2 items-center flex-wrap">
         {['pending','printing','completed','shipped','cancelled'].map((status) => (
-          <button key={status} onClick={() => setStatusFilter(status)}
+          <button key={status} onClick={() => { setStatusFilter(status); setOrderPageNumber(0); }}
             className={'px-3 py-1 rounded-full text-sm ' + (statusFilter === status ? 'bg-brand-600 text-white' : 'bg-slate-100')}>
             {t(`common:status.${status}`)}
           </button>
@@ -162,6 +166,14 @@ export default function EmployeePortal() {
           ))}
         </tbody>
       </table>
+      {!!orderPage && (orderPageNumber > 0 || orderPage.hasNext) && <nav
+        aria-label={t('employee:orders_pagination')} className="mt-5 flex items-center justify-between gap-3 text-sm">
+        <button type="button" className="btn-outline" disabled={orderPageNumber === 0}
+          onClick={() => setOrderPageNumber((current) => Math.max(0, current - 1))}>{t('employee:previous_page')}</button>
+        <span aria-live="polite">{t('employee:page_number', { number: orderPageNumber + 1 })}</span>
+        <button type="button" className="btn-outline" disabled={!orderPage.hasNext}
+          onClick={() => setOrderPageNumber((current) => current + 1)}>{t('employee:next_page')}</button>
+      </nav>}
 
       <h2 id="filament" className="mt-10 text-xl font-medium">{t('employee:filament_stock')}</h2>
       <div className="mt-3 grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-[1fr_220px]">

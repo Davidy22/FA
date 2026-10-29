@@ -403,5 +403,7 @@
   "option_label_name": "New label name (English)",
   "add_option_label": "Add label",
   "option_label_delete_hint": "Deleting a label leaves existing product groups intact, but they will need a new label if edited.",
-  "coupon_claim_url": "Open QR claim link"
+  "coupon_claim_url": "Open QR claim link",
+  "product_search_hint": "Type at least two characters to search products.",
+  "no_product_matches": "No matching products."
 }

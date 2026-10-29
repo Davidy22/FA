@@ -67,7 +67,7 @@ export function AdminOrders() {
     queryKey: ['admin_orders', status, locationId, page, filter],
     queryFn: async () => {
       let request = supabase().from('orders').select('*')
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false }).order('id', { ascending: true })
         .range(page * ADMIN_PAGE_SIZE, (page + 1) * ADMIN_PAGE_SIZE - 1);
       if (status !== 'all') request = request.eq('status', status);
       if (locationId !== 'all') request = request.eq('location_id', locationId);

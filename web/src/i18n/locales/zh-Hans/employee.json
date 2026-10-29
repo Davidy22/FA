@@ -42,5 +42,9 @@
   "stock_group_summary": "{{count}} 种颜色 · {{inStock}} 种有库存",
   "id": "ID",
   "color": "颜色",
-  "cost_per_gram": "每克成本"
+  "cost_per_gram": "每克成本",
+  "orders_pagination": "订单页码",
+  "previous_page": "上一页",
+  "next_page": "下一页",
+  "page_number": "第 {{number}} 页"
 }

@@ -22,7 +22,7 @@ export function AdminPayouts() {
     queryKey: ['admin_payouts', status, page],
     queryFn: async () => {
       let request = supabase().from('payouts').select('*,creator:profiles!payouts_creator_id_fkey(email,display_name)')
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false }).order('id', { ascending: true })
         .range(page * ADMIN_PAGE_SIZE, (page + 1) * ADMIN_PAGE_SIZE - 1);
       if (status === 'open') request = request.in('status', ['requested', 'processing']);
       else if (status !== 'all') request = request.eq('status', status);

@@ -17,7 +17,7 @@ export function AdminTickets() {
     queryKey: ['admin_tickets', status, page],
     queryFn: async () => {
       let request = supabase().from('tickets').select('*,location:locations(name)')
-        .order('updated_at', { ascending: false })
+        .order('updated_at', { ascending: false }).order('id', { ascending: true })
         .range(page * ADMIN_PAGE_SIZE, (page + 1) * ADMIN_PAGE_SIZE - 1);
       if (status !== 'all') request = request.eq('status', status);
       const { data, error } = await request;
