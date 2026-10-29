@@ -16,7 +16,6 @@ const product: ProductWithMaterials = {
   category: 'tool',
   tags: [],
   image_urls: [],
-  source_model_path: 'models/desk-tool.stl',
   submitted_by: null,
   is_featured: false,
   status: 'published',
@@ -38,11 +37,11 @@ const product: ProductWithMaterials = {
 afterEach(cleanup);
 
 describe('ProductCard', () => {
-  it('renders from the embedded materials without a per-card query provider', () => {
+  it('shows only the product name and price without a per-card query provider', () => {
     render(<ProductCard product={product} />);
     expect(screen.getByRole('link')).toHaveAttribute('href', '/product?slug=desk-tool');
     expect(screen.getByText('Desk tool')).toBeInTheDocument();
-    expect(screen.getByText('PLA')).toBeInTheDocument();
+    expect(screen.queryByText('PLA')).not.toBeInTheDocument();
     expect(screen.getByText('HK$12.00')).toBeInTheDocument();
   });
 });

@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/lib/types';
 import { hasPermission, type Permission } from '@/lib/permissions';
-import { AdminSubmissions } from '@/components/admin/Submissions';
 import { AdminLocations } from '@/components/admin/Locations';
 import { AdminMaterials } from '@/components/admin/Materials';
 import { AdminProducts } from '@/components/admin/Products';
@@ -23,7 +22,6 @@ import { AdminNamespaceGate } from '@/components/admin/AdminNamespaceGate';
 // One tab per staff module. A tab only appears when the signed-in account holds
 // the module's permission (admins hold all of them).
 const TABS: { key: string; permission: Permission }[] = [
-  { key: 'submissions', permission: 'submissions.review' },
   { key: 'locations', permission: 'locations.manage' },
   { key: 'materials_filaments', permission: 'products.manage' },
   { key: 'categories', permission: 'products.manage' },
@@ -41,7 +39,7 @@ function AdminContent() {
   const { t } = useTranslation(['common', 'admin']);
   const queryClient = useQueryClient();
   const activation = useAdminAction();
-  const [tab, setTab] = useState<string>('submissions');
+  const [tab, setTab] = useState<string>('locations');
   const { data: profile, isPending, error } = useQuery<Profile | null>({
     queryKey: ['me'],
     queryFn: async () => {
@@ -92,7 +90,6 @@ function AdminContent() {
         ))}
       </nav>
       <section className="mt-7 min-w-0" aria-label={active ? t(`admin:${active}`) : undefined}>
-        {active === 'submissions' && <AdminSubmissions />}
         {active === 'locations' && <AdminLocations />}
         {active === 'materials_filaments' && <AdminMaterials />}
         {active === 'categories' && <AdminCategories />}

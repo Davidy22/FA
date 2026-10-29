@@ -1,11 +1,9 @@
 'use client';
-import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useLocale } from '@/store/locale';
 import { t_db } from '@/lib/format';
-import { useFeature } from '@/lib/features';
 import type { JobListing, Location } from '@/lib/types';
 
 const CAREERS_EMAIL = 'careers@makeanyth.ing';
@@ -13,11 +11,9 @@ const CAREERS_EMAIL = 'careers@makeanyth.ing';
 export default function CareersPage() {
   const { t } = useTranslation(['pages', 'common']);
   const locale = useLocale((state) => state.locale);
-  const careers = useFeature('careers_page');
 
   const { data: jobs } = useQuery<(JobListing & { location?: Pick<Location, 'name'> | null })[]>({
     queryKey: ['careers_jobs'],
-    enabled: careers.enabled,
     queryFn: async () => {
       const { data } = await supabase().from('job_listings')
         .select('*, location:locations(name)')
@@ -28,25 +24,6 @@ export default function CareersPage() {
       return (data || []).filter((job) => !job.closes_at || new Date(job.closes_at).getTime() > now);
     },
   });
-
-  if (careers.isPending) {
-    return <div className="container-ma py-10">{t('common:loading')}</div>;
-  }
-
-  // The page ships hidden: until there are roles to publish, a direct visit gets
-  // a friendly "not yet" instead of an empty job board.
-  if (!careers.enabled) {
-    return (
-      <div className="container-ma py-16 max-w-2xl">
-        <h1 className="text-3xl font-semibold">{t('pages:careers.hidden_title')}</h1>
-        <p className="mt-3 text-slate-700">{t('pages:careers.hidden_body')}</p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Link href="/about" className="btn-outline">{t('common:nav.about')}</Link>
-          <Link href="/contact" className="btn-outline">{t('common:nav.contact')}</Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container-ma py-10 max-w-3xl">

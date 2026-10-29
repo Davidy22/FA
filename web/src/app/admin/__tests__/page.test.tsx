@@ -10,7 +10,6 @@ vi.mock('react-i18next', async (importOriginal) => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock('@/lib/supabase', () => ({ supabase: vi.fn() }));
-vi.mock('@/components/admin/Submissions', () => ({ AdminSubmissions: () => <div>Review queue</div> }));
 vi.mock('@/components/admin/Locations', () => ({ AdminLocations: () => <div>Edit locations</div> }));
 
 const userId = 'aaaaaaaa-aaaa-aaaa-aaaa-000000000001';

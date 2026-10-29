@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { useLocale } from '@/store/locale';
 import type { Location, Order } from '@/lib/types';
 import { ADMIN_PAGE_SIZE, AdminFeedback, AdminPagination, AdminQueryState, FormActions, useAdminAction } from './Shared';
+import { FuzzySelect } from './FuzzySelect';
 
 const EDITABLE_STATUSES: Order['status'][] = ['pending', 'printing', 'completed', 'shipped', 'cancelled'];
 
@@ -66,7 +67,7 @@ export function AdminOrders() {
     queryKey: ['admin_orders', status, locationId, page, filter],
     queryFn: async () => {
       let request = supabase().from('orders').select('*')
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false }).order('id', { ascending: true })
         .range(page * ADMIN_PAGE_SIZE, (page + 1) * ADMIN_PAGE_SIZE - 1);
       if (status !== 'all') request = request.eq('status', status);
       if (locationId !== 'all') request = request.eq('location_id', locationId);
@@ -95,9 +96,9 @@ export function AdminOrders() {
       <label className="text-sm">{t('admin:fields.status')}<select className="input mt-1" value={status} onChange={(event) => { setStatus(event.target.value); setPage(0); }}>
         <option value="all">{t('admin:all')}</option>{([...EDITABLE_STATUSES, 'refunded'] as const).map((value) => <option key={value} value={value}>{t(`common:status.${value}`)}</option>)}
       </select></label>
-      <label className="text-sm">{t('admin:locations')}<select className="input mt-1" value={locationId} onChange={(event) => { setLocationId(event.target.value); setPage(0); }}>
-        <option value="all">{t('admin:all')}</option>{locationsQuery.data?.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
-      </select></label>
+      <label className="text-sm">{t('admin:locations')}<div className="mt-1"><FuzzySelect value={locationId} onChange={(value) => { setLocationId(value); setPage(0); }}
+        emptyLabel={t('admin:all')} emptyValue="all" searchLabel={t('admin:locations')}
+        options={(locationsQuery.data || []).map((location) => ({ value: location.id, label: location.name }))} /></div></label>
       <form className="flex items-end gap-2" onSubmit={(event) => {
         event.preventDefault(); setPage(0);
         // PostgREST's OR filter syntax treats punctuation as operators.

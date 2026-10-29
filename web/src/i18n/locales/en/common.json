@@ -4,7 +4,7 @@
   "nav": {
     "home": "Home",
     "catalog": "Catalog",
-    "quote": "Get a Quote",
+    "quote": "Custom",
     "cart": "Cart",
     "login": "Sign in",
     "register": "Sign up",
@@ -14,12 +14,14 @@
     "creator_dashboard": "Creator Dashboard",
     "employee_portal": "Employee Portal",
     "admin": "Admin",
-    "document_printing": "Document printing",
+    "document_printing": "Paper",
     "tickets": "Tickets",
     "about": "About us",
     "contact": "Contact us",
     "careers": "Careers",
-    "locations": "Locations"
+    "locations": "Locations",
+    "pricing": "Pricing information",
+    "logging_out": "Logging out…"
   },
   "location": {
     "title": "Choose a location",
@@ -135,5 +137,11 @@
   "footer": {
     "nav_label": "Footer",
     "made_in_hong_kong": "Designed and printed in Hong Kong."
+  },
+  "appearance": {
+    "label": "Appearance",
+    "light": "Light",
+    "dark": "Dark",
+    "auto": "Auto (system)"
   }
 }

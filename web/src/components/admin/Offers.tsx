@@ -4,10 +4,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { decimal, isoDateTime, localDateTime } from '@/lib/admin';
 import { formatMoney, t_db } from '@/lib/format';
-import { DEFAULT_REDEEM_OPTIONS, type RedeemOption } from '@/lib/rewards';
+import { DEFAULT_REDEEM_OPTIONS, parseRedeemOptions, type RedeemOption } from '@/lib/rewards';
 import { supabase } from '@/lib/supabase';
 import { useLocale } from '@/store/locale';
 import type { Coupon, OfferCode, PremadeProduct } from '@/lib/types';
+import { ProductPicker } from './ProductPicker';
 import { ADMIN_PAGE_SIZE, AdminFeedback, AdminPagination, AdminQueryState, FormActions, useAdminAction, useFormPanel } from './Shared';
 
 // Sale/coupon windows are edited with datetime-local inputs.
@@ -24,47 +25,34 @@ function useConditions(source?: { min_subtotal?: number | null; product_id?: str
   });
 }
 
-function ConditionFields({ conditions, onChange, products }: {
+function ConditionFields({ conditions, onChange }: {
   conditions: Conditions;
   onChange: (next: Conditions) => void;
-  products: PremadeProduct[];
 }) {
-  const { t } = useTranslation(['admin', 'common']);
-  const locale = useLocale((state) => state.locale);
+  const { t } = useTranslation('admin');
   return <>
     <label className="text-sm">{t('admin:fields.min_subtotal')}
       <input className="input mt-1" type="number" min="0.01" step="0.01" value={conditions.minSpend}
         onChange={(event) => onChange({ ...conditions, minSpend: event.target.value })} />
     </label>
     <label className="text-sm">{t('admin:fields.applies_to_product')}
-      <select className="input mt-1" value={conditions.productId}
-        onChange={(event) => onChange({ ...conditions, productId: event.target.value })}>
-        <option value="">{t('admin:any_product')}</option>
-        {products.map((product) => (
-          <option key={product.id} value={product.id}>
-            {t_db(product.name, locale)}{product.status === 'published' ? '' : ` (${t('admin:product_status.' + product.status)})`}
-          </option>
-        ))}
-      </select>
+      <div className="mt-1"><ProductPicker value={conditions.productId}
+        onChange={(productId) => onChange({ ...conditions, productId })}
+        emptyLabel={t('any_product')} searchLabel={t('fields.applies_to_product')} /></div>
     </label>
   </>;
 }
 
 /** Validates the two conditions and returns them as insert/update payload fields. */
-function conditionPayload(conditions: Conditions, t: (key: string) => string, products: PremadeProduct[]) {
+function conditionPayload(conditions: Conditions, t: (key: string) => string) {
   const minSpend = conditions.minSpend.trim()
     ? decimal(conditions.minSpend, t('fields.min_subtotal'), 0.01, 99999999)
     : null;
   const productId = conditions.productId || null;
-  if (productId && !products.some((product) => product.id === productId)) {
-    throw new Error(t('product_not_found'));
-  }
   return { min_subtotal: minSpend, product_id: productId };
 }
 
-function OfferForm({ offer, products, onDone }: {
-  offer?: OfferCode; products: PremadeProduct[]; onDone: () => void;
-}) {
+function OfferForm({ offer, onDone }: { offer?: OfferCode; onDone: () => void }) {
   const { t } = useTranslation('admin');
   const queryClient = useQueryClient();
   const action = useAdminAction();
@@ -91,7 +79,7 @@ function OfferForm({ offer, products, onDone }: {
       const payload = {
         code: normalizedCode, description: description.trim() || null, discount_type: type,
         discount_value: decimal(value, t('fields.discount_value'), 0.01, type === 'percent' ? 100 : 99999999),
-        ...conditionPayload(conditions, t, products),
+        ...conditionPayload(conditions, t),
         max_claims: limit, coupon_valid_days: decimal(validDays, t('fields.coupon_valid_days'), 1, 3650, true),
         starts_at: isoDate(startsAt), expires_at: isoDate(expiresAt), is_active: active,
       };
@@ -112,7 +100,7 @@ function OfferForm({ offer, products, onDone }: {
         <option value="percent">{t('discount_type.percent')}</option><option value="fixed">{t('discount_type.fixed')}</option>
       </select></label>
       <label className="text-sm">{t('fields.discount_value')}<input className="input mt-1" type="number" required min="0.01" max={type === 'percent' ? 100 : undefined} step="0.01" value={value} onChange={(event) => setValue(event.target.value)} /></label>
-      <ConditionFields conditions={conditions} onChange={setConditions} products={products} />
+      <ConditionFields conditions={conditions} onChange={setConditions} />
       <label className="text-sm">{t('fields.max_claims')}<input className="input mt-1" type="number" min="1" step="1" value={maxClaims} onChange={(event) => setMaxClaims(event.target.value)} /></label>
       <label className="text-sm">{t('fields.coupon_valid_days')}<input className="input mt-1" type="number" required min="1" step="1" value={validDays} onChange={(event) => setValidDays(event.target.value)} /></label>
       <label className="text-sm">{t('fields.starts_at')}<input className="input mt-1" type="datetime-local" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} /></label>
@@ -124,14 +112,14 @@ function OfferForm({ offer, products, onDone }: {
   </form>;
 }
 
-function CouponForm({ products, onDone }: { products: PremadeProduct[]; onDone: () => void }) {
+function CouponForm({ onDone }: { onDone: () => void }) {
   const { t } = useTranslation('admin');
   const queryClient = useQueryClient();
   const action = useAdminAction();
   const panel = useFormPanel<HTMLFormElement>();
   const [code, setCode] = useState('');
   const [email, setEmail] = useState('');
-  const [type, setType] = useState<'percent' | 'fixed'>('fixed');
+  const [type, setType] = useState<'percent' | 'fixed' | 'points'>('fixed');
   const [value, setValue] = useState('5');
   const [grantPoints, setGrantPoints] = useState('');
   const [conditions, setConditions] = useConditions();
@@ -153,11 +141,11 @@ function CouponForm({ products, onDone }: { products: PremadeProduct[]; onDone: 
       if (expiresAt && new Date(expiresAt) <= new Date()) throw new Error(t('expiry_in_future'));
       const points = grantPoints.trim()
         ? decimal(grantPoints, t('fields.points'), 1, 2147483647, true) : null;
-      const discount = decimal(value, t('fields.discount_value'), 0, type === 'percent' ? 100 : 99999999);
+      const discount = type === 'points' ? 0 : decimal(value, t('fields.discount_value'), 0, type === 'percent' ? 100 : 99999999);
       if (discount <= 0 && points === null) throw new Error(t('coupon_needs_discount_or_points'));
       const shared = {
-        discount_type: type, discount_value: discount, grant_points: points,
-        ...conditionPayload(conditions, t, products), expires_at: isoDate(expiresAt),
+        discount_type: type === 'percent' ? 'percent' : 'fixed', discount_value: discount, grant_points: points,
+        ...(type === 'points' ? { min_subtotal: null, product_id: null } : conditionPayload(conditions, t)), expires_at: isoDate(expiresAt),
       };
       if (normalizedCode) {
         const { error } = await supabase().from('coupons').insert({
@@ -184,17 +172,18 @@ function CouponForm({ products, onDone }: { products: PremadeProduct[]; onDone: 
     <div className="grid gap-3 sm:grid-cols-2">
       <label className="text-sm">{t('fields.code')}<input className="input mt-1 uppercase" maxLength={32} value={code} onChange={(event) => setCode(event.target.value)} /></label>
       <label className="text-sm">{t('fields.customer_email')}<input className="input mt-1" type="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
-      <label className="text-sm">{t('fields.discount_type')}<select className="input mt-1" value={type} onChange={(event) => setType(event.target.value as 'percent' | 'fixed')}>
-        <option value="fixed">{t('discount_type.fixed')}</option><option value="percent">{t('discount_type.percent')}</option>
+      <label className="text-sm">{t('fields.discount_type')}<select className="input mt-1" value={type} onChange={(event) => setType(event.target.value as 'percent' | 'fixed' | 'points')}>
+        <option value="fixed">{t('discount_type.fixed')}</option><option value="percent">{t('discount_type.percent')}</option><option value="points">{t('discount_type.points')}</option>
       </select></label>
-      <label className="text-sm">{t('fields.discount_value')}<input className="input mt-1" type="number" min="0" max={type === 'percent' ? 100 : undefined} step="0.01" value={value} onChange={(event) => setValue(event.target.value)} /></label>
-      <label className="text-sm">{t('fields.grant_points')}<input className="input mt-1" type="number" min="1" step="1" value={grantPoints} onChange={(event) => setGrantPoints(event.target.value)} /></label>
-      <ConditionFields conditions={conditions} onChange={setConditions} products={products} />
+      {type !== 'points' && <><label className="text-sm">{t('fields.discount_value')}<input className="input mt-1" type="number" min="0" max={type === 'percent' ? 100 : undefined} step="0.01" value={value} onChange={(event) => setValue(event.target.value)} /></label>
+      <ConditionFields conditions={conditions} onChange={setConditions} /></>}
+      <label className="text-sm">{t('fields.grant_points')}<input className="input mt-1" type="number" min="1" step="1" required={type === 'points'} value={grantPoints} onChange={(event) => setGrantPoints(event.target.value)} /></label>
       <label className="text-sm">{t('fields.expires_at')}<input className="input mt-1" type="datetime-local" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} /></label>
     </div>
-    {issuedCode && <p className="rounded border border-emerald-200 bg-emerald-50 p-2 text-sm text-emerald-800">
-      {t('coupon_issued', { code: issuedCode })}
-    </p>}
+    {issuedCode && <div className="rounded border border-emerald-200 bg-emerald-50 p-2 text-sm text-emerald-800">
+      <p>{t('coupon_issued', { code: issuedCode })}</p>
+      <a className="mt-1 inline-block underline" href={`/coupon/?code=${encodeURIComponent(issuedCode)}`} target="_blank" rel="noreferrer">{t('coupon_claim_url')}</a>
+    </div>}
     <AdminFeedback error={action.error} notice={action.notice} /><FormActions busy={action.busy} onCancel={onDone} />
   </form>;
 }
@@ -210,14 +199,14 @@ function rpcConditions(shared: { discount_type: string; discount_value: number; 
   };
 }
 
-function BulkCouponForm({ products, onDone }: { products: PremadeProduct[]; onDone: () => void }) {
+function BulkCouponForm({ onDone }: { onDone: () => void }) {
   const { t } = useTranslation('admin');
   const queryClient = useQueryClient();
   const action = useAdminAction();
   const panel = useFormPanel<HTMLFormElement>();
   const [count, setCount] = useState('25');
   const [prefix, setPrefix] = useState('');
-  const [type, setType] = useState<'percent' | 'fixed'>('fixed');
+  const [type, setType] = useState<'percent' | 'fixed' | 'points'>('fixed');
   const [value, setValue] = useState('5');
   const [grantPoints, setGrantPoints] = useState('');
   const [conditions, setConditions] = useConditions();
@@ -234,11 +223,11 @@ function BulkCouponForm({ products, onDone }: { products: PremadeProduct[]; onDo
       if (expiresAt && new Date(expiresAt) <= new Date()) throw new Error(t('expiry_in_future'));
       const points = grantPoints.trim()
         ? decimal(grantPoints, t('fields.points'), 1, 2147483647, true) : null;
-      const discount = decimal(value, t('fields.discount_value'), 0, type === 'percent' ? 100 : 99999999);
+      const discount = type === 'points' ? 0 : decimal(value, t('fields.discount_value'), 0, type === 'percent' ? 100 : 99999999);
       if (discount <= 0 && points === null) throw new Error(t('coupon_needs_discount_or_points'));
       const shared = {
-        discount_type: type, discount_value: discount,
-        ...conditionPayload(conditions, t, products), expires_at: isoDate(expiresAt),
+        discount_type: type === 'percent' ? 'percent' : 'fixed', discount_value: discount,
+        ...(type === 'points' ? { min_subtotal: null, product_id: null } : conditionPayload(conditions, t)), expires_at: isoDate(expiresAt),
       };
       const { data, error } = await supabase().rpc('admin_generate_coupons', {
         p_count: batch, p_prefix: normalizedPrefix || null, p_user_id: null, p_grant_points: points, ...rpcConditions(shared),
@@ -267,12 +256,12 @@ function BulkCouponForm({ products, onDone }: { products: PremadeProduct[]; onDo
     <div className="grid gap-3 sm:grid-cols-2">
       <label className="text-sm">{t('fields.code_count')} *<input className="input mt-1" type="number" required min="1" max="500" step="1" value={count} onChange={(event) => setCount(event.target.value)} /></label>
       <label className="text-sm">{t('fields.code_prefix')}<input className="input mt-1 uppercase" maxLength={12} value={prefix} onChange={(event) => setPrefix(event.target.value)} placeholder="SUMMER" /></label>
-      <label className="text-sm">{t('fields.discount_type')}<select className="input mt-1" value={type} onChange={(event) => setType(event.target.value as 'percent' | 'fixed')}>
-        <option value="fixed">{t('discount_type.fixed')}</option><option value="percent">{t('discount_type.percent')}</option>
+      <label className="text-sm">{t('fields.discount_type')}<select className="input mt-1" value={type} onChange={(event) => setType(event.target.value as 'percent' | 'fixed' | 'points')}>
+        <option value="fixed">{t('discount_type.fixed')}</option><option value="percent">{t('discount_type.percent')}</option><option value="points">{t('discount_type.points')}</option>
       </select></label>
-      <label className="text-sm">{t('fields.discount_value')}<input className="input mt-1" type="number" min="0" max={type === 'percent' ? 100 : undefined} step="0.01" value={value} onChange={(event) => setValue(event.target.value)} /></label>
+      {type !== 'points' && <><label className="text-sm">{t('fields.discount_value')}<input className="input mt-1" type="number" min="0" max={type === 'percent' ? 100 : undefined} step="0.01" value={value} onChange={(event) => setValue(event.target.value)} /></label>
+      <ConditionFields conditions={conditions} onChange={setConditions} /></>}
       <label className="text-sm">{t('fields.grant_points')}<input className="input mt-1" type="number" min="1" step="1" value={grantPoints} onChange={(event) => setGrantPoints(event.target.value)} /></label>
-      <ConditionFields conditions={conditions} onChange={setConditions} products={products} />
       <label className="text-sm">{t('fields.expires_at')}<input className="input mt-1" type="datetime-local" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} /></label>
     </div>
     {generated.length > 0 && <div className="rounded border border-emerald-200 bg-emerald-50 p-3">
@@ -299,17 +288,15 @@ function optionToDraft(option: RedeemOption): RedeemDraft {
 }
 
 /** Points redemption lives with the other coupon tools: it issues coupons too. */
-function RedeemSettings({ value, pointsPerDollar, products }: {
-  value: unknown; pointsPerDollar: unknown; products: PremadeProduct[];
+function RedeemSettings({ value, pointsPerDollar }: {
+  value: unknown; pointsPerDollar: unknown;
 }) {
   const { t } = useTranslation(['admin', 'common']);
-  const locale = useLocale((state) => state.locale);
   const queryClient = useQueryClient();
   const action = useAdminAction();
   const [options, setOptions] = useState<RedeemDraft[]>(() =>
     (Array.isArray(value) ? value as RedeemOption[] : DEFAULT_REDEEM_OPTIONS).map(optionToDraft));
   const [earnRate, setEarnRate] = useState(String(pointsPerDollar ?? 1));
-  const published = products.filter((product) => product.status === 'published');
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -323,8 +310,14 @@ function RedeemSettings({ value, pointsPerDollar, products }: {
         product_id: option.product_id || null,
       }));
       if (new Set(parsed.map((option) => option.points)).size !== parsed.length) throw new Error(t('admin:duplicate_points'));
-      if (parsed.some((option) => option.product_id && !published.some((product) => product.id === option.product_id))) {
-        throw new Error(t('admin:redeem_product_published'));
+      const productIds = [...new Set(parsed.flatMap((option) => option.product_id ? [option.product_id] : []))];
+      if (productIds.length) {
+        const { data: products, error } = await supabase().from('premade_products')
+          .select('id,status').in('id', productIds);
+        if (error) throw error;
+        if (products?.length !== productIds.length || products.some((product) => product.status !== 'published')) {
+          throw new Error(t('admin:redeem_product_published'));
+        }
       }
       parsed.sort((a, b) => a.points - b.points);
       const rate = decimal(earnRate, t('admin:setting_labels.rewards.points_per_dollar'), 0, 1000);
@@ -355,11 +348,10 @@ function RedeemSettings({ value, pointsPerDollar, products }: {
       </select></label>
       <label className="text-sm">{t('admin:fields.discount_value')}<input className="input mt-1" type="number" min="0.01" step="0.01" required value={option.discount_value}
         onChange={(event) => setOptions((previous) => previous.map((row, i) => i === index ? { ...row, discount_value: event.target.value } : row))} /></label>
-      <label className="text-sm">{t('admin:fields.redeem_product')}<select className="input mt-1" value={option.product_id}
-        onChange={(event) => setOptions((previous) => previous.map((row, i) => i === index ? { ...row, product_id: event.target.value } : row))}>
-        <option value="">{t('admin:any_product')}</option>
-        {published.map((product) => <option key={product.id} value={product.id}>{t_db(product.name, locale)}</option>)}
-      </select></label>
+      <label className="text-sm">{t('admin:fields.redeem_product')}<div className="mt-1"><ProductPicker
+        value={option.product_id}
+        onChange={(product_id) => setOptions((previous) => previous.map((row, i) => i === index ? { ...row, product_id } : row))}
+        emptyLabel={t('admin:any_product')} searchLabel={t('admin:fields.redeem_product')} publishedOnly /></div></label>
       <button type="button" className="btn-outline text-sm" onClick={() => setOptions((previous) => previous.filter((_, i) => i !== index))}>{t('admin:remove')}</button>
     </div>)}</div>
     <p className="mt-3 text-xs text-slate-600">{t('admin:redeem_product_hint')}</p>
@@ -383,7 +375,7 @@ export function AdminOffers() {
   const offersQuery = useQuery<OfferCode[]>({
     queryKey: ['admin_offers', offerPage], queryFn: async () => {
       const { data, error } = await supabase().from('offer_codes').select('*')
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false }).order('id', { ascending: true })
         .range(offerPage * ADMIN_PAGE_SIZE, (offerPage + 1) * ADMIN_PAGE_SIZE - 1);
       if (error) throw error;
       return (data || []) as OfferCode[];
@@ -392,17 +384,10 @@ export function AdminOffers() {
   const couponsQuery = useQuery<Coupon[]>({
     queryKey: ['admin_coupons', couponPage], queryFn: async () => {
       const { data, error } = await supabase().from('coupons').select('*')
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false }).order('id', { ascending: true })
         .range(couponPage * ADMIN_PAGE_SIZE, (couponPage + 1) * ADMIN_PAGE_SIZE - 1);
       if (error) throw error;
       return (data || []) as Coupon[];
-    },
-  });
-  const productsQuery = useQuery<PremadeProduct[]>({
-    queryKey: ['admin_products'], queryFn: async () => {
-      const { data, error } = await supabase().from('premade_products').select('*').order('name->>en');
-      if (error) throw error;
-      return (data || []) as PremadeProduct[];
     },
   });
   const settingsQuery = useQuery<{ key: string; value: unknown }[]>({
@@ -413,8 +398,24 @@ export function AdminOffers() {
       return data || [];
     },
   });
-  const products = productsQuery.data || [];
   const rewardSettings = Object.fromEntries((settingsQuery.data || []).map((row) => [row.key, row.value]));
+  const referencedProductIds = Array.from(new Set([
+    ...(offersQuery.data || []).map((offer) => offer.product_id),
+    ...(couponsQuery.data || []).map((coupon) => coupon.product_id),
+    ...parseRedeemOptions(rewardSettings['rewards.redeem_options']).map((option) => option.product_id ?? null),
+  ].filter((id): id is string => !!id)));
+  const productsQuery = useQuery<PremadeProduct[]>({
+    queryKey: ['admin_offer_product_labels', referencedProductIds],
+    enabled: !offersQuery.isPending && !couponsQuery.isPending && !settingsQuery.isPending,
+    queryFn: async () => {
+      if (!referencedProductIds.length) return [];
+      const { data, error } = await supabase().from('premade_products')
+        .select('id,name,slug,status').in('id', referencedProductIds);
+      if (error) throw error;
+      return (data || []) as PremadeProduct[];
+    },
+  });
+  const products = productsQuery.data || [];
   const productName = (id: string | null) =>
     id ? (t_db(products.find((product) => product.id === id)?.name, locale) || id) : null;
   /** "Min spend US$50 · Only Desk Cable Holder" for the lists below. */
@@ -439,7 +440,7 @@ export function AdminOffers() {
     <section><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-medium">{t('admin:offers')}</h2>
       <p className="text-sm text-slate-600">{t('admin:offers_help')}</p></div>
       <button type="button" className="btn text-sm" onClick={() => setEditing('new')}>{t('admin:add_offer')}</button></div>
-      {editing && <OfferForm key={editing} offer={offersQuery.data?.find((offer) => offer.id === editing)} products={products} onDone={() => setEditing(null)} />}
+      {editing && <OfferForm key={editing} offer={offersQuery.data?.find((offer) => offer.id === editing)} onDone={() => setEditing(null)} />}
       <AdminQueryState loading={offersQuery.isPending} error={offersQuery.error} />
       {offersQuery.data?.length === 0 && <p className="mt-4 text-slate-500">{t('admin:no_offers')}</p>}
       <div className="mt-3 grid gap-2 sm:grid-cols-2">{offersQuery.data?.map((offer) => <div key={offer.id} className="rounded border p-3 text-sm">
@@ -459,15 +460,15 @@ export function AdminOffers() {
         <button type="button" className="btn-outline text-sm" onClick={() => setCouponMode((mode) => mode === 'bulk' ? null : 'bulk')}>{t('admin:bulk_coupons')}</button>
         <button type="button" className="btn text-sm" onClick={() => setCouponMode((mode) => mode === 'single' ? null : 'single')}>{t('admin:issue_coupon')}</button>
       </div></div>
-      {couponMode === 'single' && <CouponForm key="single" products={products} onDone={() => setCouponMode(null)} />}
-      {couponMode === 'bulk' && <BulkCouponForm key="bulk" products={products} onDone={() => setCouponMode(null)} />}
+      {couponMode === 'single' && <CouponForm key="single" onDone={() => setCouponMode(null)} />}
+      {couponMode === 'bulk' && <BulkCouponForm key="bulk" onDone={() => setCouponMode(null)} />}
       <AdminFeedback error={action.error} notice={action.notice} />
       <AdminQueryState loading={couponsQuery.isPending} error={couponsQuery.error} />
       {couponsQuery.data?.length === 0 && <p className="mt-4 text-slate-500">{t('admin:no_coupons')}</p>}
       <div className="mt-3 space-y-2">{couponsQuery.data?.map((coupon) => {
         const expired = coupon.expires_at !== null && new Date(coupon.expires_at) <= new Date();
         return <div key={coupon.id} className="flex flex-wrap items-center justify-between gap-2 rounded border p-3 text-sm">
-          <span><strong className="font-mono">{coupon.code}</strong> · {coupon.discount_value}{coupon.discount_type === 'percent' ? '%' : ` ${t('common:currency_code')}`}
+          <span><strong className="font-mono">{coupon.code}</strong>{Number(coupon.discount_value) > 0 && <> · {coupon.discount_value}{coupon.discount_type === 'percent' ? '%' : ` ${t('common:currency_code')}`}</>}
             {coupon.grant_points ? ` · ${t('fields.grant_points')}: ${coupon.grant_points}` : ''}
             {conditionLabel(coupon)}
             {' · '}{coupon.user_id ? t('admin:assigned_coupon') : t('admin:public_coupon')} · {coupon.status === 'used' ? t('admin:used') : expired ? t('admin:expired') : t('admin:active')}
@@ -485,7 +486,7 @@ export function AdminOffers() {
       <AdminQueryState loading={settingsQuery.isPending} error={settingsQuery.error} />
       {!settingsQuery.isPending && <RedeemSettings key={JSON.stringify(rewardSettings)}
         value={rewardSettings['rewards.redeem_options']}
-        pointsPerDollar={rewardSettings['rewards.points_per_dollar']} products={products} />}
+        pointsPerDollar={rewardSettings['rewards.points_per_dollar']} />}
     </section>
   </div>;
 }

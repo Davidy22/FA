@@ -4,7 +4,7 @@
   "nav": {
     "home": "首頁",
     "catalog": "商品目錄",
-    "quote": "線上報價",
+    "quote": "自訂",
     "cart": "購物車",
     "login": "登入",
     "register": "註冊",
@@ -14,12 +14,14 @@
     "creator_dashboard": "創作者儀表板",
     "employee_portal": "員工入口",
     "admin": "管理後台",
-    "document_printing": "文件列印",
+    "document_printing": "紙張",
     "tickets": "工單",
     "about": "關於我們",
     "contact": "聯絡我們",
     "careers": "招聘",
-    "locations": "門市"
+    "locations": "門市",
+    "pricing": "價格資訊",
+    "logging_out": "正在登出…"
   },
   "location": {
     "title": "選擇門市",
@@ -135,5 +137,11 @@
   "footer": {
     "nav_label": "頁尾",
     "made_in_hong_kong": "香港設計及打印。"
+  },
+  "appearance": {
+    "label": "外觀",
+    "light": "淺色",
+    "dark": "深色",
+    "auto": "自動（系統）"
   }
 }

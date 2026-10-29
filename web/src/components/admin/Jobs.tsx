@@ -10,6 +10,7 @@ import type { JobListing, Localized, Location } from '@/lib/types';
 import {
   AdminFeedback, AdminQueryState, FormActions, LocalizedFields, useAdminAction, useAdminLanguage, useFormPanel,
 } from './Shared';
+import { FuzzySelect } from './FuzzySelect';
 
 const EMPLOYMENT_TYPES = ['full_time', 'part_time', 'contract', 'internship'] as const;
 
@@ -103,10 +104,8 @@ function JobForm({ job, nextOrder, locations, onDone }: {
         </select>
       </label>
       <label className="block text-sm">{t('admin:fields.location')}
-        <select className="input mt-1" value={form.locationId} onChange={(event) => set('locationId', event.target.value)}>
-          <option value="">—</option>
-          {locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
-        </select>
+        <div className="mt-1"><FuzzySelect value={form.locationId} onChange={(value) => set('locationId', value)} emptyLabel="—"
+          searchLabel={t('admin:fields.location')} options={locations.map((location) => ({ value: location.id, label: location.name }))} /></div>
       </label>
       <label className="block text-sm">{t('admin:fields.sort_order')}
         <input className="input mt-1" type="number" step="1" value={form.sortOrder}

@@ -135,6 +135,13 @@ try {
   const product = await saveProduct(exampleProduct(), materials);
   assert.equal(product.slug, product.id, 'new product slugs are generated from their IDs');
   assert.equal(product.status, 'published');
+  const productChoices = await rows('select id,slug from public.search_product_choices($1,$2)', ['Smoke test', true]);
+  assert.equal(productChoices.some((row) => row.id === product.id), true,
+    'staff product search returns matching published choices');
+  await claims(buyer);
+  assert.equal((await rows('select id from public.search_product_choices($1,$2)', ['Smoke test', false])).length, 0,
+    'product search does not disclose choices to customers');
+  await claims(admin);
 
   // The catalog is public: explicit anon table grants plus the published-only
   // RLS policy return products without exposing drafts or requiring a session.
@@ -174,7 +181,7 @@ try {
   await assert.rejects(pricing(cart([{ ...premade, options: {} }])), /Required option missing/);
   const pricedOptions = await pricing(cart([premade]));
   assert.equal(pricedOptions.lines[0].unit_price, 14);
-  assert.equal(pricedOptions.lines[0].item_snapshot.model_path, 'admin/smoke.stl');
+  assert.equal(pricedOptions.lines[0].item_snapshot.model_path, null);
   await rows(`insert into public.checkout_sessions(session_id,cart,user_id,location_id,contact_email,contact_name,locale)
       values('smoke-options',$1::jsonb,$2,$3,'db-buyer@example.test','Buyer','en')`,
     [JSON.stringify(cart([premade])), buyer, location]);

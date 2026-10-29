@@ -147,7 +147,6 @@ export type PremadeProduct = SaleFields & {
   category: 'toy' | 'tool' | 'art' | 'gadget' | 'replacement_part' | 'other';
   tags: string[];
   image_urls: string[];
-  source_model_path: string;
   submitted_by: string | null;
   is_featured: boolean;
   status: 'draft' | 'published' | 'archived';
@@ -159,7 +158,12 @@ export type ProductMaterial = {
   price_modifier: number;
 };
 
-/** Product card rows include their materials in the same PostgREST request. */
+/** Minimal product fields used by catalog cards; avoid joining full material records. */
+export type CatalogProduct = Pick<PremadeProduct,
+  'id' | 'slug' | 'name' | 'base_price' | 'image_urls' | 'sale_price' | 'sale_starts_at' | 'sale_ends_at'
+>;
+
+/** Product card rows in parts of the UI that need the embedded material list. */
 export type ProductWithMaterials = PremadeProduct & {
   product_materials: (ProductMaterial & { material: Material | null })[];
 };

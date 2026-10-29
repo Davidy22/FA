@@ -42,5 +42,9 @@
   "stock_group_summary": "{{count}} colors · {{inStock}} in stock",
   "id": "ID",
   "color": "Color",
-  "cost_per_gram": "Cost/g"
+  "cost_per_gram": "Cost/g",
+  "orders_pagination": "Order pages",
+  "previous_page": "Previous",
+  "next_page": "Next",
+  "page_number": "Page {{number}}"
 }

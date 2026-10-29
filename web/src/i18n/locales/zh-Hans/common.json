@@ -4,7 +4,7 @@
   "nav": {
     "home": "首页",
     "catalog": "商品目录",
-    "quote": "在线报价",
+    "quote": "定制",
     "cart": "购物车",
     "login": "登录",
     "register": "注册",
@@ -14,12 +14,14 @@
     "creator_dashboard": "创作者仪表板",
     "employee_portal": "员工入口",
     "admin": "管理后台",
-    "document_printing": "文件打印",
+    "document_printing": "纸张",
     "tickets": "工单",
     "about": "关于我们",
     "contact": "联系我们",
     "careers": "招聘",
-    "locations": "门店"
+    "locations": "门店",
+    "pricing": "价格信息",
+    "logging_out": "正在退出…"
   },
   "location": {
     "title": "选择门店",
@@ -135,5 +137,11 @@
   "footer": {
     "nav_label": "页脚",
     "made_in_hong_kong": "香港设计与打印。"
+  },
+  "appearance": {
+    "label": "外观",
+    "light": "浅色",
+    "dark": "深色",
+    "auto": "自动（系统）"
   }
 }

@@ -1,5 +1,5 @@
 'use client';
-import { useState, type FormEvent } from 'react';
+import { useDeferredValue, useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { cleanLocalized, decimal, isoDateTime, lines, localDateTime, localizedInput, PRODUCT_STATUSES } from '@/lib/admin';
@@ -10,7 +10,7 @@ import { useLocale } from '@/store/locale';
 import type {
   Filament, Localized, Material, PremadeProduct, ProductCategory, ProductMaterial, ProductMaterialSlot, ProductSlotMaterial,
 } from '@/lib/types';
-import { AdminFeedback, AdminQueryState, FormActions, LocalizedFields, useAdminAction, useAdminLanguage, useFormPanel } from './Shared';
+import { ADMIN_PAGE_SIZE, AdminFeedback, AdminPagination, AdminQueryState, FormActions, LocalizedFields, useAdminAction, useAdminLanguage, useFormPanel } from './Shared';
 import { ProductOptions } from './ProductOptions';
 
 type SlotRow = ProductMaterialSlot & { product_slot_materials: ProductSlotMaterial[] };
@@ -28,7 +28,7 @@ type SlotDraft = {
 type Draft = {
   name: Localized; description: Localized; price: string;
   category: string; tags: string; imageUrls: string;
-  sourcePath: string; featured: boolean; status: PremadeProduct['status'];
+  featured: boolean; status: PremadeProduct['status'];
   defaultMaterialId: string; allowed: Record<string, string>;
   salePrice: string; saleStartsAt: string; saleEndsAt: string;
   slots: SlotDraft[];
@@ -50,7 +50,7 @@ function draft(product?: PremadeProduct, allowed: ProductMaterial[] = [], slots:
     name: localizedInput(product?.name), description: localizedInput(product?.description),
     price: product?.base_price?.toString() || '0', category: product?.category || 'other',
     tags: product?.tags?.join(', ') || '', imageUrls: product?.image_urls?.join('\n') || '',
-    sourcePath: product?.source_model_path || '', featured: product?.is_featured ?? false,
+    featured: product?.is_featured ?? false,
     status: product?.status || 'draft', defaultMaterialId: product?.default_material_id || '',
     allowed: Object.fromEntries(allowed.map((row) => [row.material_id, row.price_modifier.toString()])),
     salePrice: product?.sale_price != null ? product.sale_price.toString() : '',
@@ -73,7 +73,6 @@ function ProductForm({ product, allowed, slots, materials, filaments, onDone }: 
   const [showOptions, setShowOptions] = useState(!!product);
   // One language picker edits the name, the description and every slot name.
   const [language, setLanguage] = useAdminLanguage();
-  const [modelFile, setModelFile] = useState<File | null>(null);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setForm((previous) => ({ ...previous, [key]: value }));
@@ -112,10 +111,6 @@ function ProductForm({ product, allowed, slots, materials, filaments, onDone }: 
   async function submit(event: FormEvent) {
     event.preventDefault();
     await action.run(async () => {
-      if (!product && !modelFile) throw new Error(t('admin:model_required'));
-      if (modelFile && !/\.(stl|obj|3mf)$/i.test(modelFile.name)) {
-        throw new Error(t('admin:model_invalid'));
-      }
       for (const file of imageFiles) {
         if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
           throw new Error(t('admin:image_invalid'));
@@ -180,16 +175,6 @@ function ProductForm({ product, allowed, slots, materials, filaments, onDone }: 
       }
       const uploaded: { bucket: string; path: string }[] = [];
       try {
-        let sourcePath = form.sourcePath;
-        if (modelFile) {
-          const path = `${crypto.randomUUID()}.${modelFile.name.split('.').pop()!.toLowerCase()}`;
-          const { error } = await supabase().storage.from('product-files').upload(path, modelFile, {
-            contentType: modelFile.type || 'application/octet-stream',
-          });
-          if (error) throw error;
-          uploaded.push({ bucket: 'product-files', path });
-          sourcePath = path;
-        }
         const imageUrls = lines(form.imageUrls);
         for (const file of imageFiles) {
           const extension = file.type === 'image/jpeg' ? 'jpg' : file.type === 'image/png' ? 'png' : 'webp';
@@ -206,7 +191,7 @@ function ProductForm({ product, allowed, slots, materials, filaments, onDone }: 
           base_price: basePrice,
           default_material_id: slotPayload.length ? null : (form.defaultMaterialId || null),
           category: form.category, tags: lines(form.tags), image_urls: imageUrls,
-          source_model_path: sourcePath, is_featured: form.featured, status: form.status,
+          is_featured: form.featured, status: form.status,
           sale_price: salePrice, sale_starts_at: saleStartsAt, sale_ends_at: saleEndsAt,
         };
         const { error } = await supabase().rpc('admin_save_product', {
@@ -271,8 +256,6 @@ function ProductForm({ product, allowed, slots, materials, filaments, onDone }: 
       )}
     </fieldset>
     <label className="block text-sm">{t('admin:fields.tags')}<input className="input mt-1" value={form.tags} onChange={(event) => set('tags', event.target.value)} placeholder="gift, desk" /></label>
-    <label className="block text-sm">{t('admin:fields.model_file')}{!product ? ' *' : ''}<input className="mt-1 block w-full text-sm" type="file" accept=".stl,.obj,.3mf" onChange={(event) => setModelFile(event.target.files?.[0] || null)} /></label>
-    {product && <p className="break-all text-xs text-slate-500">{t('admin:current_file')}: {form.sourcePath}</p>}
     <label className="block text-sm">{t('admin:fields.image_upload')}<input className="mt-1 block w-full text-sm" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => setImageFiles(Array.from(event.target.files || []))} /></label>
     <label className="block text-sm">{t('admin:fields.image_urls')}<textarea className="input mt-1 min-h-20" value={form.imageUrls} onChange={(event) => set('imageUrls', event.target.value)} placeholder="https://…" /></label>
     <p className="text-xs text-slate-500">{t('admin:images_hint')}</p>
@@ -407,14 +390,21 @@ export function AdminProducts() {
   const action = useAdminAction();
   const [editing, setEditing] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
+  const searchTerm = useDeferredValue(search).trim().replace(/[^\p{L}\p{N}\s-]/gu, '');
   const productsQuery = useQuery<PremadeProduct[]>({
-    queryKey: ['admin_products'],
+    queryKey: ['admin_products', page, searchTerm],
     queryFn: async () => {
-      const { data, error } = await supabase().from('premade_products').select('*').order('created_at', { ascending: false });
+      let request = supabase().from('premade_products').select('*')
+        .order('created_at', { ascending: false }).order('id', { ascending: true });
+      if (searchTerm) request = request.or(`slug.ilike.%${searchTerm}%,name->>en.ilike.%${searchTerm}%`);
+      const { data, error } = await request.range(page * ADMIN_PAGE_SIZE, page * ADMIN_PAGE_SIZE + ADMIN_PAGE_SIZE);
       if (error) throw error;
       return (data || []) as PremadeProduct[];
     },
   });
+  const products = productsQuery.data?.slice(0, ADMIN_PAGE_SIZE) || [];
+  const productIds = products.map((product) => product.id);
   const materialsQuery = useQuery<Material[]>({
     queryKey: ['admin_materials'],
     queryFn: async () => {
@@ -432,28 +422,29 @@ export function AdminProducts() {
     },
   });
   const allowedQuery = useQuery<ProductMaterial[]>({
-    queryKey: ['admin_product_materials'],
+    queryKey: ['admin_product_materials', productIds],
+    enabled: productsQuery.data !== undefined,
     queryFn: async () => {
-      const { data, error } = await supabase().from('product_materials').select('*');
+      if (!productIds.length) return [];
+      const { data, error } = await supabase().from('product_materials').select('*').in('product_id', productIds);
       if (error) throw error;
       return (data || []) as ProductMaterial[];
     },
   });
   const slotsQuery = useQuery<SlotRow[]>({
-    queryKey: ['admin_product_slots'],
+    queryKey: ['admin_product_slots', productIds],
+    enabled: productsQuery.data !== undefined,
     queryFn: async () => {
+      if (!productIds.length) return [];
       const { data, error } = await supabase().from('product_material_slots')
-        .select('*, product_slot_materials(*)').order('sort_order');
+        .select('*, product_slot_materials(*)').in('product_id', productIds).order('sort_order');
       if (error) throw error;
       return (data || []) as unknown as SlotRow[];
     },
   });
-  const products = productsQuery.data || [];
   const slots = slotsQuery.data || [];
-  const filtered = products.filter((product) =>
-    `${product.slug} ${product.name.en}`.toLowerCase().includes(search.trim().toLowerCase()));
-  const loading = productsQuery.isPending || materialsQuery.isPending || allowedQuery.isPending ||
-    slotsQuery.isPending || filamentsQuery.isPending;
+  const loading = productsQuery.isPending || materialsQuery.isPending || filamentsQuery.isPending ||
+    (!!productsQuery.data && (allowedQuery.isPending || slotsQuery.isPending));
   const queryError = productsQuery.error || materialsQuery.error || allowedQuery.error || slotsQuery.error || filamentsQuery.error;
 
   async function deleteProduct(product: PremadeProduct) {
@@ -482,10 +473,10 @@ export function AdminProducts() {
       slots={slots.filter((slot) => slot.product_id === editing)} onDone={() => setEditing(null)} />}
     <AdminFeedback error={action.error} notice={action.notice} />
     <AdminQueryState loading={loading} error={queryError} />
-    <label className="mt-4 block max-w-sm text-sm">{t('common:search')}<input className="input mt-1" type="search" value={search} onChange={(event) => setSearch(event.target.value)} /></label>
+    <label className="mt-4 block max-w-sm text-sm">{t('common:search')}<input className="input mt-1" type="search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(0); setEditing(null); }} /></label>
     {products.length === 0 && !productsQuery.isPending && <p className="mt-4 text-slate-500">{t('admin:no_products')}</p>}
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
-      {filtered.map((product) => {
+      {products.map((product) => {
         const productSlots = slots.filter((slot) => slot.product_id === product.id);
         const onSale = isOnSale(product);
         return <article key={product.id} className="rounded-lg border p-4">
@@ -509,5 +500,7 @@ export function AdminProducts() {
         </article>;
       })}
     </div>
+    {productsQuery.data && <AdminPagination page={page} hasNext={productsQuery.data.length > ADMIN_PAGE_SIZE}
+      onPageChange={(next) => { setPage(next); setEditing(null); }} />}
   </>;
 }

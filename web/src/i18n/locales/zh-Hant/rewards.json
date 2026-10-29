@@ -66,5 +66,16 @@
   "tier_top": "你已達到最高等級——謝謝你與我們一起創作。",
   "tier_requirement": "{{points}} 終身積分 · {{multiplier}} 倍積分",
   "tier_default_name": "等級 {{number}}",
-  "earn_rate_tier": "你的等級每消費 HK$1 可賺取 {{count}} 積分。"
+  "earn_rate_tier": "你的等級每消費 HK$1 可賺取 {{count}} 積分。",
+  "coupon_claim_title": "領取優惠券",
+  "coupon_claim_success": "優惠券已套用至帳戶。",
+  "coupon_points_added": "已向帳戶新增 {{count}} 點。",
+  "coupon_saved_account": "優惠券已儲存至帳戶，可在結帳時使用。",
+  "coupon_sign_in_to_claim": "登入後將此優惠券套用至帳戶。",
+  "coupon_claim_intro": "此連結包含一張優惠券。將其套用至登入帳戶。",
+  "coupon_claim_action": "套用優惠券",
+  "tabs_label": "獎賞分頁",
+  "tab_balance": "積分及優惠券",
+  "tab_redeem": "兌換積分",
+  "tab_membership": "會員及活動"
 }

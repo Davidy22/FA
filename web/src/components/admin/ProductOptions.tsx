@@ -13,6 +13,7 @@ import type {
   ProductOptionGroup, ProductOptionType, TextOptionConfig,
 } from '@/lib/types';
 import { AdminFeedback, AdminQueryState, FormActions, LocalizedFields, useAdminAction, useAdminLanguage, useFormPanel } from './Shared';
+import { FuzzySelect } from './FuzzySelect';
 
 type OptionDetail = ProductOptionGroup & {
   choices: ProductOptionChoice[];
@@ -122,10 +123,8 @@ function GroupForm({ productId, group, onDone }: { productId: string; group?: Op
   return <form ref={panel} onSubmit={(event) => void submit(event)} className="mt-3 space-y-3 rounded border border-brand-200 bg-brand-50/30 p-3">
     <h5 className="font-medium">{group ? t('edit_group') : t('add_group')}</h5>
     <label className="block text-sm">{t('fields.option_label')}
-      <select className="input mt-1" required value={labelTypeId} onChange={(event) => setLabelTypeId(event.target.value)}>
-        <option value="">—</option>
-        {(optionTypesQuery.data || []).map((optionType) => <option key={optionType.id} value={optionType.id}>{t_db(optionType.name, locale)}</option>)}
-      </select>
+      <div className="mt-1"><FuzzySelect value={labelTypeId} onChange={setLabelTypeId} emptyLabel="—"
+        searchLabel={t('fields.option_label')} options={(optionTypesQuery.data || []).map((optionType) => ({ value: optionType.id, label: t_db(optionType.name, locale) }))} /></div>
     </label>
     <div className="grid gap-3 sm:grid-cols-2">
       <label className="text-sm">{t('fields.option_type')}
@@ -232,6 +231,16 @@ export function ProductOptions({ product, onClose }: { product: PremadeProduct; 
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [editingChoice, setEditingChoice] = useState<string | null>(null);
   const [newChoiceGroup, setNewChoiceGroup] = useState<string | null>(null);
+  const [showLabels, setShowLabels] = useState(false);
+  const [newLabel, setNewLabel] = useState('');
+  const labelsQuery = useQuery<ProductOptionType[]>({
+    queryKey: ['product_option_types'],
+    queryFn: async () => {
+      const { data, error } = await supabase().from('product_option_types').select('*').order('sort_order').order('slug');
+      if (error) throw error;
+      return (data || []) as ProductOptionType[];
+    },
+  });
   const { data, isPending, error } = useQuery<OptionDetail[]>({
     queryKey: ['admin_options', product.id], queryFn: () => loadOptions(product.id),
   });
@@ -249,7 +258,40 @@ export function ProductOptions({ product, onClose }: { product: PremadeProduct; 
     <div className="flex items-center justify-between gap-3"><h3 className="text-lg font-medium">{t('admin:edit_options')}: {t_db(product.name, locale)}</h3>
       <button className="btn-outline text-sm" type="button" onClick={onClose}>{t('common:close')}</button></div>
     <p className="mt-1 text-sm text-slate-600">{t('admin:options_help')}</p>
-    <button type="button" className="btn mt-3 text-sm" onClick={() => setEditingGroup('new')}>{t('admin:add_group')}</button>
+    <div className="mt-3 flex flex-wrap gap-2">
+      <button type="button" className="btn text-sm" onClick={() => setEditingGroup('new')}>{t('admin:add_group')}</button>
+      <button type="button" className="btn-outline text-sm" aria-expanded={showLabels} onClick={() => setShowLabels((open) => !open)}>{t('admin:manage_option_labels')}</button>
+    </div>
+    {showLabels && <section className="mt-3 rounded border p-3" aria-label={t('admin:manage_option_labels')}>
+      <h4 className="font-medium">{t('admin:manage_option_labels')}</h4>
+      <form className="mt-2 flex flex-wrap gap-2" onSubmit={(event) => {
+        event.preventDefault();
+        void action.run(async () => {
+          const name = newLabel.trim();
+          const slug = name.toLowerCase().normalize('NFKD').replace(/[\\u0300-\\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40).replace(/-$/g, '');
+          if (!name || !slug) throw new Error(t('admin:option_label_required'));
+          const { error } = await supabase().from('product_option_types').insert({ slug, name: { en: name }, sort_order: 100 });
+          if (error) throw error;
+          setNewLabel('');
+          await queryClient.invalidateQueries({ queryKey: ['product_option_types'] });
+        });
+      }}>
+        <input className="input max-w-sm" value={newLabel} onChange={(event) => setNewLabel(event.target.value)} placeholder={t('admin:option_label_name')} aria-label={t('admin:option_label_name')} />
+        <button type="submit" className="btn-outline text-sm" disabled={action.busy}>{t('admin:add_option_label')}</button>
+      </form>
+      <ul className="mt-2 divide-y">{(labelsQuery.data || []).map((item) => <li key={item.id} className="flex items-center justify-between gap-2 py-2 text-sm">
+        <span>{t_db(item.name, locale)}</span>
+        <button type="button" className="text-red-700 underline" disabled={action.busy} onClick={() => {
+          if (!window.confirm(t('admin:delete_option_confirm'))) return;
+          void action.run(async () => {
+            const { error } = await supabase().from('product_option_types').delete().eq('id', item.id);
+            if (error) throw error;
+            await queryClient.invalidateQueries({ queryKey: ['product_option_types'] });
+          });
+        }}>{t('common:delete')}</button>
+      </li>)}</ul>
+      <p className="mt-2 text-xs text-slate-500">{t('admin:option_label_delete_hint')}</p>
+    </section>}
     <AdminFeedback error={action.error} notice={action.notice} />
     <AdminQueryState loading={isPending} error={error} />
     {editingGroup === 'new' && <GroupForm key="new" productId={product.id} onDone={() => setEditingGroup(null)} />}
@@ -267,7 +309,7 @@ export function ProductOptions({ product, onClose }: { product: PremadeProduct; 
         {editingGroup === group.id && <GroupForm key={group.id} productId={product.id} group={group} onDone={() => setEditingGroup(null)} />}
         {(group.option_type === 'select_one' || group.option_type === 'select_many') && <>
           <div className="mt-3 flex justify-end">
-            <button className="text-brand-700 underline" type="button" onClick={() => { setEditingChoice(null); setNewChoiceGroup(group.id); }}>{t('admin:add_choice')}</button>
+            <button className="btn-outline text-sm" type="button" onClick={() => { setEditingChoice(null); setNewChoiceGroup(group.id); }}>{t('admin:add_choice')}</button>
           </div>
           {newChoiceGroup === group.id && <ChoiceForm key={`new-${group.id}`} productId={product.id} groupId={group.id} onDone={() => setNewChoiceGroup(null)} />}
           <ul className="mt-2 divide-y">{group.choices.map((choice) => <li key={choice.id} className="py-2">

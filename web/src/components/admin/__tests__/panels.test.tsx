@@ -31,8 +31,7 @@ const materials = [{
 }];
 const products = [{
   id: 'product-1', slug: 'keychain', name: { en: 'Keychain' }, description: null, base_price: 20,
-  default_material_id: 'material-1', category: 'other', tags: [], image_urls: [],
-  source_model_path: 'keychain.stl', submitted_by: null, is_featured: false, status: 'published',
+  default_material_id: 'material-1', category: 'other', tags: [], image_urls: [], submitted_by: null, is_featured: false, status: 'published',
 }];
 const offerTables = {
   offer_codes: [], coupons: [], premade_products: products,
@@ -150,22 +149,44 @@ describe('admin offers and coupons', () => {
   it('generates a batch of single-use codes without typing each one', async () => {
     const { rpcMock } = mountOffers({
       admin_generate_coupons: [{ coupon_code: 'SUMMERAB2345', coupon_id: 'coupon-1' }],
+      search_product_choices: products,
     });
     fireEvent.click(await screen.findByRole('button', { name: 'admin:bulk_coupons' }));
     const form = (await screen.findByRole('heading', { name: 'bulk_coupons' })).closest('form')!;
     fireEvent.change(within(form).getByLabelText(/fields\.code_count/), { target: { value: '25' } });
     fireEvent.change(within(form).getByLabelText(/fields\.code_prefix/), { target: { value: 'summer' } });
     fireEvent.change(within(form).getByLabelText(/fields\.discount_value/), { target: { value: '15' } });
-    fireEvent.change(within(form).getByLabelText(/fields\.applies_to_product/), { target: { value: 'product-1' } });
+    const productPicker = within(form).getByLabelText(/fields\.applies_to_product/);
+    fireEvent.focus(productPicker);
+    fireEvent.change(productPicker, { target: { value: 'key' } });
+    fireEvent.click(await screen.findByRole('option', { name: 'Keychain' }));
     fireEvent.submit(form);
 
     await waitFor(() => expect(rpcMock).toHaveBeenCalledWith('admin_generate_coupons', expect.objectContaining({
       p_count: 25, p_prefix: 'SUMMER', p_discount_type: 'fixed', p_discount_value: 15,
-      p_product_id: 'product-1', p_min_subtotal: null, p_expires_at: null, p_user_id: null,
+      p_product_id: 'product-1', p_min_subtotal: null, p_expires_at: null, p_user_id: null, p_grant_points: null,
     })));
     const issued = await screen.findByLabelText(/fields\.generated_codes/);
     expect((issued as HTMLTextAreaElement).value).toBe('SUMMERAB2345');
     expect(screen.getByRole('button', { name: 'copy_codes' })).toBeInTheDocument();
+  });
+
+  it('creates a points-only coupon without discount conditions', async () => {
+    const { rpcMock } = mountOffers({
+      admin_generate_coupons: [{ coupon_code: 'POINTS123456', coupon_id: 'coupon-points' }],
+    });
+    fireEvent.click(await screen.findByRole('button', { name: 'admin:issue_coupon' }));
+    const form = (await screen.findByRole('heading', { name: 'issue_coupon' })).closest('form')!;
+    fireEvent.change(within(form).getByLabelText(/fields\.discount_type/), { target: { value: 'points' } });
+    expect(within(form).queryByLabelText(/fields\.discount_value/)).not.toBeInTheDocument();
+    expect(within(form).queryByLabelText(/fields\.min_subtotal/)).not.toBeInTheDocument();
+    expect(within(form).queryByLabelText(/fields\.applies_to_product/)).not.toBeInTheDocument();
+    fireEvent.change(within(form).getByLabelText(/fields\.grant_points/), { target: { value: '500' } });
+    fireEvent.submit(form);
+    await waitFor(() => expect(rpcMock).toHaveBeenCalledWith('admin_generate_coupons', expect.objectContaining({
+      p_discount_type: 'fixed', p_discount_value: 0, p_grant_points: 500,
+      p_min_subtotal: null, p_product_id: null,
+    })));
   });
 
   it('mints a code when a single coupon is issued without one', async () => {
@@ -197,12 +218,14 @@ describe('admin offers and coupons', () => {
   });
 
   it('keeps the points redemption options next to the coupon tools', async () => {
-    mountOffers();
+    mountOffers({ search_product_choices: products });
     const heading = await screen.findByRole('heading', { name: 'admin:redeem_options' });
     const section = heading.closest('section')!;
     expect(within(section).getByText('admin:redeem_section_help')).toBeInTheDocument();
-    const productSelect = await within(section).findByLabelText(/fields\.redeem_product/);
-    expect(within(productSelect).getByRole('option', { name: 'Keychain' })).toBeInTheDocument();
+    const productSearch = await within(section).findByLabelText(/fields\.redeem_product/);
+    fireEvent.focus(productSearch);
+    fireEvent.change(productSearch, { target: { value: 'key' } });
+    expect(await screen.findByRole('option', { name: 'Keychain' })).toBeInTheDocument();
     expect(within(section).getByRole('button', { name: 'admin:add_redeem_option' })).toBeInTheDocument();
   });
 });

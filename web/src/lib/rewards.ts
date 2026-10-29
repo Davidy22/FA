@@ -77,8 +77,8 @@ export type MembershipTier = {
 export const DEFAULT_TIERS: MembershipTier[] = [
   { name: 'Member', min_lifetime_points: 0, multiplier: 1 },
   { name: 'Silver', min_lifetime_points: 1000, multiplier: 2 },
-  { name: 'Gold', min_lifetime_points: 5000, multiplier: 3 },
-  { name: 'Platinum', min_lifetime_points: 20000, multiplier: 4 },
+  { name: 'Gold', min_lifetime_points: 10000, multiplier: 3 },
+  { name: 'Platinum', min_lifetime_points: 100000, multiplier: 4 },
 ];
 
 /**

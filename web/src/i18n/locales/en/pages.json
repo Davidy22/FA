@@ -34,8 +34,6 @@
   "careers": {
     "title": "Careers",
     "lede": "We are a small team of makers, printers, and people who like fixing things. When a role opens, it appears here.",
-    "hidden_title": "Careers is not open yet",
-    "hidden_body": "We are not hiring through this page at the moment. If you would like to introduce yourself anyway, use the contact page and tell us what you make.",
     "open_roles": "Open roles",
     "no_roles": "No open roles right now",
     "no_roles_hint": "Check back soon, or send us a message and we will keep your details on file.",

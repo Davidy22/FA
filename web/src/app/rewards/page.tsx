@@ -23,6 +23,7 @@ export default function RewardsPage() {
   const { t } = useTranslation(['common', 'rewards']);
   const locale = useLocale((s) => s.locale);
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<0 | 1 | 2>(0);
   const [busyIndex, setBusyIndex] = useState<number | null>(null);
   const [redeemedCode, setRedeemedCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -109,7 +110,6 @@ export default function RewardsPage() {
         <h1 className="text-2xl font-semibold">{t('rewards:title')}</h1>
         <p className="mt-3 text-slate-600">{t('rewards:sign_in_required')}</p>
         <Link href="/login" className="btn mt-4 inline-block">{t('common:nav.login')}</Link>
-        <ReferralCard />
       </div>
     );
   }
@@ -126,8 +126,15 @@ export default function RewardsPage() {
     <div className="container-ma py-10 max-w-3xl">
       <h1 className="text-2xl font-semibold">{t('rewards:title')}</h1>
       <p className="mt-1 text-slate-600">{t('rewards:subtitle')}</p>
+      <div className="mt-5 flex flex-wrap gap-2 border-b border-slate-200" role="tablist" aria-label={t('rewards:tabs_label')}>
+        {[t('rewards:tab_balance'), t('rewards:tab_redeem'), t('rewards:tab_membership')].map((label, index) => (
+          <button key={label} type="button" role="tab" aria-selected={activeTab === index}
+            className={`border-b-2 px-3 py-2 text-sm ${activeTab === index ? 'border-brand-600 font-medium text-brand-700' : 'border-transparent text-slate-600'}`}
+            onClick={() => setActiveTab(index as 0 | 1 | 2)}>{label}</button>
+        ))}
+      </div>
 
-      <section className="mt-6 rounded-lg border border-slate-200 bg-white p-5">
+      <section className="mt-6 rounded-lg border border-slate-200 bg-white p-5" hidden={activeTab !== 0}>
         <p className="text-sm text-slate-500">{t('rewards:balance_label')}</p>
         <p className="mt-1 text-3xl font-semibold text-brand-700">{t('rewards:points', { count: balance })}</p>
         <p className="mt-2 text-sm text-slate-600">{t('rewards:earn_rate', { count: pointsPerDollar })}</p>
@@ -141,7 +148,7 @@ export default function RewardsPage() {
         )}
       </section>
 
-      <section className="mt-6 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="membership-heading">
+      <section className="mt-6 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="membership-heading" hidden={activeTab !== 2}>
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 id="membership-heading" className="text-xl font-medium">{t('rewards:membership_title')}</h2>
           <p className="text-sm text-slate-600">
@@ -185,9 +192,9 @@ export default function RewardsPage() {
         </ul>
       </section>
 
-      <ReferralCard code={profile.referral_code} />
+      <div hidden={activeTab !== 2}><ReferralCard code={profile.referral_code} /></div>
 
-      <section className="mt-8">
+      <section className="mt-8" hidden={activeTab !== 1}>
         <h2 className="text-xl font-medium">{t('rewards:redeem_title')}</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           {options.map((opt, i) => {
@@ -224,7 +231,7 @@ export default function RewardsPage() {
         {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
       </section>
 
-      <section className="mt-8">
+      <section className="mt-8" hidden={activeTab !== 0}>
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-xl font-medium">{t('rewards:my_coupons')}</h2>
           <div className="text-right">
@@ -269,7 +276,7 @@ export default function RewardsPage() {
         )}
       </section>
 
-      <section className="mt-8">
+      <section className="mt-8" hidden={activeTab !== 2}>
         <h2 className="text-xl font-medium">{t('rewards:activity')}</h2>
         {!activity?.length ? (
           <p className="mt-3 text-slate-500">{t('rewards:no_activity')}</p>
