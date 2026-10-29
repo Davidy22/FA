@@ -15,8 +15,6 @@
   },
   "contact": {
     "title": "Contact us",
-    "lede": "Questions about an order, a material, or a part that needs to fit exactly right? Send a message and a real person will reply.",
-    "form_title": "Send us a message",
     "sign_in_hint": "Sign in to open a ticket.",
     "subject": "Subject",
     "message": "Message",
@@ -25,7 +23,6 @@
     "sent": "Thanks — your message is ticket “{{subject}}”. We reply in the ticket and by email.",
     "sent_cta": "View your tickets",
     "required": "Add a subject and a message.",
-    "ticket_hint": "Your message opens a support ticket, so nothing gets lost in an inbox.",
     "email_title": "Prefer email?",
     "email_hint": "Write to us directly and we will answer within one working day.",
     "no_phone": "Phone not listed yet",
@@ -49,7 +46,7 @@
     }
   },
   "document": {
-    "title": "A4 document printing",
+    "title": "Document Printing",
     "price_summary": "Grayscale: {{grayscale}} per side · Color: {{color}} per side.",
     "privacy": "No account is needed. Your upload stays private and is only used to fulfil your order.",
     "file_label": "Document (up to 20 MB)",

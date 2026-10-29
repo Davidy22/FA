@@ -119,7 +119,6 @@ export default function DocumentPrintingPage() {
         color: formatMoney(prices.color, locale),
       })}
     </p>
-    <p className="mt-3 text-sm text-slate-500">{t('document.privacy')}</p>
 
     <form onSubmit={submit} className="mt-6 space-y-4" aria-busy={busy || reading}>
       <label className="label">{t('document.file_label')}

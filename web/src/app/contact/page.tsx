@@ -72,11 +72,9 @@ export default function ContactPage() {
   return (
     <div className="container-ma py-10 max-w-4xl">
       <h1 className="text-3xl font-semibold">{t('pages:contact.title')}</h1>
-      <p className="mt-2 max-w-2xl text-slate-700">{t('pages:contact.lede')}</p>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[1.4fr_1fr]">
         <section aria-labelledby="contact-form-heading">
-          <h2 id="contact-form-heading" className="text-xl font-medium">{t('pages:contact.form_title')}</h2>
           {!profile ? (
             <div className="mt-3 rounded border border-slate-200 p-4 text-sm">
               <p className="text-slate-700">{t('pages:contact.sign_in_hint')}</p>
@@ -109,7 +107,6 @@ export default function ContactPage() {
               <button type="submit" className="btn" disabled={busy}>
                 {busy ? t('common:loading') : t('pages:contact.send')}
               </button>
-              <p className="text-xs text-slate-500">{t('pages:contact.ticket_hint')}</p>
             </form>
           )}
         </section>

@@ -86,7 +86,7 @@ begin
       v_line.unit_price := v_unit;
       v_line_total := v_unit * v_qty;
       v_line.line_total := v_line_total;
-      v_line.description := jsonb_build_object('en','A4 document printing');
+      v_line.description := jsonb_build_object('en','Document Printing');
       v_line.item_snapshot := jsonb_build_object('kind','document','file_path',v_item->>'file_path',
         'pages',(v_item->>'pages')::int,'color',v_item->>'color','duplex',(v_item->>'duplex')::boolean);
     elsif v_item->>'kind' = 'premade' then

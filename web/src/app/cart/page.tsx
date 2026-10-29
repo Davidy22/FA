@@ -213,7 +213,7 @@ export default function CartPage() {
               );
             } else if (it.kind === 'document') {
               return <li key={idx} className="p-4 flex flex-wrap items-center justify-between gap-3">
-                <div><p className="font-medium">A4 document printing</p><p className="text-sm text-slate-600">{it.pages} sides · {it.color} · {it.duplex ? 'Double-sided' : 'Single-sided'} · {it.quantity} copies</p></div>
+                <div><p className="font-medium">Document Printing</p><p className="text-sm text-slate-600">{it.pages} sides · {it.color} · {it.duplex ? 'Double-sided' : 'Single-sided'} · {it.quantity} copies</p></div>
                 <button onClick={() => removeItem(idx)} className="btn-outline">{t('cart:remove')}</button>
               </li>;
             } else if (it.kind === 'ticket') {
@@ -311,7 +311,6 @@ export default function CartPage() {
         ) : (
           <Link href="/checkout" className="btn w-full mt-4">{t('cart:proceed_to_checkout')}</Link>
         )}
-        <p className="mt-3 text-xs text-slate-500">{t('cart:pickup_only')}</p>
       </aside>
     </div>
   );

@@ -203,7 +203,6 @@ export default function CheckoutPage() {
         <button className="btn w-full" disabled={busy || !email || !name} onClick={handlePay}>
           {busy ? t('common:loading') : t('checkout:pay_with_stripe')}
         </button>
-        <p className="text-xs text-slate-500">{t('checkout:pickup_only')}</p>
       </section>
     </div>
   );
