@@ -54,7 +54,7 @@ export default function CatalogPage() {
   });
 
   return (
-    <div className="container-ma py-8 grid grid-cols-1 md:grid-cols-[240px_1fr] gap-8">
+    <div className="w-full max-w-none px-2 py-8 sm:px-3 grid grid-cols-1 md:grid-cols-[180px_minmax(0,1fr)] gap-4 md:gap-5">
       <aside aria-label={t('catalog:filters')} className="space-y-4">
         <div>
           <label className="label">{t('common:search')}</label>
@@ -86,7 +86,7 @@ export default function CatalogPage() {
         ) : products?.length === 0 ? (
           <p className="text-slate-500">{t('catalog:no_results')}</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
             {products?.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
         )}

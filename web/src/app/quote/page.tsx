@@ -12,7 +12,6 @@ import type { Location, Profile, TicketAttachment } from '@/lib/types';
 
 const MAX_FILES = 5;
 const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25 MB each
-const ALLOWED_EXT = ['stl', 'obj', '3mf', 'step', 'stp', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'svg'];
 
 function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;
@@ -75,8 +74,6 @@ export default function QuotePage() {
     if (messageTrim.length < 10) { setError(t('tickets:error_message_short')); return; }
     for (const f of files) {
       if (f.size > MAX_FILE_BYTES) { setError(t('tickets:error_attachment_too_large')); return; }
-      const ext = f.name.split('.').pop()?.toLowerCase() || '';
-      if (!ALLOWED_EXT.includes(ext)) { setError(t('tickets:error_attachment_type')); return; }
     }
 
     setBusy(true);
@@ -142,6 +139,7 @@ export default function QuotePage() {
     <div className="container-ma py-10 max-w-2xl">
       <h1 className="text-3xl font-bold">{t('quote:title')}</h1>
       <p className="mt-2 text-slate-600">{t('quote:subtitle')}</p>
+      <Link href="/pricing" className="mt-2 inline-block text-sm text-brand-700 underline">{t('common:nav.pricing')}</Link>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-5">
         <div>
@@ -194,9 +192,9 @@ export default function QuotePage() {
             <p className="mt-1 text-xs text-slate-500">
               {t('tickets:attachment_limits', { count: MAX_FILES, size: '25 MB' })}
             </p>
+            <p className="mt-1 text-xs text-slate-500">{t('tickets:attachment_types_hint')}</p>
             <input
               ref={inputRef} type="file" multiple
-              accept=".stl,.obj,.3mf,.step,.stp,.pdf,.png,.jpg,.jpeg,.gif,.svg"
               className="hidden"
               onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }}
             />

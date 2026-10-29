@@ -28,7 +28,7 @@ type SlotDraft = {
 type Draft = {
   name: Localized; description: Localized; price: string;
   category: string; tags: string; imageUrls: string;
-  sourcePath: string; featured: boolean; status: PremadeProduct['status'];
+  featured: boolean; status: PremadeProduct['status'];
   defaultMaterialId: string; allowed: Record<string, string>;
   salePrice: string; saleStartsAt: string; saleEndsAt: string;
   slots: SlotDraft[];
@@ -50,7 +50,7 @@ function draft(product?: PremadeProduct, allowed: ProductMaterial[] = [], slots:
     name: localizedInput(product?.name), description: localizedInput(product?.description),
     price: product?.base_price?.toString() || '0', category: product?.category || 'other',
     tags: product?.tags?.join(', ') || '', imageUrls: product?.image_urls?.join('\n') || '',
-    sourcePath: product?.source_model_path || '', featured: product?.is_featured ?? false,
+    featured: product?.is_featured ?? false,
     status: product?.status || 'draft', defaultMaterialId: product?.default_material_id || '',
     allowed: Object.fromEntries(allowed.map((row) => [row.material_id, row.price_modifier.toString()])),
     salePrice: product?.sale_price != null ? product.sale_price.toString() : '',
@@ -73,7 +73,6 @@ function ProductForm({ product, allowed, slots, materials, filaments, onDone }: 
   const [showOptions, setShowOptions] = useState(!!product);
   // One language picker edits the name, the description and every slot name.
   const [language, setLanguage] = useAdminLanguage();
-  const [modelFile, setModelFile] = useState<File | null>(null);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setForm((previous) => ({ ...previous, [key]: value }));
@@ -112,10 +111,6 @@ function ProductForm({ product, allowed, slots, materials, filaments, onDone }: 
   async function submit(event: FormEvent) {
     event.preventDefault();
     await action.run(async () => {
-      if (!product && !modelFile) throw new Error(t('admin:model_required'));
-      if (modelFile && !/\.(stl|obj|3mf)$/i.test(modelFile.name)) {
-        throw new Error(t('admin:model_invalid'));
-      }
       for (const file of imageFiles) {
         if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
           throw new Error(t('admin:image_invalid'));
@@ -180,16 +175,6 @@ function ProductForm({ product, allowed, slots, materials, filaments, onDone }: 
       }
       const uploaded: { bucket: string; path: string }[] = [];
       try {
-        let sourcePath = form.sourcePath;
-        if (modelFile) {
-          const path = `${crypto.randomUUID()}.${modelFile.name.split('.').pop()!.toLowerCase()}`;
-          const { error } = await supabase().storage.from('product-files').upload(path, modelFile, {
-            contentType: modelFile.type || 'application/octet-stream',
-          });
-          if (error) throw error;
-          uploaded.push({ bucket: 'product-files', path });
-          sourcePath = path;
-        }
         const imageUrls = lines(form.imageUrls);
         for (const file of imageFiles) {
           const extension = file.type === 'image/jpeg' ? 'jpg' : file.type === 'image/png' ? 'png' : 'webp';
@@ -206,7 +191,7 @@ function ProductForm({ product, allowed, slots, materials, filaments, onDone }: 
           base_price: basePrice,
           default_material_id: slotPayload.length ? null : (form.defaultMaterialId || null),
           category: form.category, tags: lines(form.tags), image_urls: imageUrls,
-          source_model_path: sourcePath, is_featured: form.featured, status: form.status,
+          is_featured: form.featured, status: form.status,
           sale_price: salePrice, sale_starts_at: saleStartsAt, sale_ends_at: saleEndsAt,
         };
         const { error } = await supabase().rpc('admin_save_product', {
@@ -271,8 +256,6 @@ function ProductForm({ product, allowed, slots, materials, filaments, onDone }: 
       )}
     </fieldset>
     <label className="block text-sm">{t('admin:fields.tags')}<input className="input mt-1" value={form.tags} onChange={(event) => set('tags', event.target.value)} placeholder="gift, desk" /></label>
-    <label className="block text-sm">{t('admin:fields.model_file')}{!product ? ' *' : ''}<input className="mt-1 block w-full text-sm" type="file" accept=".stl,.obj,.3mf" onChange={(event) => setModelFile(event.target.files?.[0] || null)} /></label>
-    {product && <p className="break-all text-xs text-slate-500">{t('admin:current_file')}: {form.sourcePath}</p>}
     <label className="block text-sm">{t('admin:fields.image_upload')}<input className="mt-1 block w-full text-sm" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => setImageFiles(Array.from(event.target.files || []))} /></label>
     <label className="block text-sm">{t('admin:fields.image_urls')}<textarea className="input mt-1 min-h-20" value={form.imageUrls} onChange={(event) => set('imageUrls', event.target.value)} placeholder="https://…" /></label>
     <p className="text-xs text-slate-500">{t('admin:images_hint')}</p>

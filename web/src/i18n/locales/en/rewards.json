@@ -73,5 +73,9 @@
   "coupon_saved_account": "This coupon is now saved to your account and can be used at checkout.",
   "coupon_sign_in_to_claim": "Sign in to apply this coupon to your account.",
   "coupon_claim_intro": "This link contains a coupon. Apply it to your signed-in account.",
-  "coupon_claim_action": "Apply coupon"
+  "coupon_claim_action": "Apply coupon",
+  "tabs_label": "Rewards sections",
+  "tab_balance": "Balance & coupons",
+  "tab_redeem": "Redeem points",
+  "tab_membership": "Membership & activity"
 }

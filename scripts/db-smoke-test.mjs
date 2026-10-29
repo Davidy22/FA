@@ -174,7 +174,7 @@ try {
   await assert.rejects(pricing(cart([{ ...premade, options: {} }])), /Required option missing/);
   const pricedOptions = await pricing(cart([premade]));
   assert.equal(pricedOptions.lines[0].unit_price, 14);
-  assert.equal(pricedOptions.lines[0].item_snapshot.model_path, 'admin/smoke.stl');
+  assert.equal(pricedOptions.lines[0].item_snapshot.model_path, null);
   await rows(`insert into public.checkout_sessions(session_id,cart,user_id,location_id,contact_email,contact_name,locale)
       values('smoke-options',$1::jsonb,$2,$3,'db-buyer@example.test','Buyer','en')`,
     [JSON.stringify(cart([premade])), buyer, location]);

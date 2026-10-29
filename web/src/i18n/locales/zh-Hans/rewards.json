@@ -73,5 +73,9 @@
   "coupon_saved_account": "优惠券已保存到账户，可在结账时使用。",
   "coupon_sign_in_to_claim": "登录后将此优惠券应用到账户。",
   "coupon_claim_intro": "此链接包含一张优惠券。将其应用到账户。",
-  "coupon_claim_action": "应用优惠券"
+  "coupon_claim_action": "应用优惠券",
+  "tabs_label": "奖励分页",
+  "tab_balance": "积分及优惠券",
+  "tab_redeem": "兑换积分",
+  "tab_membership": "会员及活动"
 }

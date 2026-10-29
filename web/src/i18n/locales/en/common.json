@@ -19,7 +19,8 @@
     "about": "About us",
     "contact": "Contact us",
     "careers": "Careers",
-    "locations": "Locations"
+    "locations": "Locations",
+    "pricing": "Pricing information"
   },
   "location": {
     "title": "Choose a location",
@@ -135,5 +136,11 @@
   "footer": {
     "nav_label": "Footer",
     "made_in_hong_kong": "Designed and printed in Hong Kong."
+  },
+  "appearance": {
+    "label": "Appearance",
+    "light": "Light",
+    "dark": "Dark",
+    "auto": "Auto (system)"
   }
 }
