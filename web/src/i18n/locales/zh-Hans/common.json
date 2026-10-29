@@ -19,7 +19,8 @@
     "about": "关于我们",
     "contact": "联系我们",
     "careers": "招聘",
-    "locations": "门店"
+    "locations": "门店",
+    "pricing": "价格信息"
   },
   "location": {
     "title": "选择门店",
@@ -135,5 +136,11 @@
   "footer": {
     "nav_label": "页脚",
     "made_in_hong_kong": "香港设计与打印。"
+  },
+  "appearance": {
+    "label": "外观",
+    "light": "浅色",
+    "dark": "深色",
+    "auto": "自动（系统）"
   }
 }

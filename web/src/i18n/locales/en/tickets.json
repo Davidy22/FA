@@ -10,7 +10,7 @@
   "message_hint": "{{count}} characters (10 minimum)",
   "attachments": "Attachments",
   "dropzone": "Drop files here or click to browse",
-  "attachment_limits": "Up to {{count}} files, {{size}} each. STL, OBJ, 3MF, STEP, PDF, images.",
+  "attachment_limits": "Up to {{count}} files, {{size}} each.",
   "location": "Pickup location",
   "contact": "Contact",
   "opened": "Opened",
@@ -52,8 +52,8 @@
   "error_subject_required": "Please add a subject.",
   "error_message_short": "Please describe your request in at least 10 characters.",
   "error_attachment_too_large": "Each file must be 25 MB or smaller.",
-  "error_attachment_type": "Allowed file types: STL, OBJ, 3MF, STEP, PDF, PNG, JPG, GIF, SVG.",
   "error_description_required": "Describe what the price covers.",
   "error_price_invalid": "Enter a valid unit price (0 or more).",
-  "error_quantity_invalid": "Quantity must be a whole number between 1 and 99."
+  "error_quantity_invalid": "Quantity must be a whole number between 1 and 99.",
+  "attachment_types_hint": "Any file type is welcome — send us whatever best describes the job."
 }

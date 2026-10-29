@@ -10,7 +10,7 @@
   "message_hint": "{{count}} 个字符（至少 10 个）",
   "attachments": "附件",
   "dropzone": "将文件拖放到此处或点击浏览",
-  "attachment_limits": "最多 {{count}} 个文件，每个 {{size}}。支持 STL、OBJ、3MF、STEP、PDF、图片。",
+  "attachment_limits": "最多 {{count}} 个文件，每个不超过 {{size}}。",
   "location": "取货门店",
   "contact": "联系人",
   "opened": "创建于",
@@ -52,8 +52,8 @@
   "error_subject_required": "请填写主题。",
   "error_message_short": "请至少描述 10 个字符。",
   "error_attachment_too_large": "每个文件必须在 25 MB 以内。",
-  "error_attachment_type": "仅支持：STL、OBJ、3MF、STEP、PDF、PNG、JPG、GIF、SVG。",
   "error_description_required": "请描述报价内容。",
   "error_price_invalid": "请输入有效的单价（0 以上）。",
-  "error_quantity_invalid": "数量必须是 1 到 99 的整数。"
+  "error_quantity_invalid": "数量必须是 1 到 99 的整数。",
+  "attachment_types_hint": "任何文件类型均可，请发送最能说明需求的文件。"
 }

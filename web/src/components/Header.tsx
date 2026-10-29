@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { canUseAdminConsole } from '@/lib/permissions';
 import { LocationSelector } from './LocationSelector';
 import { LocaleSwitcher } from './LocaleSwitcher';
+import { AppearanceSelect } from './AppearanceSelect';
 import { useEffect, useState } from 'react';
 import type { Profile } from '@/lib/types';
 
@@ -55,6 +56,7 @@ export function Header() {
           <nav className="hidden lg:flex gap-4 text-sm">
             <Link href="/catalog" className="text-slate-700 hover:text-brand-700">{t('nav.catalog')}</Link>
             <Link href="/quote" className="text-slate-700 hover:text-brand-700">{t('nav.quote')}</Link>
+            <Link href="/pricing" className="text-slate-700 hover:text-brand-700">{t('nav.pricing')}</Link>
             <Link href="/document-printing" className="text-slate-700 hover:text-brand-700">{t('nav.document_printing')}</Link>
             <Link href="/rewards" className="text-slate-700 hover:text-brand-700">{t('nav.rewards')}</Link>
             {profile && <Link href="/tickets" className="text-slate-700 hover:text-brand-700">{t('nav.tickets')}</Link>}
@@ -64,6 +66,7 @@ export function Header() {
           <div className="hidden sm:block"><LocationSelector />
           </div>
           <div className="hidden sm:block"><LocaleSwitcher /></div>
+          <div className="hidden md:block"><AppearanceSelect /></div>
           <Link href="/cart" className="relative inline-flex items-center px-3 py-2 text-sm rounded-md hover:bg-slate-100" aria-label={t('nav.cart')}>
             <span aria-hidden>🛒</span>
             {itemCount > 0 && (
@@ -97,9 +100,9 @@ export function Header() {
           <button type="button" className="btn-outline lg:hidden" aria-expanded={menuOpen} aria-controls="mobile-navigation" onClick={() => setMenuOpen(!menuOpen)}>Menu</button>
         </div>
         {menuOpen && <nav id="mobile-navigation" className="w-full flex flex-col gap-3 border-t pt-3 lg:hidden" onClick={() => setMenuOpen(false)}>
-          <div className="flex flex-wrap gap-3"><LocationSelector /><LocaleSwitcher /></div>
+          <div className="flex flex-wrap gap-3"><LocationSelector /><LocaleSwitcher /><AppearanceSelect /></div>
           <Link href="/catalog">{t('nav.catalog')}</Link><Link href="/quote">{t('nav.quote')}</Link>
-          <Link href="/document-printing">{t('nav.document_printing')}</Link>
+          <Link href="/pricing">{t('nav.pricing')}</Link><Link href="/document-printing">{t('nav.document_printing')}</Link>
           <Link href="/rewards">{t('nav.rewards')}</Link><Link href="/account">{t('nav.account')}</Link>
           <Link href="/about">{t('nav.about')}</Link><Link href="/contact">{t('nav.contact')}</Link>
           {profile && <Link href="/tickets">{t('nav.tickets')}</Link>}

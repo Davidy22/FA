@@ -147,7 +147,6 @@ export type PremadeProduct = SaleFields & {
   category: 'toy' | 'tool' | 'art' | 'gadget' | 'replacement_part' | 'other';
   tags: string[];
   image_urls: string[];
-  source_model_path: string;
   submitted_by: string | null;
   is_featured: boolean;
   status: 'draft' | 'published' | 'archived';

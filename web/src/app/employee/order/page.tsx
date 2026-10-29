@@ -15,11 +15,10 @@ type OrderLine = {
   quote_request_id: string | null;
   quantity: number;
   unit_price: number;
-  item_snapshot: { kind?: string; name?: Localized; description?: string; model_path?: string; file_path?: string; ticket_id?: string };
+  item_snapshot: { kind?: string; name?: Localized; description?: string; file_path?: string; ticket_id?: string };
   /** Multi-material prints: one entry per slot, as the customer chose it. */
   material_slots: PricedSlot[] | null;
   order_item_option_values: { id: string; file_path: string | null; text_value: string | null }[];
-  product: { source_model_path: string } | null;
 };
 type OrderDetailRecord = {
   id: string;
@@ -43,7 +42,7 @@ function OrderDetail({ id }: { id: string }) {
     queryKey: ['order', id],
     queryFn: async () => {
       const { data, error } = await supabase().from('orders')
-        .select('*,order_items(*,order_item_option_values(*),product:premade_products(source_model_path)),order_notes(*)')
+        .select('*,order_items(*,order_item_option_values(*)),order_notes(*)')
         .eq('id', id).single();
       if (error) throw error;
       return data as unknown as OrderDetailRecord;
@@ -88,8 +87,6 @@ function OrderDetail({ id }: { id: string }) {
       <h2 className="mt-6 text-lg font-medium">{t('employee:items')}</h2>
       <ul className="divide-y">
         {(order.order_items || []).map((item) => {
-          const modelPath = item.item_snapshot?.model_path || item.product?.source_model_path;
-          const bucket = item.premade_product_id ? 'product-files' : 'models';
           return <li key={item.id} className="py-3 text-sm">
             <p>{item.premade_product_id
               ? (t_db(item.item_snapshot?.name, locale) || t('employee:premade'))
@@ -110,9 +107,6 @@ function OrderDetail({ id }: { id: string }) {
                 ))}
               </ul>
             ) : null}
-            {modelPath && <button className="mt-1 underline text-brand-700" onClick={() => void download(bucket, modelPath)}>
-              {t('employee:download_model')}
-            </button>}
             {item.item_snapshot?.kind === 'document' && item.item_snapshot?.file_path &&
               <button className="mt-1 underline text-brand-700" onClick={() => void download('document-prints', item.item_snapshot.file_path!)}>
                 {t('employee:download_document')}

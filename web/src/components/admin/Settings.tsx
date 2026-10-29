@@ -3,7 +3,6 @@ import { useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { decimal } from '@/lib/admin';
-import { parseFeature, type Feature } from '@/lib/features';
 import { supabase } from '@/lib/supabase';
 import type { PlatformSetting } from '@/lib/types';
 import { AdminFeedback, AdminQueryState, useAdminAction } from './Shared';
@@ -23,20 +22,12 @@ const SETTING_GROUPS: Record<string, SettingDefinition[]> = {
   ],
 };
 
-// Storefront features that ship dark. Turning one on here also unhides its
-// navigation entry; the model-submission switch is enforced in RLS too.
-const FEATURE_TOGGLES: { feature: Feature; labelKey: string; hintKey: string }[] = [
-  { feature: 'model_submissions', labelKey: 'feature_model_submissions', hintKey: 'feature_model_submissions_hint' },
-  { feature: 'careers_page', labelKey: 'feature_careers_page', hintKey: 'feature_careers_page_hint' },
-];
-
 async function refreshSettings(queryClient: ReturnType<typeof useQueryClient>) {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: ['admin_settings'] }),
     queryClient.invalidateQueries({ queryKey: ['admin_settings_redeem'] }),
     queryClient.invalidateQueries({ queryKey: ['rewards_settings'] }),
     queryClient.invalidateQueries({ queryKey: ['document_prices'] }),
-    queryClient.invalidateQueries({ queryKey: ['feature'] }),
   ]);
 }
 
@@ -63,32 +54,6 @@ function NumericSetting({ definition, value }: { definition: SettingDefinition; 
   </form>;
 }
 
-function FeatureToggle({ feature, labelKey, hintKey, enabled }: {
-  feature: Feature; labelKey: string; hintKey: string; enabled: boolean;
-}) {
-  const { t } = useTranslation('admin');
-  const queryClient = useQueryClient();
-  const action = useAdminAction();
-  async function toggle(next: boolean) {
-    await action.run(async () => {
-      const { error } = await supabase().from('platform_settings')
-        .upsert({ key: `features.${feature}`, value: next }, { onConflict: 'key' });
-      if (error) throw error;
-      await refreshSettings(queryClient);
-    });
-  }
-  return <div className="rounded border p-3 text-sm">
-    <label className="flex items-start gap-2 font-medium">
-      <input type="checkbox" className="mt-0.5" checked={enabled} disabled={action.busy}
-        onChange={(event) => void toggle(event.target.checked)} />
-      <span>{t(labelKey)}</span>
-    </label>
-    <p className="mt-1 text-xs text-slate-600">{t(hintKey)}</p>
-    <p className="mt-1 text-xs text-slate-500">{enabled ? t('feature_on') : t('feature_off')}</p>
-    <AdminFeedback error={action.error} notice={action.notice} />
-  </div>;
-}
-
 export function AdminSettings() {
   const { t } = useTranslation(['admin', 'common']);
   const { data, isPending, error } = useQuery<PlatformSetting[]>({
@@ -104,13 +69,6 @@ export function AdminSettings() {
     <p className="mt-1 text-sm text-slate-600">{t('settings_help')}</p>
     <AdminQueryState loading={isPending} error={error} />
     {data && <>
-      <section className="mt-7">
-        <h3 className="mb-3 text-lg font-medium">{t('feature_group')}</h3>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {FEATURE_TOGGLES.map((entry) => <FeatureToggle key={entry.feature} {...entry}
-            enabled={parseFeature(values[`features.${entry.feature}`])} />)}
-        </div>
-      </section>
       {Object.entries(SETTING_GROUPS).map(([group, definitions]) => <section key={group} className="mt-7">
         <h3 className="mb-3 text-lg font-medium">{t(`setting_groups.${group}`)}</h3>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

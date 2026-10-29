@@ -31,8 +31,7 @@ const materials = [{
 }];
 const products = [{
   id: 'product-1', slug: 'keychain', name: { en: 'Keychain' }, description: null, base_price: 20,
-  default_material_id: 'material-1', category: 'other', tags: [], image_urls: [],
-  source_model_path: 'keychain.stl', submitted_by: null, is_featured: false, status: 'published',
+  default_material_id: 'material-1', category: 'other', tags: [], image_urls: [], submitted_by: null, is_featured: false, status: 'published',
 }];
 const offerTables = {
   offer_codes: [], coupons: [], premade_products: products,
