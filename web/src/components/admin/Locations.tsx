@@ -83,7 +83,9 @@ function LocationForm({ location, onDone }: { location?: Location; onDone: () =>
   return <form ref={panel} onSubmit={(event) => void submit(event)} className="mt-5 space-y-4 rounded-lg border border-brand-200 bg-brand-50/30 p-4">
     <h3 className="font-medium">{location ? t('admin:edit_location') : t('admin:add_location')}</h3>
     <div className="grid gap-4 sm:grid-cols-2">
-      <label className="text-sm">{t('admin:fields.name')} *<input className="input mt-1" required value={form.name} onChange={(e) => set('name', e.target.value)} /></label>
+      <label className="text-sm">{t('admin:fields.name')} *
+        <input className="input mt-1" required placeholder={t('admin:fields.name_placeholder')} value={form.name} onChange={(e) => set('name', e.target.value)} />
+      </label>
       <label className="text-sm">{t('admin:fields.address')}<input className="input mt-1" value={form.address}
         placeholder={t('admin:fields.address_placeholder')} onChange={(e) => set('address', e.target.value)} /></label>
       <label className="text-sm">{t('admin:fields.phone')}<input className="input mt-1" value={form.phone}

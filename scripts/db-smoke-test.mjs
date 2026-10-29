@@ -370,11 +370,37 @@ try {
   assert.equal((await one('select discount_amount from public.orders where id=$1', [couponOrder.id])).discount_amount, '5.00');
   console.log('✓ coupon discount is consumed at fulfillment');
 
+  // Delivery: a flat fee below the free-shipping threshold, waived above it,
+  // and the entered address is snapshotted onto the order.
+  const deliveryAddress = { recipient: 'Ada', phone: '1234 5678', line1: '1 Example Road', district: 'Central' };
+  await assert.rejects(pricing({ ...docCart, fulfilment: 'delivery' }), /delivery address is required/);
+  const deliveryDocCart = { ...docCart, fulfilment: 'delivery', shipping_address: deliveryAddress };
+  const deliveryDoc = await pricing(deliveryDocCart);
+  assert.equal(Number(deliveryDoc.shipping_amount), 50);
+  assert.equal(Number(deliveryDoc.total_amount), 51.5);
+  const deliveryBulk = await pricing(cart([{ ...premade, quantity: 99,
+    options: { ...premade.options, [fileGroup]: { file_path: filePath } } }],
+    { fulfilment: 'delivery', shipping_address: deliveryAddress }));
+  assert.equal(Number(deliveryBulk.shipping_amount), 0);
+  await rows(`insert into public.checkout_sessions(session_id,cart,user_id,location_id,contact_email,contact_name,locale)
+      values('smoke-delivery',$1::jsonb,$2,$3,'db-buyer@example.test','Buyer','en')`,
+    [JSON.stringify(deliveryDocCart), buyer, location]);
+  const deliveryOrderRow = await one('select id from public.create_order_from_cart($1,$2,$3,$4,$5,$6)',
+    ['smoke-delivery', buyer, location, 'db-buyer@example.test', 'Buyer', 'en']);
+  const placedDelivery = await one(
+    'select fulfilment,shipping_amount,shipping_address from public.orders where id=$1', [deliveryOrderRow.id]);
+  assert.equal(placedDelivery.fulfilment, 'delivery');
+  assert.equal(Number(placedDelivery.shipping_amount), 50);
+  assert.equal(placedDelivery.shipping_address.district, 'Central');
+  console.log('✓ delivery fee, free-shipping threshold and saved address');
+
   // The shop is Hong Kong based: the seeded pickup point prices in HKD on Hong
   // Kong time and adds no sales tax, and a small cart is no longer raised to a
   // minimum order fee.
   const seededLocation = await one(
-    'select country,currency,timezone,tax_rate from public.locations where id=$1', [location]);
+    'select name,country,currency,timezone,tax_rate from public.locations where id=$1', [location]);
+  // The one shop's branches are named after their neighbourhood only.
+  assert.equal(seededLocation.name, 'Central');
   assert.equal(seededLocation.country, 'HK');
   assert.equal(seededLocation.currency, 'HKD');
   assert.equal(seededLocation.timezone, 'Asia/Hong_Kong');

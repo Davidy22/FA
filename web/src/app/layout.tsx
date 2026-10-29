@@ -10,6 +10,7 @@ import i18n from '@/lib/i18n';
 import { LocationPrompt } from '@/components/LocationPrompt';
 import { LocationSync } from '@/components/LocationSync';
 import { ClientOnly } from '@/components/ClientOnly';
+import { ThemeSync } from '@/components/ThemeSync';
 import { withBasePath } from '@/lib/paths';
 
 const queryClient = new QueryClient({
@@ -27,11 +28,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href={withBasePath('/favicon.svg')} type="image/svg+xml" />
         <title>Make Anyth.ing — 3D prints on demand</title>
+        {/* Apply the saved appearance before first paint so no page flashes light. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var v=localStorage.getItem('make-anything-appearance');" +
+              "var dark=window.matchMedia('(prefers-color-scheme: dark)').matches;" +
+              "document.documentElement.dataset.theme=(v==='light'||v==='dark')?v:(dark?'dark':'light');" +
+              "}catch(e){}})();",
+          }}
+        />
       </head>
       <body className="min-h-screen flex flex-col">
         <I18nextProvider i18n={i18n}>
           <QueryClientProvider client={queryClient}>
             <ClientOnly>
+              <ThemeSync />
               <LocationSync />
               <Header />
               <LocationPrompt />

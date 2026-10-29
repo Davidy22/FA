@@ -5,9 +5,15 @@
   "remove": "移除",
   "custom_print": "自定义 3D 打印",
   "ticket_item": "报价项目",
-  "shipping": "MVP 阶段仅供门店取件",
   "pickup_location": "取件门店",
-  "item_total": "小计",
-  "pickup_only": "仅限门店取件",
-  "sale_savings": "特价优惠"
+  "change_options": "更改选项",
+  "edit_options": "材质与选项",
+  "edit_incomplete": "请先选择材质、颜色及所有必填选项。",
+  "choose_location_to_edit": "更改选项前请先选择门店。",
+  "file_option_kept": "此项目已保留你上传的文件。",
+  "file_option_missing": "此选项需要上传文件，请移除项目后重新加入。",
+  "each": "每件 {{price}}",
+  "delivery_hint": "送货费用为 {{fee}}，订单满 {{threshold}} 免运费。",
+  "single_sided": "单面",
+  "copies": "{{count}} 份"
 }

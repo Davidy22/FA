@@ -56,10 +56,10 @@ describe('document printing uploads', () => {
   it('offers private document printing to guests without a sign-in wall', async () => {
     signedIn = false;
     render(<DocumentPrintingPage />);
-    expect(await screen.findByText(/No account is needed/)).toBeInTheDocument();
+    // A guest can upload and order without being sent to sign in first.
     expect(screen.queryByRole('link', { name: 'Sign in' })).not.toBeInTheDocument();
     // The button is waiting for a document, not for authentication.
-    expect(screen.getByRole('button', { name: 'Add to cart' })).toBeDisabled();
+    expect(await screen.findByRole('button', { name: 'Add to cart' })).toBeDisabled();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 

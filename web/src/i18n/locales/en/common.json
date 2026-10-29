@@ -57,6 +57,7 @@
   "search": "Search",
   "from_price": "from {{price}}",
   "add_to_cart": "Add to cart",
+  "tickets_hint": "Questions about an order? Open a support ticket and our team will reply there.",
   "price": "Price",
   "total": "Total",
   "subtotal": "Subtotal",

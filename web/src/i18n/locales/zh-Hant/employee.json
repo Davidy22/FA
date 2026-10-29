@@ -46,5 +46,11 @@
   "orders_pagination": "訂單頁面",
   "previous_page": "上一頁",
   "next_page": "下一頁",
-  "page_number": "第 {{number}} 頁"
+  "page_number": "第 {{number}} 頁",
+  "fulfilment": "取貨方式",
+  "pickup": "門市取件",
+  "delivery": "送貨",
+  "delivery_address": "送貨地址",
+  "shipping": "運費",
+  "total": "總額"
 }
