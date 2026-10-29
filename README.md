@@ -4,15 +4,19 @@ Multi-location 3D printing service — static SPA on GitHub Pages + Supabase Pos
 
 ## Repository layout
 ```
+AGENTS.md            Orientation for agents and new contributors: commands, conventions, traps
 web/                 Next.js 14 static export (TypeScript, Tailwind, react-i18next)
 supabase/
   migrations/        Forward-only SQL (extensions, helpers, schema, RLS, triggers, RPCs, seed)
-  functions/         Deno Edge Functions (stripe-checkout, stripe-webhook, verify-model, sign-file, ...)
+  functions/         Deno Edge Functions (stripe-checkout, stripe-webhook, convert-document, sign-file, ...)
   tests/             pgTAP policy/RPC tests
-scripts/             i18n key parity check, etc.
+scripts/             DB smoke test, pages-export check, i18n parity/sync
 .github/workflows/   CI, Pages deploy, DB migration, nightly E2E, keepalive
 docs/                Architecture & getting started
 ```
+
+New to the codebase? Read **[`AGENTS.md`](AGENTS.md)** first — it lists the check
+suite, the migration rules, and the conventions that are easy to break.
 
 ## Quick start (local)
 ```bash
