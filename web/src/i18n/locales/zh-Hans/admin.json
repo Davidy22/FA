@@ -202,6 +202,7 @@
   "remove": "移除",
   "fields": {
     "name": "名称",
+    "name_placeholder": "分店名称，例如：中环",
     "address": "地址",
     "address_placeholder": "香港中环鸭巴甸街 18 号地下 1 铺",
     "phone": "电话",

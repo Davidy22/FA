@@ -135,6 +135,15 @@ export default function AccountPage() {
         {profile?.is_creator && <Link href="/creator" className="btn-outline inline-block">{t('nav.creator_dashboard')}</Link>}
       </div>
 
+      <section className="mt-8 max-w-2xl" aria-labelledby="support-heading">
+        <h2 id="support-heading" className="text-xl font-medium">{t('nav.tickets')}</h2>
+        <p className="mt-1 text-sm text-slate-600">{t('tickets_hint')}</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link href="/tickets" className="btn-outline inline-block">{t('nav.tickets')}</Link>
+          <Link href="/contact" className="btn-outline inline-block">{t('nav.contact')}</Link>
+        </div>
+      </section>
+
       <section className="mt-8 max-w-2xl">
         <h2 className="text-xl font-medium">{t('auth.sign_in_methods')}</h2>
         <p className="mt-1 text-sm text-slate-600">{t('auth.sign_in_methods_desc')}</p>

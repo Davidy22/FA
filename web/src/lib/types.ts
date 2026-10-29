@@ -1,6 +1,8 @@
 // Generated-style types for DB rows (subset used by the client).
 // We generate a minimal set by hand that matches the migration shape.
 
+import type { DeliveryAddress } from './shipping';
+
 export type Localized = { en: string; 'zh-Hant'?: string; 'zh-Hans'?: string };
 
 export type Profile = {
@@ -19,6 +21,8 @@ export type Profile = {
   lifetime_points: number;
   referral_code: string;
   referred_by: string | null;
+  /** Address reused for delivery checkouts; null/absent until the customer saves one. */
+  delivery_address?: DeliveryAddress | null;
 };
 
 export type Coupon = {
@@ -326,8 +330,12 @@ export type Order = {
   status: 'pending' | 'printing' | 'completed' | 'shipped' | 'cancelled' | 'refunded';
   subtotal: number;
   tax_amount: number;
+  shipping_amount: number;
   total_amount: number;
   currency: string;
+  /** Collection at the location, or delivery to `shipping_address`. */
+  fulfilment: 'pickup' | 'delivery';
+  shipping_address: DeliveryAddress | null;
   tracking_number: string | null;
   cancel_reason: string | null;
   stripe_payment_intent_id: string | null;

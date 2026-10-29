@@ -25,7 +25,7 @@ export default function RewardsPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<0 | 1 | 2>(0);
   const [busyIndex, setBusyIndex] = useState<number | null>(null);
-  const [redeemedCode, setRedeemedCode] = useState<string | null>(null);
+  const [redeemed, setRedeemed] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { data: profile, isLoading } = useQuery<Profile | null>({
@@ -53,11 +53,13 @@ export default function RewardsPage() {
     },
   });
 
+  // Only active coupons are worth showing: a used one cannot be applied again.
   const { data: coupons } = useQuery<Coupon[]>({
     queryKey: ['my_coupons'],
     enabled: !!profile,
     queryFn: async () =>
-      (await supabase().from('coupons').select('*').order('created_at', { ascending: false }).limit(50)).data || [],
+      (await supabase().from('coupons').select('*').eq('status', 'active')
+        .order('created_at', { ascending: false }).limit(50)).data || [],
   });
 
   // Names for the products a coupon or redemption option is restricted to.
@@ -85,11 +87,11 @@ export default function RewardsPage() {
   async function redeem(optionIndex: number) {
     setBusyIndex(optionIndex);
     setError(null);
-    setRedeemedCode(null);
+    setRedeemed(false);
     try {
-      const { data, error: rpcErr } = await supabase().rpc('redeem_rewards', { p_option_index: optionIndex });
+      const { error: rpcErr } = await supabase().rpc('redeem_rewards', { p_option_index: optionIndex });
       if (rpcErr) throw new Error(rpcErr.message);
-      setRedeemedCode((data as Coupon).code);
+      setRedeemed(true);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['me'] }),
         queryClient.invalidateQueries({ queryKey: ['me_account'] }),
@@ -223,9 +225,9 @@ export default function RewardsPage() {
             );
           })}
         </div>
-        {redeemedCode && (
+        {redeemed && (
           <p className="mt-3 rounded border border-green-200 bg-green-50 p-3 text-sm text-green-800">
-            {t('rewards:redeem_success', { code: redeemedCode })}
+            {t('rewards:redeem_success')}
           </p>
         )}
         {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
@@ -245,28 +247,20 @@ export default function RewardsPage() {
           <div className="overflow-x-auto"><table className="mt-3 w-full text-sm">
             <thead className="text-left text-slate-500">
               <tr>
-                <th className="py-2">{t('rewards:coupon_code')}</th>
-                <th>{t('rewards:discount')}</th>
-                <th>{t('rewards:status')}</th>
-                <th className="text-right">{t('rewards:expires')}</th>
+                <th className="px-3 py-2 font-medium">{t('rewards:discount')}</th>
+                <th className="px-3 py-2 text-right font-medium">{t('rewards:expires')}</th>
               </tr>
             </thead>
             <tbody>
               {coupons.map((c) => (
                 <tr key={c.id} className="border-t">
-                  <td className="py-2 font-mono">{c.code}</td>
-                  <td>
-                    {couponDiscountLabel(c, t)}
+                  <td className="px-3 py-3">
+                    <span className="font-medium">{couponDiscountLabel(c, t)}</span>
                     {couponConditions(c, productName(c.product_id), t).map((condition) => (
                       <span key={condition} className="block text-xs text-slate-500">{condition}</span>
                     ))}
                   </td>
-                  <td>
-                    <span className={c.status === 'active' ? 'badge' : 'badge text-slate-500'}>
-                      {c.status === 'active' ? t('rewards:status_active') : t('rewards:status_used')}
-                    </span>
-                  </td>
-                  <td className="text-right">
+                  <td className="px-3 py-3 text-right whitespace-nowrap">
                     {c.expires_at ? new Date(c.expires_at).toLocaleDateString(locale) : t('rewards:no_expiry')}
                   </td>
                 </tr>

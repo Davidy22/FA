@@ -2,12 +2,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { couponDiscountLabel } from '@/lib/rewards';
 import type { Coupon } from '@/lib/types';
 
 export default function CouponClaimPage() {
   const { t } = useTranslation(['common', 'rewards']);
+  const queryClient = useQueryClient();
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(true);
   const [signedIn, setSignedIn] = useState(false);
@@ -25,12 +27,19 @@ export default function CouponClaimPage() {
       if (rpcError) throw rpcError;
       const row = Array.isArray(data) ? data[0] : data;
       setCoupon(row as Coupon);
+      // Keep the rewards page's coupon table in step with the new claim.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['my_coupons'] }),
+        queryClient.invalidateQueries({ queryKey: ['me_account'] }),
+        queryClient.invalidateQueries({ queryKey: ['me'] }),
+        queryClient.invalidateQueries({ queryKey: ['rewards_activity'] }),
+      ]);
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setBusy(false);
     }
-  }, [busy, code]);
+  }, [busy, code, queryClient]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

@@ -10,7 +10,7 @@ import type { Location } from '@/lib/types';
 function location(overrides: Partial<Location> = {}): Location {
   return {
     id: 'loc-1',
-    name: 'Make Anyth.ing Taipei',
+    name: 'Taipei',
     address: '123 Main St, Taipei',
     phone: '+886-2-1234-5678',
     photo_url: null,
@@ -29,7 +29,7 @@ function location(overrides: Partial<Location> = {}): Location {
 describe('filterLocations', () => {
   const locations = [
     location(),
-    location({ id: 'loc-2', name: 'Make Anyth.ing SF', address: '456 Howard St, San Francisco', phone: '+1-415-555-0123' }),
+    location({ id: 'loc-2', name: 'SF', address: '456 Howard St, San Francisco', phone: '+1-415-555-0123' }),
   ];
 
   it('returns all locations for a blank query', () => {

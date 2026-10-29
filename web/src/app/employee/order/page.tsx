@@ -7,6 +7,8 @@ import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useLocale } from '@/store/locale';
 import { formatMoney, formatMaterial, t_db } from '@/lib/format';
+import { formatDeliveryAddress, parseDeliveryAddress } from '@/lib/shipping';
+import type { DeliveryAddress } from '@/lib/shipping';
 import type { Localized, PricedSlot } from '@/lib/types';
 
 type OrderLine = {
@@ -27,9 +29,19 @@ type OrderDetailRecord = {
   contact_email: string;
   status: string;
   currency: string;
+  /** Collection at the location, or delivery to the stored address. */
+  fulfilment: 'pickup' | 'delivery';
+  shipping_address: DeliveryAddress | null;
+  shipping_amount: number;
+  total_amount: number;
   order_items: OrderLine[];
   order_notes: { id: string; body: string; kind: 'internal' | 'customer' }[];
 };
+
+/** Recipient and phone, appended to the address when the order is delivered. */
+function contactParts(address: { recipient: string; phone: string }): string[] {
+  return [address.recipient, address.phone].filter((part) => part.trim().length > 0);
+}
 
 function OrderDetail({ id }: { id: string }) {
   const { t } = useTranslation(['common','employee']);
@@ -84,6 +96,22 @@ function OrderDetail({ id }: { id: string }) {
       <h1 className="mt-3 text-2xl font-semibold">{order.order_number}</h1>
       <p className="text-slate-600">{order.contact_name} — {order.contact_email}</p>
       <p>{t('employee:status')}: {t(`common:status.${order.status}`)}</p>
+      <div className="mt-3 rounded border border-slate-200 p-3 text-sm">
+        <p className="font-medium">
+          {t('employee:fulfilment')}: {order.fulfilment === 'delivery' ? t('employee:delivery') : t('employee:pickup')}
+        </p>
+        {order.fulfilment === 'delivery' && order.shipping_address && (
+          <p className="mt-1 text-slate-700">
+            <span className="font-medium">{t('employee:delivery_address')}: </span>
+            {formatDeliveryAddress(parseDeliveryAddress(order.shipping_address))}
+            {contactParts(parseDeliveryAddress(order.shipping_address)).join(' · ')}
+          </p>
+        )}
+        {Number(order.shipping_amount) > 0 && (
+          <p className="mt-1 text-slate-700">{t('employee:shipping')}: {formatMoney(Number(order.shipping_amount), locale, order.currency)}</p>
+        )}
+        <p className="mt-1 font-medium">{t('employee:total')}: {formatMoney(Number(order.total_amount), locale, order.currency)}</p>
+      </div>
       <h2 className="mt-6 text-lg font-medium">{t('employee:items')}</h2>
       <ul className="divide-y">
         {(order.order_items || []).map((item) => {

@@ -6,6 +6,7 @@ import { t_db, formatMaterial, formatMoney } from '@/lib/format';
 import { useLocale } from '@/store/locale';
 import { useLocation } from '@/store/location';
 import { useSelectedLocation } from '@/hooks/useLocations';
+import { fetchAvailableFilaments } from '@/hooks/useAvailableFilaments';
 import { useCart } from '@/store/cart';
 import { useTranslation } from 'react-i18next';
 import { useMemo, useState } from 'react';
@@ -18,16 +19,6 @@ import type {
   ProductOptionChoice, ProductOptionGroup, ProductSlotMaterial, SlotSelection, TextOptionConfig,
 } from '@/lib/types';
 import { Suspense } from 'react';
-
-/** Colours in stock for a material at the chosen location. */
-async function fetchFilaments(locationId: string, materialId: string): Promise<Filament[]> {
-  const { data, error } = await supabase().rpc('available_filaments', {
-    p_location_id: locationId, p_material_id: materialId,
-  });
-  if (error) throw error;
-  // The RPC calls the primary key filament_id, unlike the filaments table.
-  return (data || []).map((row: { filament_id: string }) => ({ ...row, id: row.filament_id })) as Filament[];
-}
 
 function ProductDetail({ slug }: { slug: string }) {
   const { t } = useTranslation(['common','catalog','errors']);
@@ -132,7 +123,7 @@ function ProductDetail({ slug }: { slug: string }) {
   const { data: colors, error: colorsError } = useQuery<Filament[]>({
     queryKey: ['available_filaments', locationId, selectedMaterialId],
     enabled: !hasSlots && !!locationId && !!selectedMaterialId,
-    queryFn: () => fetchFilaments(locationId!, selectedMaterialId!),
+    queryFn: () => fetchAvailableFilaments(locationId!, selectedMaterialId!),
   });
 
   const slotColors = useQueries({
@@ -141,7 +132,7 @@ function ProductDetail({ slug }: { slug: string }) {
       return {
         queryKey: ['available_filaments', locationId, slotMaterial],
         enabled: !!locationId && !!slotMaterial,
-        queryFn: () => fetchFilaments(locationId!, slotMaterial!),
+        queryFn: () => fetchAvailableFilaments(locationId!, slotMaterial!),
       };
     }),
   });

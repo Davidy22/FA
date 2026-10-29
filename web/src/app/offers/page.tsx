@@ -2,13 +2,13 @@
 import { useTranslation } from 'react-i18next';
 import Link from 'next/link';
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { couponDiscountLabel } from '@/lib/rewards';
 import type { Coupon, Profile } from '@/lib/types';
 
 export default function OffersPage() {
   const { t } = useTranslation(['common', 'rewards']);
+  const queryClient = useQueryClient();
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +33,14 @@ export default function OffersPage() {
       if (rpcErr) throw new Error(rpcErr.message);
       setClaimed(data as Coupon);
       setCode('');
+      // The coupons table and points balance on /rewards must not wait for a
+      // manual refresh after a successful claim.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['my_coupons'] }),
+        queryClient.invalidateQueries({ queryKey: ['me_account'] }),
+        queryClient.invalidateQueries({ queryKey: ['me'] }),
+        queryClient.invalidateQueries({ queryKey: ['rewards_activity'] }),
+      ]);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -76,11 +84,8 @@ export default function OffersPage() {
       </form>
 
       {claimed && (
-        <div className="mt-4 rounded border border-green-200 bg-green-50 p-4 text-sm text-green-800">
-          <p>{t('rewards:claim_success', { code: claimed.code })}</p>
-          <p className="mt-1 font-medium">
-            {couponDiscountLabel({ discount_type: claimed.discount_type, discount_value: claimed.discount_value }, t)}
-          </p>
+        <div role="status" className="mt-4 rounded border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+          <p>{t('rewards:claim_success')}</p>
         </div>
       )}
       {error && <p className="mt-4 text-sm text-red-700">{error}</p>}

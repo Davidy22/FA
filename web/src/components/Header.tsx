@@ -80,7 +80,7 @@ export function Header() {
 
   return (
     <header className="border-b border-slate-200 bg-white sticky top-0 z-20">
-      <div className="w-full max-w-none px-0 flex min-h-16 flex-wrap items-center justify-between gap-2 py-2">
+      <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 flex min-h-16 flex-wrap items-center justify-between gap-2 py-2">
         <div className="flex items-center gap-6">
           <Link href="/" className="text-xl font-bold text-brand-700" aria-label="Make Anyth.ing">
             Make<span className="text-slate-800">Anyth.ing</span>
@@ -90,7 +90,6 @@ export function Header() {
             <Link href="/quote" className="text-slate-700 hover:text-brand-700">{t('nav.quote')}</Link>
             <Link href="/document-printing" className="text-slate-700 hover:text-brand-700">{t('nav.document_printing')}</Link>
             <Link href="/rewards" className="text-slate-700 hover:text-brand-700">{t('nav.rewards')}</Link>
-            {profile && <Link href="/tickets" className="text-slate-700 hover:text-brand-700">{t('nav.tickets')}</Link>}
           </nav>
         </div>
         <div className="flex items-center gap-2 min-w-0">
@@ -137,7 +136,6 @@ export function Header() {
           <Link href="/document-printing">{t('nav.document_printing')}</Link>
           <Link href="/rewards">{t('nav.rewards')}</Link><Link href="/account">{t('nav.account')}</Link>
           <Link href="/about">{t('nav.about')}</Link><Link href="/contact">{t('nav.contact')}</Link>
-          {profile && <Link href="/tickets">{t('nav.tickets')}</Link>}
           {profile?.is_active && profile.role !== 'customer' && <Link href="/employee">{t('nav.employee_portal')}</Link>}
           {canUseAdminConsole(profile) && <Link href="/admin">{t('nav.admin')}</Link>}
           {profile?.is_active && profile.is_creator && <Link href="/creator">{t('nav.creator_dashboard')}</Link>}

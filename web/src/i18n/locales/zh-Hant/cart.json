@@ -5,9 +5,15 @@
   "remove": "移除",
   "custom_print": "自訂 3D 列印",
   "ticket_item": "報價項目",
-  "shipping": "MVP 階段僅供門市取件",
   "pickup_location": "取件門市",
-  "item_total": "小計",
-  "pickup_only": "僅限門市取件",
-  "sale_savings": "特價優惠"
+  "change_options": "更改選項",
+  "edit_options": "材質與選項",
+  "edit_incomplete": "請先選擇材質、顏色及所有必填選項。",
+  "choose_location_to_edit": "更改選項前請先選擇門市。",
+  "file_option_kept": "此項目已保留你上傳的檔案。",
+  "file_option_missing": "此選項需要上傳檔案，請移除項目後重新加入。",
+  "each": "每件 {{price}}",
+  "delivery_hint": "送貨費用為 {{fee}}，訂單滿 {{threshold}} 免運費。",
+  "single_sided": "單面",
+  "copies": "{{count}} 份"
 }

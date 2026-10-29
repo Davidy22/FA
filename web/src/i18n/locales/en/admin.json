@@ -202,6 +202,7 @@
   "remove": "Remove",
   "fields": {
     "name": "Name",
+    "name_placeholder": "Branch name, e.g. Central",
     "address": "Address",
     "address_placeholder": "Shop 1, G/F, 18 Aberdeen Street, Central, Hong Kong",
     "phone": "Phone",

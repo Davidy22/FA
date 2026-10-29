@@ -5,9 +5,15 @@
   "remove": "Remove",
   "custom_print": "Custom 3D print",
   "ticket_item": "Quoted item",
-  "shipping": "Pickup only — no shipping for MVP",
   "pickup_location": "Pickup location",
-  "item_total": "Item total",
-  "pickup_only": "Pickup only",
-  "sale_savings": "Sale savings"
+  "change_options": "Change options",
+  "edit_options": "Material and options",
+  "edit_incomplete": "Choose a material, a colour, and any required options first.",
+  "choose_location_to_edit": "Choose a location before changing options.",
+  "file_option_kept": "The file you uploaded stays on this item.",
+  "file_option_missing": "This option needs an uploaded file. Remove the item and add it again.",
+  "each": "{{price}} each",
+  "delivery_hint": "Delivery is {{fee}}, free on orders over {{threshold}}.",
+  "single_sided": "Single-sided",
+  "copies": "{{count}} copies"
 }
