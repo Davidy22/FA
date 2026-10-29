@@ -1,5 +1,5 @@
 'use client';
-import { useState, type FormEvent } from 'react';
+import { useDeferredValue, useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { cleanLocalized, decimal, isoDateTime, lines, localDateTime, localizedInput, PRODUCT_STATUSES } from '@/lib/admin';
@@ -10,7 +10,7 @@ import { useLocale } from '@/store/locale';
 import type {
   Filament, Localized, Material, PremadeProduct, ProductCategory, ProductMaterial, ProductMaterialSlot, ProductSlotMaterial,
 } from '@/lib/types';
-import { AdminFeedback, AdminQueryState, FormActions, LocalizedFields, useAdminAction, useAdminLanguage, useFormPanel } from './Shared';
+import { ADMIN_PAGE_SIZE, AdminFeedback, AdminPagination, AdminQueryState, FormActions, LocalizedFields, useAdminAction, useAdminLanguage, useFormPanel } from './Shared';
 import { ProductOptions } from './ProductOptions';
 
 type SlotRow = ProductMaterialSlot & { product_slot_materials: ProductSlotMaterial[] };
@@ -390,14 +390,21 @@ export function AdminProducts() {
   const action = useAdminAction();
   const [editing, setEditing] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
+  const searchTerm = useDeferredValue(search).trim().replace(/[^\p{L}\p{N}\s-]/gu, '');
   const productsQuery = useQuery<PremadeProduct[]>({
-    queryKey: ['admin_products'],
+    queryKey: ['admin_products', page, searchTerm],
     queryFn: async () => {
-      const { data, error } = await supabase().from('premade_products').select('*').order('created_at', { ascending: false });
+      let request = supabase().from('premade_products').select('*')
+        .order('created_at', { ascending: false }).order('id', { ascending: true });
+      if (searchTerm) request = request.or(`slug.ilike.%${searchTerm}%,name->>en.ilike.%${searchTerm}%`);
+      const { data, error } = await request.range(page * ADMIN_PAGE_SIZE, page * ADMIN_PAGE_SIZE + ADMIN_PAGE_SIZE);
       if (error) throw error;
       return (data || []) as PremadeProduct[];
     },
   });
+  const products = productsQuery.data?.slice(0, ADMIN_PAGE_SIZE) || [];
+  const productIds = products.map((product) => product.id);
   const materialsQuery = useQuery<Material[]>({
     queryKey: ['admin_materials'],
     queryFn: async () => {
@@ -415,28 +422,29 @@ export function AdminProducts() {
     },
   });
   const allowedQuery = useQuery<ProductMaterial[]>({
-    queryKey: ['admin_product_materials'],
+    queryKey: ['admin_product_materials', productIds],
+    enabled: productsQuery.data !== undefined,
     queryFn: async () => {
-      const { data, error } = await supabase().from('product_materials').select('*');
+      if (!productIds.length) return [];
+      const { data, error } = await supabase().from('product_materials').select('*').in('product_id', productIds);
       if (error) throw error;
       return (data || []) as ProductMaterial[];
     },
   });
   const slotsQuery = useQuery<SlotRow[]>({
-    queryKey: ['admin_product_slots'],
+    queryKey: ['admin_product_slots', productIds],
+    enabled: productsQuery.data !== undefined,
     queryFn: async () => {
+      if (!productIds.length) return [];
       const { data, error } = await supabase().from('product_material_slots')
-        .select('*, product_slot_materials(*)').order('sort_order');
+        .select('*, product_slot_materials(*)').in('product_id', productIds).order('sort_order');
       if (error) throw error;
       return (data || []) as unknown as SlotRow[];
     },
   });
-  const products = productsQuery.data || [];
   const slots = slotsQuery.data || [];
-  const filtered = products.filter((product) =>
-    `${product.slug} ${product.name.en}`.toLowerCase().includes(search.trim().toLowerCase()));
-  const loading = productsQuery.isPending || materialsQuery.isPending || allowedQuery.isPending ||
-    slotsQuery.isPending || filamentsQuery.isPending;
+  const loading = productsQuery.isPending || materialsQuery.isPending || filamentsQuery.isPending ||
+    (!!productsQuery.data && (allowedQuery.isPending || slotsQuery.isPending));
   const queryError = productsQuery.error || materialsQuery.error || allowedQuery.error || slotsQuery.error || filamentsQuery.error;
 
   async function deleteProduct(product: PremadeProduct) {
@@ -465,10 +473,10 @@ export function AdminProducts() {
       slots={slots.filter((slot) => slot.product_id === editing)} onDone={() => setEditing(null)} />}
     <AdminFeedback error={action.error} notice={action.notice} />
     <AdminQueryState loading={loading} error={queryError} />
-    <label className="mt-4 block max-w-sm text-sm">{t('common:search')}<input className="input mt-1" type="search" value={search} onChange={(event) => setSearch(event.target.value)} /></label>
+    <label className="mt-4 block max-w-sm text-sm">{t('common:search')}<input className="input mt-1" type="search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(0); setEditing(null); }} /></label>
     {products.length === 0 && !productsQuery.isPending && <p className="mt-4 text-slate-500">{t('admin:no_products')}</p>}
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
-      {filtered.map((product) => {
+      {products.map((product) => {
         const productSlots = slots.filter((slot) => slot.product_id === product.id);
         const onSale = isOnSale(product);
         return <article key={product.id} className="rounded-lg border p-4">
@@ -492,5 +500,7 @@ export function AdminProducts() {
         </article>;
       })}
     </div>
+    {productsQuery.data && <AdminPagination page={page} hasNext={productsQuery.data.length > ADMIN_PAGE_SIZE}
+      onPageChange={(next) => { setPage(next); setEditing(null); }} />}
   </>;
 }

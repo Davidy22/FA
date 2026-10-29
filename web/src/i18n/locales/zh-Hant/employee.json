@@ -42,5 +42,9 @@
   "stock_group_summary": "{{count}} 種顏色 · {{inStock}} 種有庫存",
   "id": "ID",
   "color": "顏色",
-  "cost_per_gram": "每克成本"
+  "cost_per_gram": "每克成本",
+  "orders_pagination": "訂單頁面",
+  "previous_page": "上一頁",
+  "next_page": "下一頁",
+  "page_number": "第 {{number}} 頁"
 }

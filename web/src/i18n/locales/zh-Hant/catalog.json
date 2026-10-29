@@ -20,5 +20,9 @@
   "slots_intro": "這款打印品由多個部分組成——請為每個部分選擇物料和顏色。",
   "linked_slot_choice_help": "此部件與「{{slot}}」共用材質與顏色。",
   "no_colors_in_stock": "所選門市沒有此物料的現貨顏色",
-  "load_error": "無法載入商品目錄，請稍後再試。"
+  "load_error": "無法載入商品目錄，請稍後再試。",
+  "pagination_label": "商品目錄分頁",
+  "previous_page": "上一頁",
+  "next_page": "下一頁",
+  "page_number": "第 {{number}} 頁"
 }

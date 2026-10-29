@@ -149,13 +149,16 @@ describe('admin offers and coupons', () => {
   it('generates a batch of single-use codes without typing each one', async () => {
     const { rpcMock } = mountOffers({
       admin_generate_coupons: [{ coupon_code: 'SUMMERAB2345', coupon_id: 'coupon-1' }],
+      search_product_choices: products,
     });
     fireEvent.click(await screen.findByRole('button', { name: 'admin:bulk_coupons' }));
     const form = (await screen.findByRole('heading', { name: 'bulk_coupons' })).closest('form')!;
     fireEvent.change(within(form).getByLabelText(/fields\.code_count/), { target: { value: '25' } });
     fireEvent.change(within(form).getByLabelText(/fields\.code_prefix/), { target: { value: 'summer' } });
     fireEvent.change(within(form).getByLabelText(/fields\.discount_value/), { target: { value: '15' } });
-    fireEvent.focus(within(form).getByLabelText(/fields\.applies_to_product/));
+    const productPicker = within(form).getByLabelText(/fields\.applies_to_product/);
+    fireEvent.focus(productPicker);
+    fireEvent.change(productPicker, { target: { value: 'key' } });
     fireEvent.click(await screen.findByRole('option', { name: 'Keychain' }));
     fireEvent.submit(form);
 
@@ -215,12 +218,13 @@ describe('admin offers and coupons', () => {
   });
 
   it('keeps the points redemption options next to the coupon tools', async () => {
-    mountOffers();
+    mountOffers({ search_product_choices: products });
     const heading = await screen.findByRole('heading', { name: 'admin:redeem_options' });
     const section = heading.closest('section')!;
     expect(within(section).getByText('admin:redeem_section_help')).toBeInTheDocument();
     const productSearch = await within(section).findByLabelText(/fields\.redeem_product/);
     fireEvent.focus(productSearch);
+    fireEvent.change(productSearch, { target: { value: 'key' } });
     expect(await screen.findByRole('option', { name: 'Keychain' })).toBeInTheDocument();
     expect(within(section).getByRole('button', { name: 'admin:add_redeem_option' })).toBeInTheDocument();
   });

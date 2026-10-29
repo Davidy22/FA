@@ -4,9 +4,9 @@ import { t_db, formatMoney } from '@/lib/format';
 import { useLocale } from '@/store/locale';
 import { useSelectedLocation } from '@/hooks/useLocations';
 import { effectivePrice } from '@/lib/sale';
-import type { ProductWithMaterials } from '@/lib/types';
+import type { CatalogProduct } from '@/lib/types';
 
-export function ProductCard({ product }: { product: ProductWithMaterials }) {
+export function ProductCard({ product }: { product: CatalogProduct }) {
   const locale = useLocale((s) => s.locale);
   const currency = useSelectedLocation()?.currency;
   const name = t_db(product.name, locale);
@@ -18,7 +18,7 @@ export function ProductCard({ product }: { product: ProductWithMaterials }) {
       <div className="aspect-square bg-slate-100 flex items-center justify-center text-slate-400">
         {product.image_urls?.[0] ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={product.image_urls[0]} alt={name} className="w-full h-full object-cover" />
+          <img src={product.image_urls[0]} alt={name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
         ) : (
           <span aria-hidden className="text-4xl text-slate-300">◇</span>
         )}

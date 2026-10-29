@@ -403,5 +403,7 @@
   "option_label_name": "新标签名称（英文）",
   "add_option_label": "添加标签",
   "option_label_delete_hint": "删除标签不会删除现有产品选项组；编辑这些选项组时需要重新选择标签。",
-  "coupon_claim_url": "打开领取链接"
+  "coupon_claim_url": "打开领取链接",
+  "product_search_hint": "输入至少两个字符以搜索产品。",
+  "no_product_matches": "找不到匹配产品。"
 }
