@@ -63,6 +63,15 @@ try {
     create table storage.objects(id uuid primary key default gen_random_uuid(),
       bucket_id text references storage.buckets(id), name text, metadata jsonb);
     alter table storage.objects enable row level security;
+    -- Supabase grants table privileges to the API roles up front and relies on
+    -- row level security, plus the explicit revokes in the migrations, to keep
+    -- customers out. Mirror that so policy expressions that read other tables
+    -- are exercised the same way they are in production.
+    grant usage on schema storage to anon, authenticated;
+    grant usage on schema public to anon, authenticated;
+    alter default privileges in schema public
+      grant select, insert, update, delete on tables to anon, authenticated;
+    grant select, insert, update, delete on storage.objects to anon, authenticated;
     create function storage.foldername(path text) returns text[] language sql immutable as $$
       select string_to_array(path,'/') $$;
   `);
@@ -722,6 +731,111 @@ try {
   assert.deepEqual(missingRls.map((row) => row.relname), [],
     'enable row level security on every new public table');
   console.log('✓ every public table has row level security enabled');
+
+  const unsafeDefiner = await rows(`select p.proname from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.prosecdef
+      and not exists (select 1 from unnest(coalesce(p.proconfig, array[]::text[])) c
+                      where c like 'search_path=%')
+    order by 1`);
+  assert.deepEqual(unsafeDefiner.map((row) => row.proname), [],
+    'a security definer function must pin search_path or it can be hijacked with a shadow schema');
+  console.log('✓ security definer functions all pin search_path');
+
+  const volat = await rows(`select p.proname, p.provolatile from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname='public' and p.proname in ('is_admin','is_staff','is_staff_at','my_location','has_permission','feature_enabled','auth_role')
+    order by 1`);
+  // A VOLATILE helper in an RLS policy is re-evaluated for every candidate row.
+  assert.deepEqual(volat.filter((row) => row.provolatile !== 's').map((row) => row.proname), [],
+    'helpers used by RLS policies must be declared STABLE');
+  console.log('✓ RLS helpers are stable');
+
+  const noPolicies = await rows(`select c.relname from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname='public' and c.relkind='r' and c.relrowsecurity
+      and not exists (select 1 from pg_policy p where p.polrelid=c.oid) order by 1`);
+  // These three hold checkout state, throttle counters and raw Stripe events and
+  // are reachable only through the service role. A table listed here that gains
+  // a policy, or a new policy-less table, should be a deliberate decision.
+  assert.deepEqual(noPolicies.map((row) => row.relname),
+    ['checkout_sessions', 'request_throttle', 'stripe_events'],
+    'service-only tables must stay policy-less; give customer-facing tables a policy');
+  console.log('✓ only checkout, throttle and Stripe event tables are service-role only');
+
+
+
+  // Hot paths must not degrade into sequential scans as orders and the catalog
+  // grow: the account page filters on user_id, the product page joins option
+  // groups and choices, and admin search runs `ilike '%term%'`.
+  const hotIndexes = [
+    'orders_user_created_idx',
+    'product_option_groups_product_idx',
+    'product_option_choices_group_idx',
+    'orders_order_number_trgm_idx',
+    'orders_contact_email_trgm_idx',
+    'profiles_email_trgm_idx',
+    'order_item_option_values_file_path_idx',
+    'ticket_attachments_file_path_idx',
+    'order_items_document_path_idx',
+  ];
+  const presentIndexes = new Set((await rows(
+    "select indexname from pg_indexes where schemaname = 'public'")).map((row) => row.indexname));
+  assert.deepEqual(hotIndexes.filter((name) => !presentIndexes.has(name)), [],
+    'add the missing index in a migration');
+  console.log('✓ hot-path indexes are present');
+
+  // Abandoned checkouts and Stripe payloads are never read again, so the webhook
+  // prunes them. Only rows past the window may go, and only the service role may
+  // call the prune.
+  await rows(`insert into public.checkout_sessions(session_id,cart,contact_email,created_at)
+    values('old-session','{}'::jsonb,'old@example.test', now() - interval '40 days'),
+          ('new-session','{}'::jsonb,'new@example.test', now())`);
+  await rows(`insert into public.stripe_events(id,payload,received_at)
+    values('evt_old','{}'::jsonb, now() - interval '120 days'), ('evt_new','{}'::jsonb, now())`);
+  await db.exec('set role service_role');
+  await one('select public.prune_operational_tables()');
+  await db.exec('reset role');
+  const remainingSessions = (await rows('select session_id from public.checkout_sessions'))
+    .map((row) => row.session_id);
+  assert.equal(remainingSessions.includes('old-session'), false,
+    'the prune must drop abandoned checkouts past the window');
+  assert.equal(remainingSessions.includes('new-session'), true,
+    'the prune must keep checkout sessions inside the retention window');
+  const remainingEvents = (await rows('select id from public.stripe_events')).map((row) => row.id);
+  assert.equal(remainingEvents.includes('evt_old'), false,
+    'the prune must drop Stripe payloads past the window');
+  assert.equal(remainingEvents.includes('evt_new'), true,
+    'the prune must keep recent Stripe events for idempotency');
+  await claims(buyer);
+  await db.exec('set role authenticated');
+  await assert.rejects(one('select public.prune_operational_tables()'), /permission denied/);
+  await db.exec('reset role');
+  console.log('✓ checkout sessions and Stripe payloads are pruned past their window');
+
+  // Uploads could be created but never removed, so abandoned files stayed in the
+  // bucket forever. The owner can clean up their own folder; a reference from an
+  // order or ticket keeps the file, and another account's folder is untouchable.
+  await rows(`insert into storage.objects(id,bucket_id,name,metadata)
+    values('99999999-0000-0000-0000-000000000001','option-uploads',$1,'{"size":10}'::jsonb),
+          ('99999999-0000-0000-0000-000000000002','option-uploads',$2,'{"size":10}'::jsonb),
+          ('99999999-0000-0000-0000-000000000003','option-uploads',$3,'{"size":10}'::jsonb)`,
+  [`${buyer}/abandoned.stl`, `${admin}/someone-else.stl`, `${buyer}/purchased.stl`]);
+  await rows(`insert into public.order_item_option_values(order_item_id,option_group_id,file_path)
+    select (select id from public.order_items limit 1), null, $1`, [`${buyer}/purchased.stl`]);
+  await claims(buyer);
+  await db.exec('set role authenticated');
+  assert.equal((await db.query(
+    "delete from storage.objects where id = '99999999-0000-0000-0000-000000000001'")).affectedRows, 1,
+  'a customer must be able to remove their own abandoned upload');
+  assert.equal((await db.query(
+    "delete from storage.objects where id = '99999999-0000-0000-0000-000000000002'")).affectedRows, 0,
+  "a customer must not delete another account's upload");
+  assert.equal((await db.query(
+    "delete from storage.objects where id = '99999999-0000-0000-0000-000000000003'")).affectedRows, 0,
+  'an upload that an order still references must be kept');
+  await db.exec('reset role');
+  console.log('✓ uploads can be cleaned up by their owner only');
 
   // `get_setting` is anon-executable: it must not become a read-anything door
   // into platform_settings.

@@ -168,8 +168,9 @@ Set these with `supabase secrets set` (or in the ignored
 | `GOTENBERG_URL` | `convert-document` | Word/Pages → PDF conversion |
 | `GITHUB_TOKEN`, `GITHUB_REPO` | `site-rebuild` | optional catalog rebuild dispatch |
 
-`convert-document` is the only endpoint anonymous visitors can drive, so it is
-throttled per client address (`consume_throttle`, 20 conversions per hour) and
+`convert-document` and `stripe-checkout` are the endpoints anonymous visitors can
+drive, so both are throttled per client address (`consume_throttle`; 20
+conversions per hour, 40 checkout attempts per 10 minutes). `convert-document`
 never stores the uploaded file.
 
 A failing **CI**, **Migrate DB**, or **Nightly E2E** run is distinct from a

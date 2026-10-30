@@ -113,6 +113,13 @@ serve(async (req) => {
       id: event.id, payload: event as unknown as Record<string, unknown>,
     });
     if (eventError && eventError.code !== '23505') throw eventError;
+
+    // Checkout attempts and raw Stripe payloads are never read again after the
+    // order exists, but both grow with traffic. Prune them here rather than
+    // depending on a scheduler this deployment does not have; a failure is
+    // logged, not retried, because the payment itself has already succeeded.
+    const { error: pruneError } = await sb.rpc('prune_operational_tables', {});
+    if (pruneError) console.warn('Retention prune failed', pruneError.message);
     if (!eventError && RESEND_KEY && confirmation) {
       // Email is best-effort, after the durable event record, so a retry does
       // not send a second confirmation for an already-fulfilled payment.

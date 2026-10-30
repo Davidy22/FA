@@ -40,7 +40,7 @@ staff/admin console.
 
 | Layer | Tech |
 | --- | --- |
-| Frontend | Next.js 14 App Router, **static export**, React 18, TypeScript (strict), Tailwind, TanStack Query, Zustand (persisted), react-i18next |
+| Frontend | Next.js 15 App Router, **static export**, React 19, TypeScript (strict), Tailwind, TanStack Query, Zustand (persisted), react-i18next |
 | Backend | Single Supabase project: Postgres + RLS + RPCs, Auth, Storage, Deno Edge Functions |
 | Payments | Stripe Checkout (hosted redirect) + signed webhook |
 | Hosting | GitHub Pages (`web/out`), Supabase free tier |
@@ -522,8 +522,8 @@ asserted by `pnpm verify`; the rest is the reasoning you need to not undo it.
 * `verify_jwt = true` on an Edge Function only proves the JWT was signed by the
   project; **the anon key is one of those JWTs**. A function is public until it
   resolves the caller itself (`supabaseUserClient(req).auth.getUser()`) and checks
-  the role from `profiles`. `convert-document` is the one deliberately public
-  endpoint, which is why it is throttled.
+  the role from `profiles`. `convert-document` and `stripe-checkout` are the two
+  deliberately public endpoints, which is why both are throttled.
 
 **Database**
 * RLS is enabled on every `public` table (`pnpm test:db` fails if a new one is not).
@@ -542,6 +542,16 @@ asserted by `pnpm verify`; the rest is the reasoning you need to not undo it.
 * Storage: every bucket except `product-images` is private, read through
   `sign-file` (which checks ownership/ticket/order before signing). Buckets carry
   `file_size_limit` and, where the type is fixed, `allowed_mime_types`.
+* A customer may delete their own upload from `option-uploads`, `ticket-uploads`
+  and `document-prints` so abandoned files do not accumulate. Two rules make that
+  work: a DELETE needs a matching SELECT policy to find the row at all (that is
+  why `owner read own option uploads` exists), and
+  `upload_is_referenced(bucket, name)` refuses to delete a file an order or ticket
+  still points at.
+* Indexes: `orders.user_id`, the option-group/choice joins, and the `ilike`
+  search columns (`orders.order_number`, `orders.contact_email`,
+  `profiles.email`, product names/slug) are covered by a btree/trigram index.
+  `pnpm test:db` fails if one of the hot-path indexes is dropped.
 
 **Payments**
 * The webhook verifies `STRIPE_WEBHOOK_SECRET` and only fulfils a session whose
@@ -556,10 +566,18 @@ asserted by `pnpm verify`; the rest is the reasoning you need to not undo it.
   the status trigger re-checks the admin role.
 
 **Operational**
-* Public compute (document conversion) goes through
-  `consume_throttle(bucket, key, limit, window)`; keys are hashed, never raw IPs.
+* Anything an anonymous visitor can drive repeatedly goes through
+  `_shared/throttle.ts` → `consume_throttle(bucket, key, limit, window)`: document
+  conversion (20/hour) and checkout session creation (40/10 min). Keys are hashed
+  client addresses, never raw IPs, and a counter outage fails open.
 * CORS is `Access-Control-Allow-Origin: *` on purpose: authorisation travels in a
   bearer token, not a cookie, so a hostile page cannot borrow a session by
   reflecting an origin. Do not "fix" it without also changing the auth model.
 * Errors returned from public endpoints are generic; the Postgres/Stripe detail
   goes to `console.error`. Staff-only endpoints may still explain what failed.
+* The header clears the TanStack cache whenever the signed-in user changes. Most
+  query keys carry no user id, so keeping the cache would hand one account's
+  orders, coupons and earnings to the next person who signs in on the same tab.
+* `pnpm audit` must stay at zero. Next is pinned to the latest 15.5 patch (14.x
+  is no longer patched and carries advisories that have no 14.x fix); version
+  bumps go through `pnpm verify` plus `node scripts/check-pages-export.mjs`.
