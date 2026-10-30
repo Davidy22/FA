@@ -2,7 +2,7 @@
 
 Make Anyth.ing is a static SPA on GitHub Pages backed by a single Supabase free-tier project.
 
-- Frontend: Next.js 14 static export (`output: 'export'`), React, Tailwind, TanStack Query, Zustand.
+- Frontend: Next.js 15 static export (`output: 'export'`), React 19, Tailwind, TanStack Query, Zustand.
 - Backend: Supabase Postgres + RLS + RPCs + Auth + Storage + Deno Edge Functions.
 - Payments: Stripe Checkout hosted redirect + webhook. (A switch to a marketplace checkout was considered; shop.com only publishes product/affiliate APIs, so Stripe remains until a real payment provider is chosen.)
 - Document printing: guests upload PDFs into random, insert-only capability paths in the private `document-prints` bucket; signed-in owners retain owner-scoped paths. `price_cart()` and `stripe-checkout` accept the same strict path shapes, and checkout always downloads the private PDF with the service role and recounts pages. The `convert-document` function proxies DOC/DOCX/ODT/Pages conversion to a private Gotenberg 8/LibreOffice service configured with `GOTENBERG_URL`.

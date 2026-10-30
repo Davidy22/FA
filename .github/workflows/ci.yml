@@ -56,7 +56,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned: CLI 2.122.0 ships a storage service that refuses the direct
+          # `delete from storage.objects` in migration …3500, which breaks
+          # `supabase db start`. 2.121.0 is the last version CI was green on.
+          version: 2.121.0
       - name: Run supabase db start
         run: |
           set -o pipefail

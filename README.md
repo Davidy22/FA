@@ -5,7 +5,7 @@ Multi-location 3D printing service — static SPA on GitHub Pages + Supabase Pos
 ## Repository layout
 ```
 AGENTS.md            Orientation for agents and new contributors: commands, conventions, traps
-web/                 Next.js 14 static export (TypeScript, Tailwind, react-i18next)
+web/                 Next.js 15 static export (TypeScript, Tailwind, react-i18next)
 supabase/
   migrations/        Forward-only SQL (extensions, helpers, schema, RLS, triggers, RPCs, seed)
   functions/         Deno Edge Functions (stripe-checkout, stripe-webhook, convert-document, sign-file, ...)
