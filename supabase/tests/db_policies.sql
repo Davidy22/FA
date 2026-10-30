@@ -4,7 +4,7 @@
 create extension if not exists pgtap;
 
 -- Plan count
-select plan(20);
+select plan(19);
 
 -- RLS is enabled on key tables
 select ok(not exists (
@@ -49,7 +49,9 @@ select isnt_empty(
 -- get_setting returns defaults
 select is(public.get_setting('quote.min_order_fee')::text, null::text,
   'the automatic 3D-quote tuning settings are gone');
-select is(public.get_setting('platform.commission_percent')::text, '15', 'Commission default 15%');
+-- get_setting is anon-executable, so it only serves rewards/document/feature keys.
+select is(public.get_setting('platform.commission_percent')::text, null::text,
+  'internal commission settings are not served to anonymous callers');
 
 -- price_cart with a premade item
 select ok(

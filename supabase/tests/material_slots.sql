@@ -94,6 +94,8 @@ begin
         'materials',jsonb_build_array(
           jsonb_build_object('material_id','11111111-1111-1111-1111-000000000001','price_modifier',0),
           jsonb_build_object('material_id','11111111-1111-1111-1111-000000000002','price_modifier',1.5)))));
+  -- A new product takes its id as slug; the later checks address it by name.
+  update public.premade_products set slug = 'slots-fixture' where id = saved.id;
   select count(*) into slot_count from public.product_material_slots where product_id = saved.id;
   select count(*) into material_count from public.product_slot_materials sm
     join public.product_material_slots s on s.id = sm.slot_id
@@ -325,6 +327,7 @@ begin
     jsonb_build_array(jsonb_build_object(
       'material_id','11111111-1111-1111-1111-000000000001','price_modifier',2)),
     '[]'::jsonb);
+  update public.premade_products set slug = 'sale-fixture' where id = saved.id;
   perform set_config('request.jwt.claims', '', false);
 
   items := jsonb_build_array(jsonb_build_object('kind','premade','product_id',saved.id,

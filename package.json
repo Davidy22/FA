@@ -15,7 +15,8 @@
     "i18n:check": "node scripts/i18n-check.mjs",
     "i18n:sync": "node scripts/i18n-sync.mjs",
     "check:repo": "node scripts/check-repo.mjs",
-    "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm test:db && pnpm i18n:check && pnpm check:repo"
+    "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm test:db && pnpm test:tap && pnpm i18n:check && pnpm check:repo",
+    "test:tap": "node scripts/db-tap-test.mjs"
   },
   "engines": {
     "node": ">=20"

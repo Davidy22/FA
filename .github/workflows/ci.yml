@@ -33,6 +33,9 @@ jobs:
       - run: pnpm test
       - run: pnpm test:db
         working-directory: ${{ github.workspace }}
+      # Same SQL suites as the `db` job, without waiting for Docker.
+      - run: pnpm test:tap
+        working-directory: ${{ github.workspace }}
       - run: node scripts/i18n-check.mjs
         working-directory: ${{ github.workspace }}
       - run: node scripts/check-repo.mjs

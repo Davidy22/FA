@@ -67,7 +67,8 @@ pnpm dev                                   # next dev on :3000
 pnpm lint               # next lint (eslint-config-next)
 pnpm typecheck          # tsc --noEmit (strict + noUnusedLocals/Parameters)
 pnpm test               # Vitest, jsdom (unit + component)
-pnpm test:db            # scripts/db-smoke-test.mjs — all migrations in PGlite, no Docker
+pnpm test:db            # scripts/db-smoke-test.mjs — migrations + RPC/RLS smoke, no Docker
+pnpm test:tap           # supabase/tests/*.sql via a TAP shim (same suites as `supabase test db`)
 pnpm i18n:check         # locale key + {{placeholder}} parity
 pnpm check:repo         # migrations append-only + edge-function/config parity
 pnpm verify             # everything above except build, in one go
