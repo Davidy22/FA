@@ -3,9 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { ProductCard } from '@/components/ProductCard';
-import { useDeferredValue, useState } from 'react';
+import { useState } from 'react';
 import { t_db } from '@/lib/format';
 import { useLocale } from '@/store/locale';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import type { CatalogProduct, Material, ProductCategory } from '@/lib/types';
 
 export default function CatalogPage() {
@@ -15,7 +16,7 @@ export default function CatalogPage() {
   const [category, setCategory] = useState<string>('');
   const [materialId, setMaterialId] = useState<string>('');
   const [query, setQuery] = useState('');
-  const deferredQuery = useDeferredValue(query);
+  const deferredQuery = useDebouncedValue(query);
   const [page, setPage] = useState(0);
 
   const { data: productPage, isLoading, error } = useQuery<{ products: CatalogProduct[]; hasMore: boolean }>({

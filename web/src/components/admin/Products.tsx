@@ -1,5 +1,6 @@
 'use client';
-import { useDeferredValue, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { cleanLocalized, decimal, isoDateTime, lines, localDateTime, localizedInput, PRODUCT_STATUSES } from '@/lib/admin';
@@ -391,7 +392,7 @@ export function AdminProducts() {
   const [editing, setEditing] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
-  const searchTerm = useDeferredValue(search).trim().replace(/[^\p{L}\p{N}\s-]/gu, '');
+  const searchTerm = useDebouncedValue(search).trim().replace(/[^\p{L}\p{N}\s-]/gu, '');
   const productsQuery = useQuery<PremadeProduct[]>({
     queryKey: ['admin_products', page, searchTerm],
     queryFn: async () => {

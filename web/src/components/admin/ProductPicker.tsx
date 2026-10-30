@@ -1,5 +1,6 @@
 'use client';
-import { useDeferredValue, useId, useState } from 'react';
+import { useId, useState } from 'react';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { t_db } from '@/lib/format';
@@ -23,7 +24,7 @@ export function ProductPicker({ value, onChange, emptyLabel, searchLabel, publis
   const listId = useId();
   const [input, setInput] = useState('');
   const [open, setOpen] = useState(false);
-  const term = useDeferredValue(input.trim().replace(/[^\p{L}\p{N}\s-]/gu, ''));
+  const term = useDebouncedValue(input.trim().replace(/[^\p{L}\p{N}\s-]/gu, ''));
 
   const selectedQuery = useQuery<ProductChoice | null>({
     queryKey: ['admin_product_choice', value],

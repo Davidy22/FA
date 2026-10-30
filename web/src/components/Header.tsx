@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { canUseAdminConsole } from '@/lib/permissions';
 import { LocationSelector } from './LocationSelector';
 import { LocaleSwitcher } from './LocaleSwitcher';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Profile } from '@/lib/types';
 
 export function Header() {
@@ -20,6 +20,7 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
+  const signedInUserId = useRef<string | null>(null);
 
   useEffect(() => {
     setCartLocation(selectedLocationId);
@@ -38,6 +39,15 @@ export function Header() {
   // Keep the header in sync with email/password and OAuth sign-in/sign-out.
   useEffect(() => {
     const { data: { subscription } } = supabase().auth.onAuthStateChange((event, session) => {
+      const nextUserId = session?.user?.id ?? null;
+      const accountChanged = nextUserId !== signedInUserId.current;
+      signedInUserId.current = nextUserId;
+      if (accountChanged) {
+        // Most query keys (['my_orders'], ['my_coupons'], ['admin_orders'], …)
+        // do not include the user id, so a cache left in place would serve the
+        // previous account's rows to the next person who signs in on this tab.
+        queryClient.clear();
+      }
       if (event === 'SIGNED_OUT' || !session) {
         queryClient.setQueryData(['me'], null);
         queryClient.setQueryData(['me_account'], null);
