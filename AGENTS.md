@@ -121,7 +121,7 @@ supabase/
   seed.sql                local demo accounts (never used by `db push`)
 web/
   next.config.mjs         output: 'export', trailingSlash, basePath/assetPrefix
-  tailwind.config.ts      brand palette (only shades 50/500/600/700 — see §11)
+  tailwind.config.ts      brand palette 50–900 (see §11)
   vitest.config.ts        jsdom, globals, alias @ -> src, src/test/setup.ts
   src/app/                one directory per route (client components, see §4.1)
   src/components/         shared UI; components/admin/* = console panels
@@ -211,7 +211,7 @@ retired for new creator uploads).
 | Feature | SQL | UI |
 | --- | --- | --- |
 | Catalog & product page | `premade_products`, `product_materials`, `product_option_*`, `product_material_slots` | `app/catalog/page.tsx`, `app/product/page.tsx`, `components/ProductCard.tsx` |
-| Pricing / sales | `price_cart`, `effective_price`, `sale_*` helpers (`20250101002300`, redefined in `…03300`, `…03700`) | `lib/pricing.ts` (heuristic, tests only), `lib/sale.ts`, `components/Price.tsx` |
+| Pricing / sales | `price_cart`, `effective_price`, `sale_*` helpers (`20250101002300`, redefined in `…03300`, `…03700`) | `lib/sale.ts`, `components/Price.tsx` |
 | Cart & options editing | `price_cart` line output | `app/cart/page.tsx`, `components/CartItemOptions.tsx`, `store/cart.ts` |
 | Checkout / delivery | `price_cart`, `create_order_from_cart`, `orders.fulfilment/shipping_address`, `profiles.delivery_address` | `app/checkout/page.tsx`, `lib/shipping.ts` |
 | Rewards & coupons | `20250101000800`, `…02600` (tiers), `…03000`, `…03300`, `redeem_rewards`, `claim_offer_code`, `redeem_coupon_code` | `app/rewards/page.tsx`, `app/offers/page.tsx`, `app/coupon/page.tsx`, `lib/rewards.ts` |
@@ -236,8 +236,6 @@ all `LocalTest123!`; two Hong Kong branches; demo products under ids
 * **Custom quotes go through tickets.** `quote_requests` / `uploaded_models` and the
   `custom` cart kind are still priced by `price_cart`, but the storefront path is the
   quote-ticket flow (`/quote` → staff quote → accept into cart).
-* **`web/src/lib/pricing.ts`** (the old heuristic engine) is only exercised by its own
-  unit test — don't wire it into a page without a product decision.
 * **`/referrals`** only redirects to `/rewards#referrals`.
 * **`verify-model`** no longer exists (README used to mention it).
 
@@ -387,10 +385,14 @@ A partial `create or replace` will silently drop behaviour.
   will stay light in dark mode. The attribute is applied in `lib/theme.ts` (by
   `components/ThemeSync.tsx` in the root layout, plus an inline pre-paint script) and
   stored under `make-anything-appearance` (`light` | `dark` | `auto`).
-* `tailwind.config.ts` defines **only** `brand-50`, `brand-500`, `brand-600`,
-  `brand-700`. Classes such as `brand-100/200/300/800` appear in a few files but emit
-  no CSS (Tailwind silently drops unknown shades). Add the shade to the config if you
-  actually need it; don't assume `border-brand-200` does anything today.
+* `tailwind.config.ts` defines the **full `brand` ramp, 50–900**. Use any shade
+  freely, but check the dark-mode remaps: `bg-brand-50`, `bg-brand-50/60`,
+  `bg-brand-100`, `border-brand-200` and `text-brand-700`/`text-brand-800` are
+  remapped in §11's dark block, and `bg-brand-600` is dark enough to keep as-is.
+  `lib/__tests__/brand-palette.test.ts` scans `src/` for every `*-brand-<shade>`
+  utility and fails if a shade is missing from the config or a pale `bg-brand-*`
+  has no `html[data-theme="dark"]` rule, so a typo or a new pale surface breaks
+  `pnpm test` instead of silently rendering nothing.
 * Wide tables: `main table { display: block; overflow-x: auto }` in `globals.css` keeps
   admin tables scrollable on narrow screens; don't undo it.
 
@@ -439,7 +441,8 @@ uploading `web/out`. If you add an asset or a raw URL, use `withBasePath()`.
 
 * Editing an already-applied migration, or forgetting the `grant`/`revoke` on a
   re-defined function.
-* Adding `brand-100/200/300/800` utilities (they do nothing without a config change).
+* A `bg-brand-*` surface like `bg-brand-50` without a dark-mode remap, or a shade
+  outside 50–900 (`brand-palette.test.ts` catches both).
 * New colour without a `html[data-theme="dark"]` rule.
 * `process.env.FOO` in client code (`NEXT_PUBLIC_` only) or a non-`withBasePath` URL.
 * Assuming `pnpm dev` reflects `basePath` (it does not; production-only).
