@@ -13,7 +13,10 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: pnpm }
       - uses: supabase/setup-cli@v1
-        with: { version: latest }
+        with:
+          # Pinned on purpose — see the note in ci.yml. Bump only together with
+          # a migration that stops deleting storage rows directly.
+          version: 2.121.0
       - run: supabase db start
       - run: supabase db reset
       - working-directory: web
