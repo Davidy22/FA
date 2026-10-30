@@ -36,15 +36,16 @@ select public.admin_save_product(
     'source_model_path','admin-tools-fixture.stl','is_featured',false,'status','published'),
   jsonb_build_array(jsonb_build_object('material_id','11111111-1111-1111-1111-000000000001','price_modifier',2))
 );
-select ok((select p.status='published' and pm.price_modifier=2
+-- A new product's slug is its id (the storefront URLs are /product/?slug=<id>).
+select ok((select p.status='published' and pm.price_modifier=2 and p.slug = p.id::text
   from public.premade_products p join public.product_materials pm on pm.product_id=p.id
-  where p.slug='admin-tools-fixture'), 'product and allowed materials saved together');
+  where p.name->>'en'='Test product'), 'product and allowed materials saved together');
 select throws_ok($$select public.admin_save_product(to_jsonb(p),
   '[{"material_id":"99999999-9999-9999-9999-999999999999","price_modifier":0}]'::jsonb)
-  from public.premade_products p where slug='admin-tools-fixture'$$,
+  from public.premade_products p where p.name->>'en'='Test product'$$,
   'P0001','Default material must be allowed','invalid material changes are rejected before writes');
 select is((select count(*)::int from public.product_materials pm
-  join public.premade_products p on p.id=pm.product_id where p.slug='admin-tools-fixture'),
+  join public.premade_products p on p.id=pm.product_id where p.name->>'en'='Test product'),
   1, 'failed save leaves material mappings intact');
 
 select ok((select role='employee' and location_id='00000000-0000-0000-0000-000000000001'
@@ -80,10 +81,10 @@ select throws_ok($$select public.price_cart(jsonb_build_object(
   'location_id','00000000-0000-0000-0000-000000000001',
   'items',jsonb_build_array(jsonb_build_object('kind','document','pages',1,'color','grayscale',
     'duplex',false,'quantity',1,'file_path','missing/document.pdf'))))$$,
-  'P0001','Sign in to upload documents','document pricing requires a verified buyer');
+  'P0001','Invalid document path','document pricing requires an owned or guest upload path');
 
 select set_config('request.jwt.claims','',false);
 delete from public.payouts where id='aaaaaaaa-aaaa-aaaa-aaaa-000000000003';
-delete from public.premade_products where slug='admin-tools-fixture';
+delete from public.premade_products where name->>'en'='Test product';
 delete from auth.users where id in ('aaaaaaaa-aaaa-aaaa-aaaa-000000000001','bbbbbbbb-bbbb-bbbb-bbbb-000000000002');
 select * from finish();
