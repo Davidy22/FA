@@ -129,7 +129,30 @@ html[data-theme="dark"] .bg-brand-100 { background-color: rgb(51 65 85) !importa
 html[data-theme="dark"] .border-brand-200 { border-color: rgb(71 85 105) !important; }
 html[data-theme="dark"] .text-brand-700,
 html[data-theme="dark"] .text-brand-800 { color: rgb(125 211 252) !important; }
-html[data-theme="dark"] .text-red-700 { color: rgb(252 165 165) !important; }
+/* Status badges (tickets, offers, rewards, admin feedback) use 50/100 fills with
+   dark text. Remap both halves per hue so they stay readable on a dark page. */
+html[data-theme="dark"] .bg-amber-50 { background-color: rgb(120 53 15 / 0.35) !important; }
+html[data-theme="dark"] .bg-amber-100 { background-color: rgb(120 53 15 / 0.45) !important; }
+html[data-theme="dark"] .border-amber-200 { border-color: rgb(146 64 14) !important; }
+html[data-theme="dark"] .text-amber-700,
+html[data-theme="dark"] .text-amber-800,
+html[data-theme="dark"] .text-amber-900 { color: rgb(253 230 138) !important; }
+html[data-theme="dark"] .bg-blue-100 { background-color: rgb(30 58 138 / 0.5) !important; }
+html[data-theme="dark"] .text-blue-800 { color: rgb(147 197 253) !important; }
+html[data-theme="dark"] .bg-green-50 { background-color: rgb(6 78 59 / 0.45) !important; }
+html[data-theme="dark"] .bg-green-100 { background-color: rgb(6 95 70 / 0.5) !important; }
+html[data-theme="dark"] .border-green-200 { border-color: rgb(22 101 52) !important; }
+html[data-theme="dark"] .text-green-700,
+html[data-theme="dark"] .text-green-800 { color: rgb(134 239 172) !important; }
+html[data-theme="dark"] .bg-red-50 { background-color: rgb(127 29 29 / 0.4) !important; }
+html[data-theme="dark"] .bg-red-100 { background-color: rgb(127 29 29 / 0.5) !important; }
+html[data-theme="dark"] .border-red-200 { border-color: rgb(153 27 27) !important; }
+html[data-theme="dark"] .bg-rose-50 { background-color: rgb(136 19 55 / 0.4) !important; }
+html[data-theme="dark"] .text-rose-700 { color: rgb(253 164 175) !important; }
+html[data-theme="dark"] [class~="hover:text-red-600"]:hover { color: rgb(248 113 113) !important; }
+html[data-theme="dark"] .text-red-700,
+html[data-theme="dark"] .text-red-800 { color: rgb(252 165 165) !important; }
+html[data-theme="dark"] .text-emerald-700,
 html[data-theme="dark"] .text-emerald-800,
 html[data-theme="dark"] .text-emerald-900 { color: rgb(167 243 208) !important; }
 html[data-theme="dark"] .bg-emerald-50 { background-color: rgb(6 78 59 / 0.45) !important; }

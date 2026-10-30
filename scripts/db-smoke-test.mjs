@@ -678,6 +678,41 @@ try {
   assert.ok((await one("select count(*) as n from public.product_option_types where slug in ('size','color')")).n >= 2);
   console.log('✓ subcategories reject hierarchy cycles and common option types are seeded');
 
+  // Postgres grants EXECUTE on every new function to PUBLIC. A migration that
+  // forgets `revoke all ... from public` hands staff-only logic to anonymous
+  // visitors, and nothing in the frontend build can see that. This allowlist is
+  // the full anon surface: storefront RPCs plus the helpers RLS policies call.
+  const anonAllowlist = [
+    'available_filaments(p_location_id uuid, p_material_id uuid)', // catalog colour picker
+    'effective_price(p_regular numeric, p_sale numeric, p_starts timestamp with time zone, p_ends timestamp with time zone, p_now timestamp with time zone)', // pure arithmetic, used by price_cart
+    'feature_enabled(p_key text)',                                 // read inside RLS policies
+    'get_setting(p_key text)',                                     // public site settings
+    'has_permission(p_key text)',                                  // RLS policies
+    'is_admin()',                                                  // RLS policies
+    'is_staff()',                                                  // RLS policies
+    'is_staff_at(loc uuid)',                                       // RLS policies
+    'lookup_order(p_order_number text, p_email text)',             // guest order lookup
+    'my_location()',                                               // RLS policies
+    'no_sales_tax_countries()',                                    // pure helper for sales_tax_rate
+    'permission_keys()',                                           // pure list of permission keys
+    'price_cart(p_cart jsonb)',                                    // anonymous cart pricing
+    'reward_multiplier(p_lifetime_points integer)',                // pure arithmetic
+    'sale_is_active(p_sale numeric, p_starts timestamp with time zone, p_ends timestamp with time zone, p_now timestamp with time zone)', // pure arithmetic
+    'sale_window_open(p_starts timestamp with time zone, p_ends timestamp with time zone, p_now timestamp with time zone)', // pure arithmetic
+    'sales_tax_rate(p_country text, p_tax_rate numeric)',          // pure arithmetic
+  ];
+  const anonExecutable = (await rows(`
+    select p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')' as signature
+    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.prokind = 'f'
+      and has_function_privilege('anon', p.oid, 'EXECUTE')
+      -- extension-owned helpers (pg_trgm's set_limit) are not ours to revoke
+      and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')
+    order by 1`)).map((row) => row.signature);
+  assert.deepEqual(anonExecutable, anonAllowlist,
+    'anon function access changed: revoke the new function, or add it here with a reason');
+  console.log('✓ anon can only reach the documented storefront and RLS helpers');
+
   // `supabase db reset` runs seed.sql only after migrations. It is deliberately
   // separate from the production migrations and safe to re-run locally.
   const localSeed = await readFile(join(root, 'supabase/seed.sql'), 'utf8');

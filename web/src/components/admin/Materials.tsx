@@ -3,7 +3,7 @@ import { useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { cleanLocalized, decimal, localizedInput } from '@/lib/admin';
-import { t_db } from '@/lib/format';
+import { DEFAULT_CURRENCY, formatMoney, t_db } from '@/lib/format';
 import { filamentSwatchStyle, finishLabel } from '@/lib/filaments';
 import { supabase } from '@/lib/supabase';
 import { useLocale } from '@/store/locale';
@@ -210,6 +210,7 @@ export function AdminMaterials() {
     },
   });
   const selectedLocation = stockLocation || locationsQuery.data?.find((location) => location.is_active)?.id || null;
+  const currency = locationsQuery.data?.find((location) => location.id === selectedLocation)?.currency ?? DEFAULT_CURRENCY;
   const stockQuery = useQuery<{ filament_id: string; in_stock: boolean }[]>({
     queryKey: ['admin_stock', selectedLocation],
     enabled: !!selectedLocation,
@@ -273,7 +274,7 @@ export function AdminMaterials() {
           <div className="flex items-center justify-between gap-2"><strong>{t_db(material.name, locale)} ({material.slug})</strong>
             <div className="flex gap-3"><button type="button" className="text-brand-700 underline" onClick={() => setEditingMaterial(material.id)}>{t('common:edit')}</button>
               <button type="button" className="text-red-700 underline" disabled={action.busy} onClick={() => void deleteMaterial(material)}>{t('common:delete')}</button></div></div>
-          <p className="text-slate-600">{t_db(material.adjective, locale) || '—'} · HK${Number(material.cost_per_gram).toFixed(2)}/g</p>
+          <p className="text-slate-600">{t_db(material.adjective, locale) || '—'} · {formatMoney(Number(material.cost_per_gram), locale, currency)}/g</p>
           {!material.is_active && <span className="badge">{t('admin:inactive')}</span>}
         </div>)}
       </div>
@@ -291,7 +292,7 @@ export function AdminMaterials() {
           const colors = filaments.filter((filament) => filament.material_id === material.id)
             .sort((a, b) => (a.color.en || '').localeCompare(b.color.en || ''));
           return <details key={material.id} className="rounded border p-3">
-            <summary className="cursor-pointer font-medium">{t_db(material.name, locale)} · HK${Number(material.cost_per_gram).toFixed(2)}/g ({colors.length})</summary>
+            <summary className="cursor-pointer font-medium">{t_db(material.name, locale)} · {formatMoney(Number(material.cost_per_gram), locale, currency)}/g ({colors.length})</summary>
             <div className="mt-3 flex flex-wrap gap-2">
               {colors.map((filament) => <div key={filament.id} className="flex items-center gap-2 rounded border px-3 py-2 text-sm">
                 <span className="swatch shrink-0" style={filamentSwatchStyle(filament)} />

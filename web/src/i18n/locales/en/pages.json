@@ -67,5 +67,19 @@
     "invalid_copies": "Enter a number of copies between 1 and 99.",
     "conversion_failed": "We couldn't convert this file to PDF. Try exporting it as a PDF, or try again later.",
     "unreadable_pdf": "Could not read the printable PDF. Please choose a valid, unencrypted document."
+  },
+  "pricing": {
+    "title": "Pricing information",
+    "intro": "Starter rates for 3D printing. Final quotes may vary with geometry, setup, and finishing.",
+    "material": "Material",
+    "type": "Type",
+    "rate": "Starter rate",
+    "quality_standard": "Standard",
+    "quality_durable": "Durable",
+    "quality_flexible": "Flexible",
+    "quality_strong": "Strong",
+    "multi_title": "Multi-material printing",
+    "multi_desc": "Add {{price}}/g for multi-material prints.",
+    "quote_cta": "Request a quote"
   }
 }
