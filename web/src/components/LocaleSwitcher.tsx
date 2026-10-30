@@ -20,7 +20,7 @@ export function LocaleSwitcher() {
         aria-label={t('language')}
         className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm"
         value={locale}
-        onChange={(e) => setLocale(e.target.value as Locale)}
+        onChange={(e) => void setLocale(e.target.value as Locale)}
       >
         <option value="en">{LABELS.en}</option>
         <option value="zh-Hant">{LABELS['zh-Hant']}</option>

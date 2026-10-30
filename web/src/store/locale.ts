@@ -1,12 +1,14 @@
 'use client';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import i18n, { detectLocaleFrom, SUPPORTED_LOCALES, type Locale } from '@/lib/i18n';
+import i18n, { detectLocaleFrom, ensureLocale, SUPPORTED_LOCALES, type Locale } from '@/lib/i18n';
 
 interface LocaleState {
   locale: Locale;
-  setLocale(l: Locale): void;
-  init(): void;
+  /** False until the active language's bundles are in memory. */
+  ready: boolean;
+  setLocale(l: Locale): Promise<void>;
+  init(): Promise<void>;
 }
 
 /** The browser's language preferences, plus the OS locale as a region hint. */
@@ -39,16 +41,28 @@ export const useLocale = create<LocaleState>()(
   persist(
     (set) => ({
       locale: 'en',
-      setLocale: (l) => {
-        i18n.changeLanguage(l);
+      ready: false,
+      setLocale: async (l) => {
+        // The Chinese bundles are fetched on demand; switch language only once
+        // the strings are in memory so no screen renders untranslated keys.
+        await ensureLocale(l);
+        await i18n.changeLanguage(l);
         if (typeof document !== 'undefined') document.documentElement.lang = l;
-        set({ locale: l });
+        set({ locale: l, ready: true });
       },
-      init: () => {
+      init: async () => {
         const l = detectLocale();
-        i18n.changeLanguage(l);
+        try {
+          await ensureLocale(l);
+        } catch (error) {
+          // A failed chunk fetch must not lock the visitor out of the site.
+          console.error('Could not load locale bundle', error);
+          set({ locale: 'en', ready: true });
+          return;
+        }
+        await i18n.changeLanguage(l);
         if (typeof document !== 'undefined') document.documentElement.lang = l;
-        set({ locale: l });
+        set({ locale: l, ready: true });
       },
     }),
     { name: 'ma.locale', partialize: (s) => ({ locale: s.locale }) }

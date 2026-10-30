@@ -144,5 +144,9 @@
     "light": "浅色",
     "dark": "深色",
     "auto": "自动（系统）"
-  }
+  },
+  "retry": "重试",
+  "back_home": "返回首页",
+  "error_retry_hint": "无法显示此页面。请重试或返回首页。",
+  "not_found_title": "找不到页面"
 }
