@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/lib/supabase';
+import { edgeErrorStatus } from '@/lib/edge-errors';
 import { useCart } from '@/store/cart';
 import { useLocale } from '@/store/locale';
 import { formatMoney } from '@/lib/format';
@@ -54,8 +55,9 @@ export default function DocumentPrintingPage() {
         if (conversionError) {
           // The converter is throttled per connection; say so instead of
           // blaming the file, which is the generic conversion error.
-          const status = (conversionError as { context?: { status?: number } }).context?.status;
-          throw new Error(status === 429 ? 'conversion_rate_limited' : 'conversion_failed');
+          throw new Error(edgeErrorStatus(conversionError) === 429
+            ? 'conversion_rate_limited'
+            : 'conversion_failed');
         }
         if (!(data instanceof Blob) || data.size === 0 || data.size > MAX_DOCUMENT_BYTES) {
           throw new Error('conversion_failed');

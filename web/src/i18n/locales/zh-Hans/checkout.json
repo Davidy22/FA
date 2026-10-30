@@ -30,5 +30,6 @@
   "items": "商品",
   "free": "免费",
   "final_total": "应付总额",
-  "free_delivery_hint": "单笔订单满 {{amount}} 即享免运费。"
+  "free_delivery_hint": "单笔订单满 {{amount}} 即享免运费。",
+  "payment_error": "无法开始结账，请再试一次。"
 }
