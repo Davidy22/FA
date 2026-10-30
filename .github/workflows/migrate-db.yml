@@ -21,7 +21,7 @@ jobs:
         with:
           # Pinned on purpose — see the note in ci.yml. Bump only together with
           # a migration that stops deleting storage rows directly.
-          version: 2.121.0
+          version: 2.122.0
       - run: supabase link --project-ref ${{ vars.SUPABASE_PROJECT_REF }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

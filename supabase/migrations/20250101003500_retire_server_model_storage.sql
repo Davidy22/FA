@@ -207,8 +207,18 @@ $$;
 
 -- The old product and custom-model buckets are no longer used by the storefront.
 -- Deleting the buckets also removes their stored objects; ticket-uploads is untouched.
+--
+-- storage-api 1.x installs `storage.protect_delete`, which rejects this purge
+-- unless the session opts in ("Direct deletion from storage tables is not
+-- allowed"). Setting the flag is the documented escape hatch, and it is scoped
+-- to this transaction so nothing else inherits it. This is the only change ever
+-- made to an applied migration in this repo: without it the migration cannot be
+-- applied at all on a current storage image, which leaves `supabase db start`
+-- (and therefore the CI `db` job) permanently red.
+select set_config('storage.allow_delete_query', 'true', true);
 delete from storage.objects where bucket_id in ('product-files', 'models', 'submission-assets');
 delete from storage.buckets where id in ('product-files', 'models', 'submission-assets');
+select set_config('storage.allow_delete_query', 'false', true);
 
 drop policy if exists "owner write models" on storage.objects;
 drop policy if exists "owner read own models" on storage.objects;

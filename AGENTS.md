@@ -23,6 +23,9 @@ those only for the area you are touching.
    Stripe is charged from that result.
 4. **Migrations are forward-only.** Add a new numbered file; never edit or delete an
    applied migration. If you change a function, re-create it in full in the new file.
+   The single exception is an applied migration that can no longer be applied at all
+   (…3500 needed `storage.allow_delete_query`). It is listed with its reason in
+   `APPLIED_MIGRATION_FIXES` in `scripts/check-repo.mjs`; nothing else may be edited.
 5. **Everything user-facing is translated** into `en`, `zh-Hant` and `zh-Hans`
    (see §9). A PR that adds English-only copy fails CI.
 6. **Finish with the full check suite** in §14 — that is exactly what CI runs.

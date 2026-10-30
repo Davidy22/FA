@@ -45,6 +45,16 @@ function resolveBase() {
   return null;
 }
 
+/**
+ * Applied migrations are frozen because Supabase records their checksum. The one
+ * exception is a migration that can no longer be applied at all: editing it is
+ * then the only way to unbreak `supabase db start`, and a note keeps it visible.
+ */
+const APPLIED_MIGRATION_FIXES = {
+  'supabase/migrations/20250101003500_retire_server_model_storage.sql':
+    'allowed edit: opts into storage.allow_delete_query, without which storage-api refuses the bucket purge',
+};
+
 function checkMigrationsAppendOnly(base) {
   if (!base) {
     notes.push('no comparable git ref found — skipped the append-only migration check');
@@ -60,6 +70,11 @@ function checkMigrationsAppendOnly(base) {
   for (const line of output.split('\n').filter(Boolean)) {
     const [status, ...paths] = line.split('\t');
     if (status.startsWith('A')) continue;
+    const file = paths[paths.length - 1];
+    if (status.startsWith('M') && APPLIED_MIGRATION_FIXES[file]) {
+      notes.push(`${file}: ${APPLIED_MIGRATION_FIXES[file]}`);
+      continue;
+    }
     fail(`supabase/migrations: ${paths.join(' -> ')} was ${status.startsWith('D') ? 'deleted' : 'modified'} `
       + `against ${base}. Add a new migration instead — applied files carry a checksum.`);
   }
@@ -106,6 +121,7 @@ function checkNewFunctionAcls(base) {
   const fromDiff = output.split('\n').filter(Boolean)
     .map((line) => line.split('\t'))
     .filter(([, file]) => file && file.endsWith('.sql') && file.startsWith('supabase/migrations/'))
+    .filter(([, file]) => !APPLIED_MIGRATION_FIXES[file])
     .map((parts) => parts[1]);
   const added = [...new Set([...fromDiff, ...untracked.split('\n').filter(Boolean)])];
   let checked = 0;
