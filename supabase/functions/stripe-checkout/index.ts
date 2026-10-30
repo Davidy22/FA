@@ -10,6 +10,7 @@ import Stripe from 'https://esm.sh/stripe@14.12.0?target=deno';
 import { PDFDocument } from 'https://esm.sh/pdf-lib@1.17.1?target=deno';
 import { corsHeaders, handleCors } from '../_shared/cors.ts';
 import { supabaseServiceClient, supabaseUserClient } from '../_shared/supabase.ts';
+import { withinRateLimit } from '../_shared/throttle.ts';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
   httpClient: Stripe.createFetchHttpClient(),
@@ -23,6 +24,12 @@ const MAX_EMAIL = 254;
 const MAX_NAME = 120;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LOCALES = new Set(['en', 'zh-Hant', 'zh-Hans']);
+// Guests may create sessions without an account, and each call reads the uploaded
+// PDFs and calls Stripe. The ceiling is per address and generous enough for a
+// shared connection retrying a card problem; the idempotency key already
+// collapses a double-click into one session.
+const CHECKOUT_LIMIT = 40;
+const CHECKOUT_WINDOW_SECONDS = 600;
 
 /**
  * Where Stripe may send the shopper afterwards. Set PUBLIC_SITE_URLS in
@@ -55,9 +62,15 @@ function sameOrigin(url: unknown, origins: string[]): boolean {
 serve(async (req) => {
   const corsResp = handleCors(req);
   if (corsResp) return corsResp;
+  if (!(await withinRateLimit(req, 'stripe-checkout', CHECKOUT_LIMIT, CHECKOUT_WINDOW_SECONDS))) {
+    return new Response(
+      JSON.stringify({ error: 'Too many checkout attempts from this connection. Wait a few minutes and try again.' }),
+      { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    );
+  }
 
   try {
-    const { cart, success_url, cancel_url, contact_email, contact_name, locale } = await req.json();
+    const { cart, success_url, cancel_url, contact_email, contact_name, locale, idempotency_key } = await req.json();
     if (!cart || typeof cart !== 'object' || !Array.isArray(cart.items)) {
       throw new UserError('Your cart is empty.');
     }
@@ -76,6 +89,11 @@ serve(async (req) => {
       throw new UserError('Enter a valid email address so we can send your receipt.');
     }
     const safeLocale = LOCALES.has(locale) ? locale : 'en';
+    // The client sends a key derived from the cart, so a double-click or a retry
+    // returns the session Stripe already created instead of opening a second one.
+    const idempotencyKey = typeof idempotency_key === 'string' && /^[A-Za-z0-9_-]{8,64}$/.test(idempotency_key)
+      ? `ma-checkout-${idempotency_key}`
+      : undefined;
 
     // Resolve the authenticated caller from the request's Authorization header.
     // Guests send the anon key (or nothing) and resolve to null.
@@ -156,10 +174,12 @@ serve(async (req) => {
         fab_contact_email: email,
       },
       payment_intent_data: { metadata: { fab_location_id: cart.location_id } },
-    });
+    }, idempotencyKey ? { idempotencyKey } : undefined);
 
     // Snapshot checkout session keyed by Stripe session id, for webhook fulfillment.
-    await sb.from('checkout_sessions').insert({
+    // A replayed idempotency key returns the same session, so this insert is a
+    // no-op rather than a duplicate-key error.
+    await sb.from('checkout_sessions').upsert({
       session_id: session.id,
       cart,
       user_id: cart.user_id || null,
@@ -167,7 +187,7 @@ serve(async (req) => {
       contact_email: email || null,
       contact_name: name || null,
       locale: safeLocale,
-    });
+    }, { onConflict: 'session_id', ignoreDuplicates: true });
 
     return new Response(JSON.stringify({ url: session.url, session_id: session.id }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
