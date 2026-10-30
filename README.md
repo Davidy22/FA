@@ -48,6 +48,10 @@ Customer (anon or registered) browses the catalog: ready-made products and mater
 ## Document printing & account recovery
 Document printing supports guest orders and PDF, DOC, DOCX, ODT and Pages uploads up to 20 MB. Non-PDF documents are converted privately through the `convert-document` Edge Function and a Gotenberg 8/LibreOffice service configured with the server-side `GOTENBERG_URL` secret. Uploads remain in a private bucket, guest files have no anonymous read policy, and checkout recounts PDF pages server-side. See [Getting Started §11](docs/GETTING_STARTED.md#11-document-printing) for setup. `/login` also provides email password recovery, with `/reset-password` completing the flow; the deployed recovery route must be allowed in Supabase Auth redirect URLs.
 
+## Security model
+
+The browser only gets the Supabase anon key; row-level security and `SECURITY DEFINER` RPCs are the boundary, and `price_cart` alone decides what an order costs. Storage buckets are private and read through short-lived signed URLs (`sign-file`), the service-role key exists only inside Edge Functions, and the Stripe webhook verifies its signature and only fulfils sessions Stripe reports as paid. The anonymous database surface is an explicit allowlist asserted by `pnpm test:db`, and AGENTS.md §15 records the invariants behind it.
+
 ## Local test accounts
 `supabase db reset` applies `supabase/seed.sql` **after** migrations, so these local-only email/password accounts are ready to sign in at `/login` on every reset:
 

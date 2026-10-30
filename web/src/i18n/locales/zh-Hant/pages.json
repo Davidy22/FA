@@ -66,7 +66,8 @@
     "invalid_pages": "可列印的 PDF 必須有 1 至 500 頁。",
     "invalid_copies": "請輸入 1 至 99 份。",
     "conversion_failed": "無法將此檔案轉換為 PDF，請先自行匯出為 PDF，或稍後再試。",
-    "unreadable_pdf": "無法讀取可列印的 PDF，請選擇有效而未加密的文件。"
+    "unreadable_pdf": "無法讀取可列印的 PDF，請選擇有效而未加密的文件。",
+    "rate_limited": "此連線的文件轉換次數過多，請稍後再試。"
   },
   "pricing": {
     "title": "價格資訊",

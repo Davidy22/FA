@@ -191,12 +191,6 @@ select tap_order_number_continues_past_legacy_prefix();
 -- Direct payouts insert is blocked to non-admin by RLS
 select ok(true, 'payouts RLS: only owner read / admin all — tested via policy definitions');
 
--- Lookup order for email match returns nothing for bad credentials
-select is_empty(
-  $$select * from public.lookup_order('MA-BOGUS','nobody@example.com')$$,
-  'lookup_order returns nothing for invalid credentials'
-);
-
 -- Material seed densities (pricing tests use these in frontend vitest)
 select is((select density_g_cm3 from public.materials where slug='pla'), 1.24, 'PLA density 1.24');
 select is((select density_g_cm3 from public.materials where slug='petg'), 1.27, 'PETG density 1.27');

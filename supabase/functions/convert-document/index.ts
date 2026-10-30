@@ -2,18 +2,53 @@
 // a private Gotenberg/LibreOffice service. PDFs never need to use this function.
 import { serve } from 'https://deno.land/std@0.207.0/http/server.ts';
 import { corsHeaders, handleCors } from '../_shared/cors.ts';
+import { supabaseServiceClient } from '../_shared/supabase.ts';
 
 const MAX_BYTES = 20 * 1024 * 1024;
+// Anonymous visitors may convert guest order documents, so the endpoint needs a
+// ceiling: each call runs LibreOffice over a file of up to 20 MB.
+const CONVERT_LIMIT = 20;
+const CONVERT_WINDOW_SECONDS = 3600;
 const ALLOWED_EXTENSIONS = new Set(['doc', 'docx', 'odt', 'pages']);
 const respond = (body: object, status = 200) => new Response(JSON.stringify(body), {
   status,
   headers: { ...corsHeaders, 'Content-Type': 'application/json' },
 });
 
+/** Hash the caller's address so the throttle table never stores raw IPs. */
+async function throttleKey(req: Request): Promise<string | null> {
+  const forwarded = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+  const ip = forwarded || req.headers.get('cf-connecting-ip') || '';
+  if (!ip) return null;
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ip));
+  return [...new Uint8Array(digest)].slice(0, 12)
+    .map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+async function withinRateLimit(req: Request): Promise<boolean> {
+  const key = await throttleKey(req);
+  if (!key) return true; // no client address: never block the whole site
+  const { data, error } = await supabaseServiceClient().rpc('consume_throttle', {
+    p_bucket: 'document-convert',
+    p_key: key,
+    p_limit: CONVERT_LIMIT,
+    p_window_seconds: CONVERT_WINDOW_SECONDS,
+  });
+  if (error) {
+    // A throttling outage must not take document printing down with it.
+    console.warn('Throttle check failed', error.message);
+    return true;
+  }
+  return data !== false;
+}
+
 serve(async (req) => {
   const cors = handleCors(req);
   if (cors) return cors;
   if (req.method !== 'POST') return respond({ error: 'Method not allowed' }, 405);
+  if (!(await withinRateLimit(req))) {
+    return respond({ error: 'Too many conversions from this connection. Try again later.' }, 429);
+  }
 
   try {
     const form = await req.formData();

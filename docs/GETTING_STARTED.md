@@ -103,8 +103,9 @@ needed.
    `service_role`/secret key, database password, Supabase access token, or Stripe
    secret key in a `NEXT_PUBLIC_*` value. Backend security depends on RLS.
 
-   `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` are
-   passed through when configured, but are not required to publish the frontend.
+   Only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are needed:
+   checkout redirects to a Stripe session created by an Edge Function, so no
+   publishable key is bundled, and nothing in the UI renders a captcha.
 3. Do **not** set `NEXT_PUBLIC_BASE_PATH` in Actions. `actions/configure-pages`
    supplies the actual Pages path **before** the build: `/FA` for this project
    site, or an empty path for a root/custom-domain site. The workflow ignores any
@@ -150,6 +151,26 @@ Configuration**, set the Site URL and allowed redirect URLs to the deployed site
 (including `/FA/`), rather than localhost. If listing routes individually, include
 both `/FA/auth/callback` and `/FA/reset-password` (and their trailing-slash variants).
 Password-recovery email also requires a working Auth email/SMTP configuration.
+
+### Edge Function secrets
+
+Set these with `supabase secrets set` (or in the ignored
+`supabase/functions/.env` for local runs). `SUPABASE_URL`,
+`SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are injected by Supabase.
+
+| Secret | Needed by | Purpose |
+| --- | --- | --- |
+| `STRIPE_SECRET_KEY` | `stripe-checkout`, `stripe-webhook`, `refund-order` | create sessions, verify refunds, read payments |
+| `STRIPE_WEBHOOK_SECRET` | `stripe-webhook` | signature verification — without it every delivery is rejected |
+| `PUBLIC_SITE_URLS` | `stripe-checkout` | comma-separated origins Stripe may redirect back to, e.g. `https://davidy22.github.io`. Falls back to the request's `Origin` header when unset; a redirect to any other origin is refused, so checkout cannot be used as an open redirect |
+| `RESEND_API_KEY` | `stripe-webhook` | optional order-confirmation email |
+| `ADMIN_BOOTSTRAP_EMAIL` | `bootstrap-admin` | one-time first-admin activation |
+| `GOTENBERG_URL` | `convert-document` | Word/Pages → PDF conversion |
+| `GITHUB_TOKEN`, `GITHUB_REPO` | `site-rebuild` | optional catalog rebuild dispatch |
+
+`convert-document` is the only endpoint anonymous visitors can drive, so it is
+throttled per client address (`consume_throttle`, 20 conversions per hour) and
+never stores the uploaded file.
 
 A failing **CI**, **Migrate DB**, or **Nightly E2E** run is distinct from a
 **Deploy Web** run; those workflows are not deployment dependencies. If **Deploy
