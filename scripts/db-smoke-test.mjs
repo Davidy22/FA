@@ -79,6 +79,7 @@ try {
   assert.ok(migrationCount >= 19, 'Expected the complete baseline and admin migration chain');
   console.log(`✓ ${migrationCount} migrations applied`);
 
+
   await db.exec(`insert into auth.users(id,email) values
     ('${admin}','db-admin@example.test'),('${buyer}','db-buyer@example.test');`);
 
@@ -691,7 +692,6 @@ try {
     'is_admin()',                                                  // RLS policies
     'is_staff()',                                                  // RLS policies
     'is_staff_at(loc uuid)',                                       // RLS policies
-    'lookup_order(p_order_number text, p_email text)',             // guest order lookup
     'my_location()',                                               // RLS policies
     'no_sales_tax_countries()',                                    // pure helper for sales_tax_rate
     'permission_keys()',                                           // pure list of permission keys
@@ -712,6 +712,51 @@ try {
   assert.deepEqual(anonExecutable, anonAllowlist,
     'anon function access changed: revoke the new function, or add it here with a reason');
   console.log('✓ anon can only reach the documented storefront and RLS helpers');
+
+  // RLS is enabled table by table; a new table without it is world-readable
+  // through the anon key, which is all a browser needs.
+  const missingRls = await rows(`select c.relname from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity
+    order by 1`);
+  assert.deepEqual(missingRls.map((row) => row.relname), [],
+    'enable row level security on every new public table');
+  console.log('✓ every public table has row level security enabled');
+
+  // `get_setting` is anon-executable: it must not become a read-anything door
+  // into platform_settings.
+  await db.exec(`insert into public.platform_settings(key,value)
+    values ('platform.commission_percent','15'::jsonb),('rewards.points_per_dollar','1'::jsonb)
+    on conflict (key) do nothing`);
+  await db.exec('set role anon');
+  assert.equal((await one(`select public.get_setting('platform.commission_percent') as value`)).value, null,
+    'get_setting must hide internal settings from anonymous visitors');
+  assert.notEqual((await one(`select public.get_setting('rewards.points_per_dollar') as value`)).value, null,
+    'get_setting must keep serving storefront settings');
+  await db.exec('reset role');
+
+  // Column grants, not RLS, stop a customer from promoting themselves.
+  await claims(buyer);
+  await db.exec('set role authenticated');
+  await assert.rejects(
+    rows(`update public.profiles set role = 'admin' where id = $1`, [buyer]),
+    /permission denied/,
+    'customers must not be able to grant themselves a role');
+  await rows(`update public.profiles set delivery_address = $2::jsonb where id = $1`,
+    [buyer, JSON.stringify({ line1: '1 Test Road', district: 'Central', region: 'HK' })]);
+  await db.exec('reset role');
+  console.log('✓ customers can edit their address but not their role');
+
+  // The public document converter relies on this throttle.
+  const throttled = [
+    (await one(`select public.consume_throttle('document-convert','ip-1',2,3600) as ok`)).ok,
+    (await one(`select public.consume_throttle('document-convert','ip-1',2,3600) as ok`)).ok,
+    (await one(`select public.consume_throttle('document-convert','ip-1',2,3600) as ok`)).ok,
+    (await one(`select public.consume_throttle('document-convert','ip-2',2,3600) as ok`)).ok,
+  ];
+  assert.deepEqual(throttled, [true, true, false, true],
+    'consume_throttle should allow the limit per key and not leak across keys');
+  console.log('✓ request throttle counts per key and window');
 
   // `supabase db reset` runs seed.sql only after migrations. It is deliberately
   // separate from the production migrations and safe to re-run locally.

@@ -51,7 +51,13 @@ export default function DocumentPrintingPage() {
         const body = new FormData();
         body.append('file', selected, selected.name);
         const { data, error: conversionError } = await supabase().functions.invoke('convert-document', { body });
-        if (conversionError || !(data instanceof Blob) || data.size === 0 || data.size > MAX_DOCUMENT_BYTES) {
+        if (conversionError) {
+          // The converter is throttled per connection; say so instead of
+          // blaming the file, which is the generic conversion error.
+          const status = (conversionError as { context?: { status?: number } }).context?.status;
+          throw new Error(status === 429 ? 'conversion_rate_limited' : 'conversion_failed');
+        }
+        if (!(data instanceof Blob) || data.size === 0 || data.size > MAX_DOCUMENT_BYTES) {
           throw new Error('conversion_failed');
         }
         printable = new File([data], convertedPdfName(selected.name), { type: 'application/pdf' });
@@ -71,9 +77,11 @@ export default function DocumentPrintingPage() {
       const message = (reason as Error).message;
       setError(message === 'invalid_page_count'
         ? t('document.invalid_pages')
-        : message === 'conversion_failed'
-          ? t('document.conversion_failed')
-          : t('document.unreadable_pdf'));
+        : message === 'conversion_rate_limited'
+          ? t('document.rate_limited')
+          : message === 'conversion_failed'
+            ? t('document.conversion_failed')
+            : t('document.unreadable_pdf'));
     } finally {
       if (selection.current === revision) {
         setReading(false);

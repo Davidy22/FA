@@ -14,6 +14,20 @@ const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? '';
 
 const RESEND_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 
+const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (character) => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+}[character] as string));
+
+/** Format in the order's own currency; the shop prices in HKD, not USD. */
+function formatTotal(total: number, currency: string, locale: string): string {
+  const tag = locale === 'zh-Hant' ? 'zh-Hant-HK' : locale === 'zh-Hans' ? 'zh-Hans-HK' : 'en-HK';
+  try {
+    return new Intl.NumberFormat(tag, { style: 'currency', currency }).format(total);
+  } catch {
+    return `${currency} ${total.toFixed(2)}`;
+  }
+}
+
 const LOCALIZED_SUBJECT: Record<string, string> = {
   en: 'Your Make Anyth.ing order is confirmed',
   'zh-Hant': '您的 Make Anyth.ing 訂單已成立',
@@ -46,10 +60,20 @@ serve(async (req) => {
     }
     // Record the event only after fulfillment succeeds. A failed database write
     // must be retried by Stripe rather than treated as a completed duplicate.
-    let confirmation: { email: string; locale: string; orderNumber: string; total: number } | null = null;
-    if (event.type === 'checkout.session.completed') {
+    let confirmation: { email: string; locale: string; orderNumber: string; total: string } | null = null;
+    // `completed` fires for delayed payment methods too, before the money has
+    // arrived; only fulfil once Stripe says the session is paid, and accept the
+    // follow-up async success event for those methods.
+    const fulfilTypes = new Set(['checkout.session.completed', 'checkout.session.async_payment_succeeded']);
+    if (fulfilTypes.has(event.type)) {
       const session = event.data.object as Stripe.Checkout.Session;
       const sessionId = session.id;
+      if (session.payment_status !== 'paid') {
+        console.warn(`Skipping fulfilment for unpaid session ${sessionId} (${session.payment_status})`);
+        return new Response(JSON.stringify({ received: true, unpaid: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
       const { data: sess } = await sb
         .from('checkout_sessions')
         .select('*')
@@ -74,11 +98,15 @@ serve(async (req) => {
       });
       if (rErr) throw new Error(`create_order_from_cart: ${rErr.message}`);
 
-      if (contactEmail) confirmation = {
-        email: contactEmail, locale,
-        orderNumber: (order as { order_number: string }).order_number,
-        total: Number((order as { total_amount: number }).total_amount),
-      };
+      if (contactEmail) {
+        const placed = order as { order_number: string; total_amount: number; currency?: string };
+        confirmation = {
+          email: contactEmail,
+          locale,
+          orderNumber: placed.order_number,
+          total: formatTotal(Number(placed.total_amount), placed.currency || 'HKD', locale),
+        };
+      }
     }
 
     const { error: eventError } = await sb.from('stripe_events').insert({
@@ -97,7 +125,7 @@ serve(async (req) => {
             from: 'Make Anyth.ing <no-reply@makeanyth.ing>',
             to: [email],
             subject: LOCALIZED_SUBJECT[locale] ?? LOCALIZED_SUBJECT.en,
-            html: `<p>${orderNumber}</p><p>Total: US$${total.toFixed(2)}</p>`,
+            html: `<p>${escapeHtml(orderNumber)}</p><p>Total: ${escapeHtml(total)}</p>`,
           }),
         });
         if (!result.ok) console.warn('Resend send failed', result.status);

@@ -55,7 +55,6 @@
   "referral_step_signup": "They enter it when creating an account.",
   "referral_step_reward": "You earn 10 points at sign-up and 50 after their first order.",
   "referral_terms": "Referral points are awarded once per new customer.",
-  "referral_redirecting": "Referral details are now part of your rewards.",
   "membership_title": "Membership",
   "lifetime_points": "{{count}} lifetime points",
   "tier_multiplier": "{{multiplier}}× points",

@@ -66,7 +66,8 @@
     "invalid_pages": "可打印的 PDF 必须有 1 至 500 页。",
     "invalid_copies": "请输入 1 至 99 份。",
     "conversion_failed": "无法将此文件转换为 PDF，请先自行导出为 PDF，或稍后再试。",
-    "unreadable_pdf": "无法读取可打印的 PDF，请选择有效而未加密的文件。"
+    "unreadable_pdf": "无法读取可打印的 PDF，请选择有效而未加密的文件。",
+    "rate_limited": "此连接的文件转换次数过多，请稍后再试。"
   },
   "pricing": {
     "title": "价格信息",

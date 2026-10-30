@@ -16,7 +16,8 @@ those only for the area you are touching.
    middleware. All data access happens in the browser through `supabase()`.
 2. **The database is the security boundary.** Supabase RLS policies plus
    `SECURITY DEFINER` RPCs decide what a customer or staff member can do. Hiding a
-   button is never the protection; check the policy/RPC too.
+   button is never the protection; check the policy/RPC too. §15 is the checklist
+   that keeps the boundary honest.
 3. **Never trust the browser for money.** `price_cart(jsonb)` is the authoritative
    price. The client may estimate for display, but checkout re-prices server-side and
    Stripe is charged from that result.
@@ -25,6 +26,8 @@ those only for the area you are touching.
 5. **Everything user-facing is translated** into `en`, `zh-Hant` and `zh-Hans`
    (see §9). A PR that adds English-only copy fails CI.
 6. **Finish with the full check suite** in §14 — that is exactly what CI runs.
+7. **Tokens never leave the browser.** The anon key is public and RLS-deep; the
+   service-role key exists only inside Edge Functions.
 
 ---
 
@@ -238,7 +241,8 @@ all `LocalTest123!`; two Hong Kong branches; demo products under ids
 * **Custom quotes go through tickets.** `quote_requests` / `uploaded_models` and the
   `custom` cart kind are still priced by `price_cart`, but the storefront path is the
   quote-ticket flow (`/quote` → staff quote → accept into cart).
-* **`/referrals`** only redirects to `/rewards#referrals`.
+* **`/referrals` was deleted.** Referral details live in the rewards tab
+  (`/rewards#referrals`); there is no standalone route.
 
 ---
 
@@ -502,3 +506,60 @@ Plus, where relevant:
 * a short note in `README.md` / `docs/` when a user-visible rule changes,
 * commit on your working branch (never rewrite `main`), and describe the *why* in the
   commit message.
+
+---
+
+## 15. Security invariants
+
+Read this before touching auth, RLS, storage or payments. Most of it is already
+asserted by `pnpm verify`; the rest is the reasoning you need to not undo it.
+
+**Clients and keys**
+* The browser only ever holds `NEXT_PUBLIC_SUPABASE_URL` / `..._ANON_KEY`. A secret
+  in a `NEXT_PUBLIC_*` value is shipped to every visitor — `client-guards.test.ts`
+  and CI's config check will not save you from a genuinely public value, so never
+  put one there.
+* `verify_jwt = true` on an Edge Function only proves the JWT was signed by the
+  project; **the anon key is one of those JWTs**. A function is public until it
+  resolves the caller itself (`supabaseUserClient(req).auth.getUser()`) and checks
+  the role from `profiles`. `convert-document` is the one deliberately public
+  endpoint, which is why it is throttled.
+
+**Database**
+* RLS is enabled on every `public` table (`pnpm test:db` fails if a new one is not).
+  An RLS-enabled table with no policy is deny-all, which is a valid choice.
+* `anon` may execute only the functions listed in `anonAllowlist`
+  (`scripts/db-smoke-test.mjs`): catalog reads, `price_cart`, and the helpers RLS
+  policies call. Anything else must be revoked in the migration that creates it.
+* Column privileges are part of the policy. `profiles` is `revoke update` plus an
+  explicit column list — **adding a column does not add permission**, so grant it in
+  the same migration (that is how `delivery_address` was silently broken).
+* `get_setting(key)` is anon-executable and whitelisted to `rewards.*`,
+  `document.*` and `features.*`. Platform commission and payout limits stay in the
+  admin console's RLS-guarded table reads.
+* Every `SECURITY DEFINER` function sets `search_path = public`, and never builds
+  SQL from a caller-supplied string.
+* Storage: every bucket except `product-images` is private, read through
+  `sign-file` (which checks ownership/ticket/order before signing). Buckets carry
+  `file_size_limit` and, where the type is fixed, `allowed_mime_types`.
+
+**Payments**
+* The webhook verifies `STRIPE_WEBHOOK_SECRET` and only fulfils a session whose
+  `payment_status` is `paid`; delayed methods fulfil on
+  `checkout.session.async_payment_succeeded`. There is no other order-creation path.
+* `stripe-checkout` accepts `success_url` / `cancel_url` only from
+  `PUBLIC_SITE_URLS` (or the caller's own origin). Keep it that way or checkout
+  becomes an open redirect.
+* Money is formatted with `Intl`/`formatMoney` and the order's own `currency`
+  column — the store prices in HKD, so never print `US$`.
+* Refunds go through Stripe first and then the caller-scoped `orders` update, so
+  the status trigger re-checks the admin role.
+
+**Operational**
+* Public compute (document conversion) goes through
+  `consume_throttle(bucket, key, limit, window)`; keys are hashed, never raw IPs.
+* CORS is `Access-Control-Allow-Origin: *` on purpose: authorisation travels in a
+  bearer token, not a cookie, so a hostile page cannot borrow a session by
+  reflecting an origin. Do not "fix" it without also changing the auth model.
+* Errors returned from public endpoints are generic; the Postgres/Stripe detail
+  goes to `console.error`. Staff-only endpoints may still explain what failed.
