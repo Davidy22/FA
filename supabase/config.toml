@@ -116,9 +116,6 @@ verify_jwt = true
 [functions.sign-file]
 verify_jwt = true
 
-[functions.site-rebuild]
-verify_jwt = true
-
 [functions.stripe-checkout]
 verify_jwt = true
 

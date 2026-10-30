@@ -166,7 +166,6 @@ Set these with `supabase secrets set` (or in the ignored
 | `RESEND_API_KEY` | `stripe-webhook` | optional order-confirmation email |
 | `ADMIN_BOOTSTRAP_EMAIL` | `bootstrap-admin` | one-time first-admin activation |
 | `GOTENBERG_URL` | `convert-document` | Word/Pages → PDF conversion |
-| `GITHUB_TOKEN`, `GITHUB_REPO` | `site-rebuild` | optional catalog rebuild dispatch |
 
 `convert-document` and `stripe-checkout` are the endpoints anonymous visitors can
 drive, so both are throttled per client address (`consume_throttle`; 20

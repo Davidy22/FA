@@ -202,7 +202,7 @@ Deno modules; shared helpers in `_shared/` (`supabaseServiceClient`,
 | `convert-document` | DOC/DOCX/ODT/Pages → PDF via private Gotenberg (`GOTENBERG_URL`) |
 | `sign-file` | short-lived signed URLs for private order files |
 | `refund-order` | Stripe refund for allowed statuses |
-| `bootstrap-admin`, `create-staff`, `set-user-active`, `site-rebuild` | admin/ops actions |
+| `bootstrap-admin`, `create-staff`, `set-user-active` | admin/ops actions |
 
 Secrets live only in Edge Functions. The browser never sees anything but the anon key.
 
