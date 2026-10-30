@@ -16,7 +16,7 @@ jobs:
         with:
           # Pinned on purpose — see the note in ci.yml. Bump only together with
           # a migration that stops deleting storage rows directly.
-          version: 2.121.0
+          version: 2.122.0
       - run: supabase db start
       - run: supabase db reset
       - working-directory: web
