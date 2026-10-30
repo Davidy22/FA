@@ -30,12 +30,14 @@ pnpm dev
 ```
 
 ## Scripts
-- `pnpm test` — Vitest unit tests (formatting, slugs, i18n helpers, brand-palette guard)
-- `pnpm test:db` — embedded Postgres migration/admin/checkout smoke tests (no Docker)
+- `pnpm test` — Vitest unit tests (formatting, slugs, i18n helpers, theme-surface and client guards)
+- `pnpm test:db` — embedded Postgres migration/admin/checkout smoke tests (no Docker), including the list of functions `anon` may execute
+- `pnpm check:repo` — migrations are append-only, new SQL functions state their ACLs, and `supabase/config.toml` matches `supabase/functions/`
+- `pnpm verify` — the CI gates in one command (lint, typecheck, unit tests, db smoke, i18n, repo checks)
 - `pnpm i18n:check` — en/zh-Hant/zh-Hans key and interpolation parity
 - `pnpm i18n:sync` — synchronize Chinese locale structure from English without discarding translations; use `-- --since <git-ref>` to flag changed English copy for review
 - `supabase test db` — pgTAP RLS/RPC tests
-- `pnpm build` — static export to `web/out`
+- `pnpm build` — static export to `web/out` (then `node scripts/check-pages-export.mjs`)
 - `pnpm test:e2e` — Playwright smoke tests
 
 See `docs/GETTING_STARTED.md` and `docs/ARCHITECTURE.md` for details.

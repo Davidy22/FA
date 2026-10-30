@@ -67,5 +67,19 @@
     "invalid_copies": "请输入 1 至 99 份。",
     "conversion_failed": "无法将此文件转换为 PDF，请先自行导出为 PDF，或稍后再试。",
     "unreadable_pdf": "无法读取可打印的 PDF，请选择有效而未加密的文件。"
+  },
+  "pricing": {
+    "title": "价格信息",
+    "intro": "3D 打印入门价格。最终报价可能因模型形状、设置及后加工而有所不同。",
+    "material": "材料",
+    "type": "特性",
+    "rate": "入门价格",
+    "quality_standard": "标准",
+    "quality_durable": "耐用",
+    "quality_flexible": "柔性",
+    "quality_strong": "坚固",
+    "multi_title": "多材料打印",
+    "multi_desc": "多材料打印每克另加 {{price}}。",
+    "quote_cta": "索取报价"
   }
 }

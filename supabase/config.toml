@@ -124,9 +124,3 @@ verify_jwt = true
 
 [functions.stripe-webhook]
 verify_jwt = false
-
-[functions.submissions-decide]
-verify_jwt = true
-
-[functions.verify-model]
-verify_jwt = true

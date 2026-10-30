@@ -63,6 +63,8 @@ pnpm typecheck          # tsc --noEmit (strict + noUnusedLocals/Parameters)
 pnpm test               # Vitest, jsdom (unit + component)
 pnpm test:db            # scripts/db-smoke-test.mjs — all migrations in PGlite, no Docker
 pnpm i18n:check         # locale key + {{placeholder}} parity
+pnpm check:repo         # migrations append-only + edge-function/config parity
+pnpm verify             # everything above except build, in one go
 pnpm build              # static export to web/out
 node scripts/check-pages-export.mjs        # verifies the built artifact (needs web/out)
 
@@ -237,7 +239,6 @@ all `LocalTest123!`; two Hong Kong branches; demo products under ids
   `custom` cart kind are still priced by `price_cart`, but the storefront path is the
   quote-ticket flow (`/quote` → staff quote → accept into cart).
 * **`/referrals`** only redirects to `/rewards#referrals`.
-* **`verify-model`** no longer exists (README used to mention it).
 
 ---
 
@@ -368,6 +369,11 @@ A partial `create or replace` will silently drop behaviour.
 * **Playwright** (`web/e2e`): smoke tests only. Seed state by `page.addInitScript`
   writing `ma.cart` / `ma.location` to `localStorage` — that is how guest checkout is
   covered without an account.
+* **Repo guards** run inside the same Vitest suite: `lib/__tests__/theme-surfaces.test.ts`
+  (every colour utility has a theme shade and a dark-mode rule) and
+  `lib/__tests__/client-guards.test.ts` (inlinable env vars, `basePath`-safe URLs,
+  links to real routes, `formatMoney` instead of currency symbols). They read `src/`
+  from disk, so a failure names the offending file.
 * **pgTAP** (`supabase/tests`): policy/RPC behaviour against a real Supabase stack.
 * When a test asserts user-visible copy or existence of a string, prefer roles/labels
   over raw text where reasonable; several older tests still match text.
@@ -389,10 +395,10 @@ A partial `create or replace` will silently drop behaviour.
   freely, but check the dark-mode remaps: `bg-brand-50`, `bg-brand-50/60`,
   `bg-brand-100`, `border-brand-200` and `text-brand-700`/`text-brand-800` are
   remapped in §11's dark block, and `bg-brand-600` is dark enough to keep as-is.
-  `lib/__tests__/brand-palette.test.ts` scans `src/` for every `*-brand-<shade>`
-  utility and fails if a shade is missing from the config or a pale `bg-brand-*`
-  has no `html[data-theme="dark"]` rule, so a typo or a new pale surface breaks
-  `pnpm test` instead of silently rendering nothing.
+  `lib/__tests__/theme-surfaces.test.ts` scans `src/` for every colour utility and
+  fails if a shade is missing from the config, or a pale fill / dark text / pale
+  border has no `html[data-theme="dark"]` rule — so a typo or a new badge colour
+  breaks `pnpm test` instead of silently rendering the wrong thing.
 * Wide tables: `main table { display: block; overflow-x: auto }` in `globals.css` keeps
   admin tables scrollable on narrow screens; don't undo it.
 
@@ -439,29 +445,52 @@ uploading `web/out`. If you add an asset or a raw URL, use `withBasePath()`.
 
 ## 13. Traps checklist
 
-* Editing an already-applied migration, or forgetting the `grant`/`revoke` on a
-  re-defined function.
-* A `bg-brand-*` surface like `bg-brand-50` without a dark-mode remap, or a shade
-  outside 50–900 (`brand-palette.test.ts` catches both).
-* New colour without a `html[data-theme="dark"]` rule.
-* `process.env.FOO` in client code (`NEXT_PUBLIC_` only) or a non-`withBasePath` URL.
-* Assuming `pnpm dev` reflects `basePath` (it does not; production-only).
-* Showing a total computed in the browser as if it were authoritative.
-* Hard-coding a currency symbol instead of `formatMoney`.
-* Adding English strings without the zh-* counterparts (`pnpm i18n:check`).
-* Reading a new persisted-store field without a default (old `localStorage` payloads).
-* Copying only part of a redefined SQL function.
-* Trusting the UI for authorisation instead of the policy/RPC.
-* Reintroducing store-name location labels: all locations are branches of one shop, so
-  a branch name is just its neighbourhood (`Central`, not `Make Anyth.ing Central`).
+Most of these now fail a check instead of shipping. The guard is named next to
+each one; run `pnpm verify` (plus `pnpm build && node scripts/check-pages-export.mjs`)
+before you claim a change is done.
+
+* **Editing an applied migration.** `check:repo` fails when a file under
+  `supabase/migrations` is modified or deleted against the base branch — add a new
+  migration instead (it carries a checksum).
+* **A new function that nobody revoked.** Postgres grants `EXECUTE` to `PUBLIC` on
+  every new function, and `drop function` + `create` resets the ACL. `check:repo`
+  requires every function created by a new migration to state its ACL in the same
+  file, and `pnpm test:db` asserts the exact set of functions `anon` may execute
+  (`scripts/db-smoke-test.mjs`, `anonAllowlist`). Trigger (`tg_*`) and `_internal`
+  helpers are revoked wholesale by `20250101003800_function_acl_hardening.sql`.
+* **An edge function stanza with no function** (or vice versa). `check:repo` diffs
+  `[functions.x]` in `supabase/config.toml` against `supabase/functions/x/index.ts`.
+* **A colour with no dark-mode counterpart** or a shade missing from the theme:
+  `src/lib/__tests__/theme-surfaces.test.ts` scans the utilities `src/` uses and
+  requires a `html[data-theme="dark"]` rule for pale fills (50–200), dark text
+  (600–900) and pale borders, plus the full `brand` 50–900 ramp.
+* **`process.env.FOO` in client code** (only `NEXT_PUBLIC_*` / `NODE_ENV` is
+  inlined) and **a raw root-relative `href`/`src`** that skips `basePath`:
+  `src/lib/__tests__/client-guards.test.ts`. It also fails on links to routes that
+  have no `page.tsx`, and on hand-written currency symbols (`formatMoney` instead).
+* **Assuming `pnpm dev` reflects `basePath`** — it does not (production only); build
+  and run `node scripts/check-pages-export.mjs` when a URL, asset or redirect changes.
+* **Showing a total computed in the browser as if it were authoritative.** Only
+  `price_cart` / `create_order_from_cart` may decide money; the UI formats what the
+  RPC returned.
+* **Adding English strings without the zh-* counterparts** — `pnpm i18n:check`.
+* **Reading a new persisted-store field without a default** (`ma.cart`,
+  `ma.location`, `ma.locale`, `ma.appearance` survive deploys). Keep the default in
+  the store initialiser, or bump `version` with a `migrate`.
+* **Copying only part of a redefined SQL function** — re-read the whole body from
+  the newest migration; the PGlite smoke test covers behaviour, not completeness.
+* **Trusting the UI for authorisation** instead of the policy/RPC.
+* **Reintroducing store-name location labels**: all locations are branches of one
+  shop, so a branch name is just its neighbourhood (`Central`, not
+  `Make Anyth.ing Central`).
 
 ---
 
 ## 14. Definition of done
 
 ```bash
-pnpm lint && pnpm typecheck && pnpm test && pnpm test:db && pnpm i18n:check \
-  && pnpm build && node scripts/check-pages-export.mjs
+pnpm verify                                  # lint, typecheck, tests, db smoke, i18n, repo checks
+pnpm build && node scripts/check-pages-export.mjs
 ```
 
 Plus, where relevant:

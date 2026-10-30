@@ -17,6 +17,9 @@ jobs:
         working-directory: web
     steps:
       - uses: actions/checkout@v4
+        with:
+          # check:repo diffs migrations against the base branch, which needs history.
+          fetch-depth: 0
       - uses: pnpm/action-setup@v3
         with:
           version: 9
@@ -32,6 +35,10 @@ jobs:
         working-directory: ${{ github.workspace }}
       - run: node scripts/i18n-check.mjs
         working-directory: ${{ github.workspace }}
+      - run: node scripts/check-repo.mjs
+        working-directory: ${{ github.workspace }}
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
       - run: pnpm build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost' }}
