@@ -120,9 +120,15 @@ html[data-theme="dark"] .input::placeholder { color: rgb(148 163 184); }
 html[data-theme="dark"] [class~="hover:bg-slate-50"]:hover,
 html[data-theme="dark"] [class~="hover:bg-slate-100"]:hover { background-color: rgb(30 41 59) !important; }
 html[data-theme="dark"] [class~="hover:bg-slate-200"]:hover { background-color: rgb(51 65 85) !important; }
+/* Pale brand tints are surfaces in light mode; on a dark page they would stay
+   bright, so remap them to raised slate surfaces like the other light fills. */
+html[data-theme="dark"] .bg-brand-50 { background-color: rgb(30 41 59) !important; }
 html[data-theme="dark"] [class~="bg-brand-50/30"] { background-color: rgb(30 41 59 / 0.45) !important; }
+html[data-theme="dark"] [class~="bg-brand-50/60"] { background-color: rgb(30 41 59 / 0.6) !important; }
+html[data-theme="dark"] .bg-brand-100 { background-color: rgb(51 65 85) !important; }
 html[data-theme="dark"] .border-brand-200 { border-color: rgb(71 85 105) !important; }
-html[data-theme="dark"] .text-brand-700 { color: rgb(125 211 252) !important; }
+html[data-theme="dark"] .text-brand-700,
+html[data-theme="dark"] .text-brand-800 { color: rgb(125 211 252) !important; }
 html[data-theme="dark"] .text-red-700 { color: rgb(252 165 165) !important; }
 html[data-theme="dark"] .text-emerald-800,
 html[data-theme="dark"] .text-emerald-900 { color: rgb(167 243 208) !important; }
