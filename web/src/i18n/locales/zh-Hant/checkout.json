@@ -30,5 +30,6 @@
   "items": "商品",
   "free": "免費",
   "final_total": "應付總額",
-  "free_delivery_hint": "單筆訂單滿 {{amount}} 即享免運費。"
+  "free_delivery_hint": "單筆訂單滿 {{amount}} 即享免運費。",
+  "payment_error": "無法開始結帳，請再試一次。"
 }

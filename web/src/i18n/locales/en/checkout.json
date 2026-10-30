@@ -30,5 +30,6 @@
   "items": "Items",
   "free": "Free",
   "final_total": "Total due",
-  "free_delivery_hint": "Spend {{amount}} in one order to get free delivery."
+  "free_delivery_hint": "Spend {{amount}} in one order to get free delivery.",
+  "payment_error": "Checkout could not start. Please try again."
 }

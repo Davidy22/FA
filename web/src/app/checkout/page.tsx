@@ -19,6 +19,7 @@ import {
   type Fulfilment,
 } from '@/lib/shipping';
 import { withBasePath } from '@/lib/paths';
+import { edgeErrorMessage } from '@/lib/edge-errors';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -173,8 +174,31 @@ export default function CheckoutPage() {
     else setAddressSaved(true);
   }
 
+  /**
+   * A stable key for "this exact cart". Double-clicking Pay (or retrying after a
+   * network blip) reuses one Stripe session instead of opening a second one;
+   * editing the cart produces a new key, so the price still follows the cart.
+   */
+  function checkoutIdempotencyKey(): string {
+    const material = JSON.stringify({
+      location: cartLocationId,
+      items,
+      coupon: coupon_code || null,
+      fulfilment,
+      address: fulfilment === 'delivery' ? address : null,
+      email: contactEmail,
+    });
+    // FNV-1a: tiny, stable, and only needs to avoid accidental collisions.
+    let hash = 0x811c9dc5;
+    for (let index = 0; index < material.length; index += 1) {
+      hash ^= material.charCodeAt(index);
+      hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+    return `ma-${hash.toString(36)}-${material.length.toString(36)}`;
+  }
+
   async function handlePay() {
-    if (!canPay) return;
+    if (!canPay || busy) return;
     setBusy(true); setError(null);
     try {
       await saveAddressToAccount();
@@ -199,12 +223,22 @@ export default function CheckoutPage() {
           contact_email: contactEmail,
           contact_name: contactName,
           locale,
+          idempotency_key: checkoutIdempotencyKey(),
         },
       });
       if (error) throw error;
-      if (data?.url) window.location.href = data.url;
+      // Only follow a Stripe-hosted URL: a misconfigured or spoofed response
+      // must not be able to bounce the customer to another origin.
+      if (data?.url) {
+        let target: URL;
+        try { target = new URL(data.url); } catch { throw new Error('Checkout returned an invalid URL'); }
+        if (target.protocol !== 'https:' || target.hostname !== 'checkout.stripe.com') {
+          throw new Error('Checkout returned an unexpected URL');
+        }
+        window.location.href = target.toString();
+      }
     } catch (e) {
-      setError((e as Error).message);
+      setError(await edgeErrorMessage(e, t('checkout:payment_error')));
     } finally { setBusy(false); }
   }
 
