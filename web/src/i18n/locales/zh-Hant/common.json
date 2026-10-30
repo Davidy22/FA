@@ -144,5 +144,9 @@
     "light": "淺色",
     "dark": "深色",
     "auto": "自動（系統）"
-  }
+  },
+  "retry": "重試",
+  "back_home": "返回首頁",
+  "error_retry_hint": "無法顯示此頁面。請重試或返回首頁。",
+  "not_found_title": "找不到頁面"
 }

@@ -3,6 +3,9 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
+// English is the fallback and the default, so it ships in the main bundle. The
+// two Chinese bundles are ~15 kB gzipped each and most visitors never switch to
+// them, so they load on demand (see ensureLocale at the bottom of this file).
 import enCommon from '@/i18n/locales/en/common.json';
 import enCatalog from '@/i18n/locales/en/catalog.json';
 import enQuote from '@/i18n/locales/en/quote.json';
@@ -16,54 +19,18 @@ import enErrors from '@/i18n/locales/en/errors.json';
 import enRewards from '@/i18n/locales/en/rewards.json';
 import enPages from '@/i18n/locales/en/pages.json';
 
-import zhHantCommon from '@/i18n/locales/zh-Hant/common.json';
-import zhHantCatalog from '@/i18n/locales/zh-Hant/catalog.json';
-import zhHantQuote from '@/i18n/locales/zh-Hant/quote.json';
-import zhHantTickets from '@/i18n/locales/zh-Hant/tickets.json';
-import zhHantCart from '@/i18n/locales/zh-Hant/cart.json';
-import zhHantCheckout from '@/i18n/locales/zh-Hant/checkout.json';
-import zhHantOrders from '@/i18n/locales/zh-Hant/orders.json';
-import zhHantCreator from '@/i18n/locales/zh-Hant/creator.json';
-import zhHantEmployee from '@/i18n/locales/zh-Hant/employee.json';
-import zhHantErrors from '@/i18n/locales/zh-Hant/errors.json';
-import zhHantRewards from '@/i18n/locales/zh-Hant/rewards.json';
-import zhHantPages from '@/i18n/locales/zh-Hant/pages.json';
+export const NAMESPACES = [
+  'common', 'catalog', 'quote', 'cart', 'checkout', 'orders',
+  'creator', 'employee', 'admin', 'errors', 'rewards', 'tickets', 'pages',
+] as const;
 
-import zhHansCommon from '@/i18n/locales/zh-Hans/common.json';
-import zhHansCatalog from '@/i18n/locales/zh-Hans/catalog.json';
-import zhHansQuote from '@/i18n/locales/zh-Hans/quote.json';
-import zhHansTickets from '@/i18n/locales/zh-Hans/tickets.json';
-import zhHansCart from '@/i18n/locales/zh-Hans/cart.json';
-import zhHansCheckout from '@/i18n/locales/zh-Hans/checkout.json';
-import zhHansOrders from '@/i18n/locales/zh-Hans/orders.json';
-import zhHansCreator from '@/i18n/locales/zh-Hans/creator.json';
-import zhHansEmployee from '@/i18n/locales/zh-Hans/employee.json';
-import zhHansErrors from '@/i18n/locales/zh-Hans/errors.json';
-import zhHansRewards from '@/i18n/locales/zh-Hans/rewards.json';
-import zhHansPages from '@/i18n/locales/zh-Hans/pages.json';
+/** Namespaces that ship with a locale bundle; `admin` is fetched separately. */
+const BUNDLED_NAMESPACES = NAMESPACES.filter((namespace) => namespace !== 'admin');
 
-const resources = {
-  en: {
-    common: enCommon, catalog: enCatalog, quote: enQuote, cart: enCart,
-    tickets: enTickets,
-    checkout: enCheckout, orders: enOrders, creator: enCreator,
-    employee: enEmployee, errors: enErrors, rewards: enRewards,
-    pages: enPages,
-  },
-  'zh-Hant': {
-    common: zhHantCommon, catalog: zhHantCatalog, quote: zhHantQuote, cart: zhHantCart,
-    tickets: zhHantTickets,
-    checkout: zhHantCheckout, orders: zhHantOrders, creator: zhHantCreator,
-    employee: zhHantEmployee, errors: zhHantErrors, rewards: zhHantRewards,
-    pages: zhHantPages,
-  },
-  'zh-Hans': {
-    common: zhHansCommon, catalog: zhHansCatalog, quote: zhHansQuote, cart: zhHansCart,
-    tickets: zhHansTickets,
-    checkout: zhHansCheckout, orders: zhHansOrders, creator: zhHansCreator,
-    employee: zhHansEmployee, errors: zhHansErrors, rewards: zhHansRewards,
-    pages: zhHansPages,
-  },
+const en = {
+  common: enCommon, catalog: enCatalog, quote: enQuote, cart: enCart,
+  tickets: enTickets, checkout: enCheckout, orders: enOrders, creator: enCreator,
+  employee: enEmployee, errors: enErrors, rewards: enRewards, pages: enPages,
 };
 
 export const SUPPORTED_LOCALES = ['en', 'zh-Hant', 'zh-Hans'] as const;
@@ -134,14 +101,66 @@ if (typeof window !== 'undefined' && !i18n.isInitialized) {
   i18n
     .use(initReactI18next)
     .init({
-      resources,
+      resources: { en },
       lng: 'en',
       fallbackLng: 'en',
       defaultNS: 'common',
-      ns: ['common','catalog','quote','cart','checkout','orders','creator','employee','admin','errors','rewards','tickets','pages'],
+      ns: [...NAMESPACES],
       interpolation: { escapeValue: false },
       react: { useSuspense: false },
     });
+}
+
+const LOCALE_LOADERS: Record<Exclude<Locale, 'en'>, Record<string, () => Promise<{ default: unknown }>>> = {
+  'zh-Hant': {
+    common: () => import('@/i18n/locales/zh-Hant/common.json'),
+    catalog: () => import('@/i18n/locales/zh-Hant/catalog.json'),
+    quote: () => import('@/i18n/locales/zh-Hant/quote.json'),
+    tickets: () => import('@/i18n/locales/zh-Hant/tickets.json'),
+    cart: () => import('@/i18n/locales/zh-Hant/cart.json'),
+    checkout: () => import('@/i18n/locales/zh-Hant/checkout.json'),
+    orders: () => import('@/i18n/locales/zh-Hant/orders.json'),
+    creator: () => import('@/i18n/locales/zh-Hant/creator.json'),
+    employee: () => import('@/i18n/locales/zh-Hant/employee.json'),
+    errors: () => import('@/i18n/locales/zh-Hant/errors.json'),
+    rewards: () => import('@/i18n/locales/zh-Hant/rewards.json'),
+    pages: () => import('@/i18n/locales/zh-Hant/pages.json'),
+  },
+  'zh-Hans': {
+    common: () => import('@/i18n/locales/zh-Hans/common.json'),
+    catalog: () => import('@/i18n/locales/zh-Hans/catalog.json'),
+    quote: () => import('@/i18n/locales/zh-Hans/quote.json'),
+    tickets: () => import('@/i18n/locales/zh-Hans/tickets.json'),
+    cart: () => import('@/i18n/locales/zh-Hans/cart.json'),
+    checkout: () => import('@/i18n/locales/zh-Hans/checkout.json'),
+    orders: () => import('@/i18n/locales/zh-Hans/orders.json'),
+    creator: () => import('@/i18n/locales/zh-Hans/creator.json'),
+    employee: () => import('@/i18n/locales/zh-Hans/employee.json'),
+    errors: () => import('@/i18n/locales/zh-Hans/errors.json'),
+    rewards: () => import('@/i18n/locales/zh-Hans/rewards.json'),
+    pages: () => import('@/i18n/locales/zh-Hans/pages.json'),
+  },
+};
+
+const loadedLocales = new Set<Locale>(['en']);
+
+/**
+ * Add a language's bundles to i18next, fetching them the first time it is used.
+ * English is already present, so it resolves without a request.
+ */
+export async function ensureLocale(locale: Locale): Promise<void> {
+  if (loadedLocales.has(locale)) return;
+  const loaders = LOCALE_LOADERS[locale as Exclude<Locale, 'en'>];
+  const modules = await Promise.all(BUNDLED_NAMESPACES.map((namespace) => loaders[namespace]()));
+  BUNDLED_NAMESPACES.forEach((namespace, index) => {
+    i18n.addResourceBundle(locale, namespace, modules[index].default, true, true);
+  });
+  loadedLocales.add(locale);
+}
+
+/** Whether a locale's bundles are already in memory (English always is). */
+export function localeIsLoaded(locale: Locale): boolean {
+  return loadedLocales.has(locale);
 }
 
 export default i18n;

@@ -144,5 +144,9 @@
     "light": "Light",
     "dark": "Dark",
     "auto": "Auto (system)"
-  }
+  },
+  "retry": "Try again",
+  "back_home": "Go home",
+  "error_retry_hint": "The page could not be displayed. Try again, or go back to the home page.",
+  "not_found_title": "Page not found"
 }
